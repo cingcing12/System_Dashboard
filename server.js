@@ -54,36 +54,37 @@ const upload = multer({ storage });
 // ---------------------------
 const git = simpleGit();
 // ---------------------------
-// Set author identity globally for this repo (Render needs explicit config)
-async function setGitIdentity() {
+// ⚡ Set author identity for the repo (before any commit)
+async function setupGitIdentity() {
   try {
-    await git.addConfig('user.name', 'cingcing12', false, 'local'); // local repo only
-    await git.addConfig('user.email', 'cing16339@gmail.com', false, 'local');
+    await git.addConfig('user.name', 'cingcing12', false);  // false = local repo
+    await git.addConfig('user.email', 'cing16339@gmail.com', false);
     console.log('✅ Git identity set for commits');
   } catch (err) {
     console.error('❌ Failed to set Git identity:', err);
   }
 }
 
-// ---------------------------
-// Auto Git Push Function
+// Push function
 async function pushToGit(commitMessage) {
   try {
-    // Stage all files inside faces folder
-    await git.add("./faces/*");
+    await setupGitIdentity(); // make sure identity is set first
+
+    // Stage all images in faces folder
+    await git.add('./faces/*');
 
     // Commit
     await git.commit(commitMessage);
 
-    // Push
+    // Push using token
     await git.push(
       `https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git`,
       GITHUB_BRANCH
     );
 
-    console.log("✅ Auto git push done!");
+    console.log('✅ Auto git push done!');
   } catch (err) {
-    console.error("❌ Git push failed:", err);
+    console.error('❌ Git push failed:', err);
   }
 }
 
