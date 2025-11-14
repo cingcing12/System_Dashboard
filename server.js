@@ -73,7 +73,7 @@ async function pushToGit(commitMessage) {
     await git.addConfig('user.email', 'cing16339@gmail.com', false);
 
     // Stage all files in faces folder, recursively
-    await git.add('./faces/**');
+    await git.add('./faces/**', {'-f': null}); // -f = force
 
     // Commit (only if changes exist)
     const status = await git.status();
