@@ -53,25 +53,40 @@ const upload = multer({ storage });
 // Auto Git Push Function (via HTTPS token)
 // ---------------------------
 const git = simpleGit();
-// Set author identity for commits (once, before commit)
-git.addConfig('user.name', 'cingcing12');
-git.addConfig('user.email', 'cing16339@gmail.com');
-
-async function pushToGit(commitMessage) {
+// ---------------------------
+// Set author identity globally for this repo (Render needs explicit config)
+async function setGitIdentity() {
   try {
-    // Set remote with token
-    await git.add("./faces");
-    await git.commit(commitMessage);
-    await git.push(
-      `https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git`,
-      GITHUB_BRANCH
-    );
-    console.log("✅ Auto git push done!");
+    await git.addConfig('user.name', 'cingcing12', false, 'local'); // local repo only
+    await git.addConfig('user.email', 'cing16339@gmail.com', false, 'local');
+    console.log('✅ Git identity set for commits');
   } catch (err) {
-    console.error("❌ Git push failed:", err);
+    console.error('❌ Failed to set Git identity:', err);
   }
 }
 
+// ---------------------------
+// Auto Git Push Function
+async function pushToGit(commitMessage) {
+  try {
+    // Ensure author identity is set
+    await setGitIdentity();
+
+    // Stage the faces folder
+    await git.add('./faces');
+
+    // Commit with explicit author just in case
+    await git.commit(commitMessage, { '--author': '"cingcing12 <cing16339@gmail.com>"' });
+
+    // Push to GitHub using token
+    // Make sure GITHUB_REPO = 'username/repo' and GITHUB_BRANCH = 'main'
+    await git.push(`https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git`, GITHUB_BRANCH);
+
+    console.log('✅ Auto git push done!');
+  } catch (err) {
+    console.error('❌ Git push failed:', err);
+  }
+}
 // ---------------------------
 // Register User Endpoint
 // ---------------------------
