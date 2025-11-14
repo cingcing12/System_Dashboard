@@ -1,7 +1,6 @@
 {
   "name": "dashboard_sytem",
   "version": "1.0.0",
-  "description": "",
   "main": "config.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -25,5 +24,6 @@
     "multer": "^2.0.2",
     "node-fetch": "^2.7.0",
     "simple-git": "^3.30.0"
-  }
+  },
+  "description": ""
 }
