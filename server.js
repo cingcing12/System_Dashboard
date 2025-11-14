@@ -68,19 +68,20 @@ async function setupGitIdentity() {
 // Push function
 async function pushToGit(commitMessage) {
   try {
-    await setupGitIdentity();
+    // Ensure Git identity
+    await git.addConfig('user.name', 'cingcing12', false);
+    await git.addConfig('user.email', 'cing16339@gmail.com', false);
 
-    // Stage all images in faces folder
+    // Stage all files in faces folder, recursively
     await git.add('./faces/**');
 
-    // Check status
+    // Commit (only if changes exist)
     const status = await git.status();
-    if (status.staged.length === 0) {
-      console.log('⚠️ Nothing new to commit!');
+    if (status.modified.length === 0 && status.not_added.length === 0) {
+      console.log('ℹ️ No new files to commit');
       return;
     }
 
-    // Commit
     await git.commit(commitMessage);
 
     // Push using token
@@ -94,6 +95,7 @@ async function pushToGit(commitMessage) {
     console.error('❌ Git push failed:', err);
   }
 }
+
 
 
 // ---------------------------
