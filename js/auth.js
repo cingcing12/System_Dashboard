@@ -1,7 +1,7 @@
 // ================================
-// ⚡ Configuration Variables
+// ✅ Configuration Variables
 // ================================
-const MODEL_URL = "https://raw.githubusercontent.com/cingcing12/System_Dashboard/main/models"; // GitHub raw URL for models
+const MODEL_URL = "/models"; // path to face-api.js models
 let modelsLoaded = false;
 let streamRef = null;
 let currentFacing = "user"; // "user" = front, "environment" = back
@@ -21,7 +21,7 @@ const switchCamBtn = document.getElementById("switchCamBtn");
 const faceMsg = document.getElementById("faceMsg");
 
 // ================================
-// ⚡ Load Face Recognition Models
+// ✅ Load Face Recognition Models
 // ================================
 async function loadModels() {
   if (modelsLoaded) return;
@@ -41,7 +41,7 @@ async function loadModels() {
 }
 
 // ================================
-// ⚡ Camera Functions
+// ✅ Start Camera
 // ================================
 async function startCamera() {
   stopCamera();
@@ -58,6 +58,7 @@ async function startCamera() {
   }
 }
 
+// ✅ Stop Camera
 function stopCamera() {
   if (streamRef) {
     streamRef.getTracks().forEach(t => t.stop());
@@ -66,19 +67,21 @@ function stopCamera() {
   video.srcObject = null;
 }
 
+// ✅ Switch Camera
 switchCamBtn.addEventListener("click", async () => {
   currentFacing = currentFacing === "user" ? "environment" : "user";
   faceMsg.textContent = `Switching to ${currentFacing === "user" ? "front" : "back"} camera...`;
   await startCamera();
 });
 
+// ✅ Cancel Face Login
 cancelFaceBtn.addEventListener("click", () => {
   stopCamera();
   faceModal.style.display = "none";
 });
 
 // ================================
-// ⚡ Face Descriptor & Matching
+// ✅ Get Face Descriptor
 // ================================
 async function getDescriptorFromImage(imgOrCanvas, options = new faceapi.TinyFaceDetectorOptions({ inputSize: 512 })) {
   try {
@@ -93,19 +96,21 @@ async function getDescriptorFromImage(imgOrCanvas, options = new faceapi.TinyFac
   }
 }
 
+// ================================
+// ✅ Euclidean Distance
+// ================================
 function euclideanDistance(d1, d2) {
   return Math.sqrt(d1.reduce((sum, v, i) => sum + (v - d2[i]) ** 2, 0));
 }
 
 // ================================
-// ⚡ Capture & Match Face
+// ✅ Capture & Match Face
 // ================================
 captureBtn.addEventListener("click", async () => {
   faceMsg.textContent = "Capturing your face...";
-  await loadModels();
-
   const liveDescriptors = [];
 
+  // Set canvas size
   snapshot.width = video.videoWidth;
   snapshot.height = video.videoHeight;
   const ctx = snapshot.getContext("2d");
@@ -116,7 +121,6 @@ captureBtn.addEventListener("click", async () => {
 
     const desc = await getDescriptorFromImage(snapshot);
     if (desc) liveDescriptors.push(desc);
-
     await new Promise(r => setTimeout(r, 300));
   }
 
@@ -128,9 +132,10 @@ captureBtn.addEventListener("click", async () => {
   faceMsg.textContent = "Matching with stored faces...";
 
   try {
+    // Fetch all users
     const res = await fetch(sheetUrl(SHEET_USERS));
     const json = await res.json();
-    const users = json.slice(1); // skip header row
+    const users = json.slice(1); // skip headers
 
     let bestMatch = null;
     let bestDistance = Infinity;
@@ -178,7 +183,7 @@ captureBtn.addEventListener("click", async () => {
 });
 
 // ================================
-// ⚡ Email + Password Login
+// ✅ Email + Password Login (unchanged)
 // ================================
 document.getElementById("loginBtn").addEventListener("click", loginUser);
 
@@ -205,7 +210,7 @@ async function loginUser() {
 }
 
 // ================================
-// ⚡ Update Last Login & Redirect
+// ✅ Shared Function: Update Last Login
 // ================================
 async function updateLastLoginAndRedirect(user) {
   const now = new Date().toISOString();
