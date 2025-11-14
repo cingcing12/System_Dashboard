@@ -69,24 +69,24 @@ async function setGitIdentity() {
 // Auto Git Push Function
 async function pushToGit(commitMessage) {
   try {
-    // Ensure author identity is set
-    await setGitIdentity();
+    // Stage all files inside faces folder
+    await git.add("./faces/*");
 
-    // Stage the faces folder
-    await git.add('./faces');
+    // Commit
+    await git.commit(commitMessage);
 
-    // Commit with explicit author just in case
-    await git.commit(commitMessage, { '--author': '"cingcing12 <cing16339@gmail.com>"' });
+    // Push
+    await git.push(
+      `https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git`,
+      GITHUB_BRANCH
+    );
 
-    // Push to GitHub using token
-    // Make sure GITHUB_REPO = 'username/repo' and GITHUB_BRANCH = 'main'
-    await git.push(`https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git`, GITHUB_BRANCH);
-
-    console.log('✅ Auto git push done!');
+    console.log("✅ Auto git push done!");
   } catch (err) {
-    console.error('❌ Git push failed:', err);
+    console.error("❌ Git push failed:", err);
   }
 }
+
 // ---------------------------
 // Register User Endpoint
 // ---------------------------
