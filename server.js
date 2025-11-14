@@ -53,6 +53,9 @@ const upload = multer({ storage });
 // Auto Git Push Function (via HTTPS token)
 // ---------------------------
 const git = simpleGit();
+// Set author identity for commits (once, before commit)
+git.addConfig('user.name', 'cingcing12');
+git.addConfig('user.email', 'cing16339@gmail.com');
 
 async function pushToGit(commitMessage) {
   try {
