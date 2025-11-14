@@ -126,6 +126,37 @@ app.get("/api/users", async (req, res) => {
 });
 
 // ---------------------------
+// Fetch Face Image by Email
+// ---------------------------
+app.get("/api/face/:email", async (req, res) => {
+  try {
+    const email = req.params.email;
+    const safeEmail = email.replace(/[@.]/g, "_");
+    const githubPath = `${GITHUB_FOLDER}/${safeEmail}.jpg`;
+
+    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${githubPath}`;
+
+    const response = await fetch(url, {
+      headers: { Authorization: `token ${GITHUB_TOKEN}` }
+    });
+
+    if (!response.ok) {
+      return res.status(404).json({ error: "Face image not found" });
+    }
+
+    const json = await response.json();
+    const imgBuffer = Buffer.from(json.content, "base64");
+
+    res.setHeader("Content-Type", "image/jpeg");
+    res.send(imgBuffer);
+
+  } catch (err) {
+    console.error("Error fetching face:", err);
+    res.status(500).json({ error: "Failed to load face image" });
+  }
+});
+
+// ---------------------------
 // Start Server
 // ---------------------------
 app.listen(PORT, () => {
