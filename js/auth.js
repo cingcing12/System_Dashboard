@@ -1,7 +1,7 @@
 // ================================
 // ✅ Configuration Variables
 // ================================
-const MODEL_URL = "/models"; // path to face-api.js models
+const MODEL_URL = "./models"; // path to face-api.js models
 let modelsLoaded = false;
 let streamRef = null;
 let currentFacing = "user"; // "user" = front, "environment" = back
