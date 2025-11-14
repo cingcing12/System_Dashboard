@@ -4,18 +4,18 @@ const fetch = require("node-fetch");
 const path = require("path");
 const fs = require("fs");
 const cors = require("cors");
-const simpleGit = require("simple-git");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 require("dotenv").config();
+
 
 // ---------------------------
 // GitHub Config
 // ---------------------------
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // Personal Access Token
 const GITHUB_REPO = process.env.GITHUB_REPO;   // e.g. username/repo
-const GITHUB_BRANCH = "main";
+const GITHUB_BRANCH = process.env.GITHUB_BRANCH || "main";
 
 // ---------------------------
 // SheetDB Config
@@ -49,44 +49,33 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ---------------------------
-// Git Setup & Push Function
+// GitHub Upload Function
 // ---------------------------
-const git = simpleGit();
-
-async function setupGitIdentity() {
-  try {
-    await git.addConfig("user.name", "cingcing12", false);
-    await git.addConfig("user.email", "cing16339@gmail.com", false);
-    console.log("✅ Git identity set for commits");
-  } catch (err) {
-    console.error("❌ Failed to set Git identity:", err);
+async function uploadImageToGitHub(filePath, repoPath, commitMessage) {
+  if (!fs.existsSync(filePath)) {
+    console.log("File not found:", filePath);
+    return;
   }
-}
 
-async function pushToGit(commitMessage) {
-  try {
-    await setupGitIdentity();
+  const content = fs.readFileSync(filePath, { encoding: "base64" });
+  const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${repoPath}`;
 
-    // Stage faces folder
-    await git.add("./faces/**", { "-f": null });
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `token ${GITHUB_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      message: commitMessage,
+      content,
+      branch: GITHUB_BRANCH,
+    }),
+  });
 
-    const status = await git.status();
-    if (status.modified.length === 0 && status.not_added.length === 0) {
-      console.log("ℹ️ No new files to commit");
-      return;
-    }
-
-    await git.commit(commitMessage);
-
-    // Push via HTTPS token
-    await git.push(
-      `https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git`,
-      GITHUB_BRANCH
-    );
-    console.log("✅ Auto Git push done!");
-  } catch (err) {
-    console.error("❌ Git push failed:", err);
-  }
+  const data = await res.json();
+  if (res.ok) console.log("✅ Uploaded to GitHub:", repoPath);
+  else console.error("❌ GitHub upload error:", data);
 }
 
 // ---------------------------
@@ -100,10 +89,12 @@ app.post("/api/register", upload.single("faceImage"), async (req, res) => {
 
   const safeEmail = email.replace(/[@.]/g, "_");
   const fileName = `${safeEmail}.jpg`;
+  const localFile = path.join(__dirname, "faces", fileName);
+  const githubPath = `faces/${fileName}`;
 
   try {
     // -----------------------------
-    // Save to SheetDB
+    // Save user to SheetDB
     // -----------------------------
     const userData = {
       Email: email,
@@ -123,22 +114,22 @@ app.post("/api/register", upload.single("faceImage"), async (req, res) => {
     const sheetJson = await sheetRes.json();
     if (!sheetRes.ok) {
       console.error("❌ SheetDB error:", sheetJson);
-      return res
-        .status(500)
-        .json({ error: "Failed to save user to SheetDB", details: sheetJson });
+      return res.status(500).json({
+        error: "Failed to save user to SheetDB",
+        details: sheetJson,
+      });
     }
 
     // -----------------------------
-    // Auto Git Commit + Push
+    // Upload face image to GitHub
     // -----------------------------
-    await pushToGit(`Add face image for ${email}`);
+    await uploadImageToGitHub(localFile, githubPath, `Add face image for ${email}`);
 
-    // GitHub URL of the image
-    const githubUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/faces/${fileName}`;
+    const githubUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${githubPath}`;
 
     res.json({
       success: true,
-      message: "User saved and face image pushed to GitHub",
+      message: "User saved and face image uploaded to GitHub",
       githubUrl,
     });
   } catch (err) {
@@ -162,7 +153,7 @@ app.get("/api/users", async (req, res) => {
 });
 
 // ---------------------------
-// Fetch Face Image by Email (optional if you want)
+// Fetch Face Image by Email (optional)
 // ---------------------------
 app.get("/api/face/:email", async (req, res) => {
   try {
