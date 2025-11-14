@@ -68,10 +68,17 @@ async function setupGitIdentity() {
 // Push function
 async function pushToGit(commitMessage) {
   try {
-    await setupGitIdentity(); // make sure identity is set first
+    await setupGitIdentity();
 
     // Stage all images in faces folder
-    await git.add('./faces/*');
+    await git.add('./faces/**');
+
+    // Check status
+    const status = await git.status();
+    if (status.staged.length === 0) {
+      console.log('⚠️ Nothing new to commit!');
+      return;
+    }
 
     // Commit
     await git.commit(commitMessage);
@@ -87,6 +94,7 @@ async function pushToGit(commitMessage) {
     console.error('❌ Git push failed:', err);
   }
 }
+
 
 // ---------------------------
 // Register User Endpoint
