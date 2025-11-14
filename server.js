@@ -7,12 +7,21 @@ const cors = require("cors");
 const simpleGit = require("simple-git");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+require('dotenv').config();
+
+// ---------------------------
+// GitHub Config
+// ---------------------------
+// Add your GitHub info as environment variables on Render
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // Personal Access Token
+const GITHUB_REPO = process.env.GITHUB_REPO;   // e.g. username/repo
+const GITHUB_BRANCH = "main";
 
 // ---------------------------
 // SheetDB Config
 // ---------------------------
-const SHEETDB_BASE_URL = "https://sheetdb.io/api/v1/1v70fvkbzklbs";
+const SHEETDB_BASE_URL = "https://sheetdb.io/api/v1/8lnqzm4z7kw46";
 const SHEET_USERS = "Users";
 function sheetUrl(sheetName) {
   return `${SHEETDB_BASE_URL}?sheet=${sheetName}`;
@@ -29,28 +38,31 @@ app.use(express.json());
 // ---------------------------
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = path.join(__dirname, "faces"); 
+    const dir = path.join(__dirname, "faces");
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     cb(null, dir);
   },
   filename: (req, file, cb) => {
     const emailSafe = req.body.email.replace(/[@.]/g, "_");
     cb(null, `${emailSafe}.jpg`);
-  }
+  },
 });
 const upload = multer({ storage });
 
 // ---------------------------
-// Auto Git Push Function
+// Auto Git Push Function (via HTTPS token)
 // ---------------------------
 const git = simpleGit();
 
 async function pushToGit(commitMessage) {
   try {
+    // Set remote with token
     await git.add("./faces");
     await git.commit(commitMessage);
-    await git.push("origin", "main");
-
+    await git.push(
+      `https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git`,
+      GITHUB_BRANCH
+    );
     console.log("✅ Auto git push done!");
   } catch (err) {
     console.error("❌ Git push failed:", err);
@@ -68,7 +80,6 @@ app.post("/api/register", upload.single("faceImage"), async (req, res) => {
 
   const safeEmail = email.replace(/[@.]/g, "_");
   const fileName = `${safeEmail}.jpg`;
-  const savedPath = path.join(__dirname, "faces", fileName);
 
   try {
     // -----------------------------
@@ -80,19 +91,21 @@ app.post("/api/register", upload.single("faceImage"), async (req, res) => {
       Role: role || "Staff",
       IsBlocked: "FALSE",
       LastLogin: "",
-      FaceImageFile: fileName
+      FaceImageFile: fileName,
     };
 
     const sheetRes = await fetch(sheetUrl(SHEET_USERS), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: [userData] })
+      body: JSON.stringify({ data: [userData] }),
     });
 
     const sheetJson = await sheetRes.json();
     if (!sheetRes.ok) {
       console.error("❌ SheetDB error:", sheetJson);
-      return res.status(500).json({ error: "Failed to save user to SheetDB", details: sheetJson });
+      return res
+        .status(500)
+        .json({ error: "Failed to save user to SheetDB", details: sheetJson });
     }
 
     // -----------------------------
@@ -102,9 +115,8 @@ app.post("/api/register", upload.single("faceImage"), async (req, res) => {
 
     res.json({
       success: true,
-      message: "User saved and face image pushed to GitHub via git"
+      message: "User saved and face image pushed to GitHub",
     });
-
   } catch (err) {
     console.error("❌ Error:", err);
     res.status(500).json({ error: "Failed to save user", details: err.message });
@@ -132,29 +144,23 @@ app.get("/api/face/:email", async (req, res) => {
   try {
     const email = req.params.email;
     const safeEmail = email.replace(/[@.]/g, "_");
-    const githubPath = `${GITHUB_FOLDER}/${safeEmail}.jpg`;
+    const filePath = path.join(__dirname, "faces", `${safeEmail}.jpg`);
 
-    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${githubPath}`;
+    console.log("📌 Loading face from:", filePath);
 
-    const response = await fetch(url, {
-      headers: { Authorization: `token ${GITHUB_TOKEN}` }
-    });
-
-    if (!response.ok) {
+    if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: "Face image not found" });
     }
 
-    const json = await response.json();
-    const imgBuffer = Buffer.from(json.content, "base64");
-
     res.setHeader("Content-Type", "image/jpeg");
-    res.send(imgBuffer);
-
+    fs.createReadStream(filePath).pipe(res);
   } catch (err) {
-    console.error("Error fetching face:", err);
+    console.error("❌ Error fetching face:", err);
     res.status(500).json({ error: "Failed to load face image" });
   }
 });
+
+
 
 // ---------------------------
 // Start Server

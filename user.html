@@ -292,25 +292,41 @@ modalForm.addEventListener('submit', async e => {
 
 
 // ---------- Block / Delete ----------
-async function toggleBlockSwal(email,currentStatus){
-  const isBlocked = (String(currentStatus).toUpperCase()==='TRUE');
-  const action = isBlocked?'ដោះ Block':'ដាក់ Block';
-  const result = await Swal.fire({
-    title:`តើអ្នកចង់ ${action}?`,
-    icon:'question', showCancelButton:true, confirmButtonText:'យល់ព្រម', cancelButtonText:'បោះបង់', confirmButtonColor:'#6b46c1'
-  });
-  if(!result.isConfirmed) return;
+async function toggleBlockSwal(email, currentStatus) {
+  const isBlocked = String(currentStatus).toUpperCase() === 'TRUE';
+  const action = isBlocked ? 'ដោះ Block' : 'ដាក់ Block';
 
-  try{
-    const patchRes = await fetch(`${SHEETDB_BASE_URL}/Email/${encodeURIComponent(email)}`,{
-      method:'PATCH', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({data:[{'ស្ថានភាពប្លុក':!isBlocked}]})
-    });
-    if(!patchRes.ok) throw new Error('Failed to update');
-    showSwal('success','បានធ្វើការផ្លាស់ប្តូរ',`${email} ${action} បានជោគជ័យ`);
+  const result = await Swal.fire({
+    title: `តើអ្នកចង់ ${action}?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'យល់ព្រម',
+    cancelButtonText: 'បោះបង់',
+    confirmButtonColor: '#6b46c1'
+  });
+  if (!result.isConfirmed) return;
+
+  try {
+    const patchRes = await fetch(`${SHEETDB_BASE_URL}?search=${SHEET_USERS}&Email=${encodeURIComponent(email)}`, {
+  method: 'PUT',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    data: [{ 'IsBlocked': !isBlocked ? "TRUE" : "FALSE" }]
+  })
+});
+
+if (!patchRes.ok) throw new Error('Failed to update');
+
+if(!patchRes.ok) throw new Error('Failed to update');
+
+    showSwal('success', 'បានធ្វើការផ្លាស់ប្តូរ', `${email} ${action} បានជោគជ័យ`);
     await loadUsers();
-  }catch(err){ showSwal('error','មានបញ្ហា',err.message||String(err)); }
+  } catch (err) {
+    showSwal('error', 'មានបញ្ហា', err.message || String(err));
+    console.error(err);
+  }
 }
+
 async function deleteUserSwal(email){
   const result = await Swal.fire({
     title:`តើអ្នកចង់លុប ${email}?`, text:'ប្រតិបត្តិការនេះមិនអាចត្រឡប់វិញ', icon:'warning', showCancelButton:true,
