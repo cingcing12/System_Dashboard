@@ -223,7 +223,7 @@ captureBtn.addEventListener("click", async () => {
       if (!u.FaceImageFile) continue;
 
       const img = new Image();
-      img.src = `/faces/${u.FaceImageFile}`;
+      img.src = `https://cingcing12.github.io/faces/${u.FaceImageFile}`;
       await img.decode();
 
       const options = new faceapi.TinyFaceDetectorOptions({
