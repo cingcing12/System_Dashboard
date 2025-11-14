@@ -5,8 +5,9 @@ const MODEL_URL = "https://cingcing12.github.io/System_Dashboard/models/"; // pa
 let modelsLoaded = false;
 let streamRef = null;
 let currentFacing = "user"; // "user" = front, "environment" = back
-const CAPTURE_COUNT = 3; // number of frames to capture for matching
-const THRESHOLD = 0.5; // stricter threshold
+const THRESHOLD = 0.5; // similarity threshold
+let storedDescriptors = []; // cache stored face descriptors
+
 
 // ================================
 // ✅ Email + Password Login
@@ -25,7 +26,7 @@ async function loginUser() {
     const user = users.find(u => u.Email === email);
 
     if (!user) return alert("User not found!");
-    if (user.IsBlocked === "TRUE") return alert("Account blocked!");
+    if (user.IsBlocked === "TRUE") return alert("❌ You are blocked by owner!");
     if (user.PasswordHash !== password) return alert("Wrong password!");
 
     await updateLastLoginAndRedirect(user);
@@ -91,15 +92,35 @@ async function loadModels() {
 }
 
 // ================================
+// ✅ Preload Stored Faces (Cached)
+async function preloadStoredFaces() {
+  try {
+    const res = await fetch(sheetUrl(SHEET_USERS));
+    const json = await res.json();
+    const users = json.slice(1);
+    storedDescriptors = [];
+
+    for (const u of users) {
+      if (!u.FaceImageFile || u.IsBlocked === "TRUE") continue;
+      const img = new Image();
+      img.src = `https://cingcing12.github.io/System_Dashboard/faces/${u.FaceImageFile}`;
+      await img.decode();
+      const desc = await getDescriptorFromImage(img, new faceapi.TinyFaceDetectorOptions({inputSize:160, scoreThreshold:0.2}));
+      if (desc) storedDescriptors.push({email: u.Email, descriptor: desc});
+    }
+    console.log("✅ Stored faces preloaded:", storedDescriptors.length);
+  } catch (err) {
+    console.error("❌ Failed to preload stored faces:", err);
+  }
+}
+
+// ================================
 // ✅ Get Face Descriptor
 // ================================
-async function getDescriptorFromImage(imgOrCanvas) {
+async function getDescriptorFromImage(imgOrCanvas, options = new faceapi.TinyFaceDetectorOptions({inputSize:512})) {
   try {
     const detection = await faceapi
-      .detectSingleFace(
-        imgOrCanvas,
-        new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.3 })
-      )
+      .detectSingleFace(imgOrCanvas, options)
       .withFaceLandmarks()
       .withFaceDescriptor();
     return detection ? detection.descriptor : null;
@@ -116,14 +137,13 @@ function euclideanDistance(d1, d2) {
   return Math.sqrt(d1.reduce((sum, v, i) => sum + (v - d2[i]) ** 2, 0));
 }
 
-
-
 // ================================
 // ✅ Start Face Login
 // ================================
 faceLoginBtn.addEventListener("click", async () => {
   faceMsg.textContent = "Initializing camera...";
   await loadModels();
+  await preloadStoredFaces();
   faceModal.style.display = "flex";
   await startCamera();
 });
@@ -146,6 +166,7 @@ async function startCamera() {
   }
 }
 
+// ================================
 // ✅ Switch Camera
 switchCamBtn.addEventListener("click", async () => {
   currentFacing = currentFacing === "user" ? "environment" : "user";
@@ -153,12 +174,14 @@ switchCamBtn.addEventListener("click", async () => {
   await startCamera();
 });
 
+// ================================
 // ✅ Cancel Face Login
 cancelFaceBtn.addEventListener("click", () => {
   stopCamera();
   faceModal.style.display = "none";
 });
 
+// ================================
 // ✅ Stop Camera
 function stopCamera() {
   if (streamRef) {
@@ -169,116 +192,56 @@ function stopCamera() {
 }
 
 // ================================
-// ✅ Capture & Match Optimized
-// ================================
+// ✅ Capture & Match (Fast & Smart)
 captureBtn.addEventListener("click", async () => {
   faceMsg.textContent = "Capturing your face...";
-  const CAPTURE_COUNT_MOBILE = 5; // more frames for mobile
   const liveDescriptors = [];
 
-  // Ensure canvas matches video
   snapshot.width = video.videoWidth;
   snapshot.height = video.videoHeight;
-
   const ctx = snapshot.getContext("2d");
 
-  for (let i = 0; i < CAPTURE_COUNT_MOBILE; i++) {
-    // Draw video frame on canvas with slight brightness/contrast boost
-    ctx.filter = "brightness(1.2) contrast(1.2)";
+  for (let i = 0; i < 2; i++) { // only 2 frames for speed
     ctx.drawImage(video, 0, 0, snapshot.width, snapshot.height);
-
-    const options = new faceapi.TinyFaceDetectorOptions({
-      inputSize: 224,      // mobile-friendly
-      scoreThreshold: 0.2  // easier detection
-    });
-
-    const desc = await getDescriptorFromImage(snapshot, options);
-    if (!desc) {
-      faceMsg.textContent =
-        "No face detected. Make sure lighting is good and move slightly.";
-      await new Promise(r => setTimeout(r, 200)); // wait a bit before retry
-      continue; // try next frame
-    }
-
-    liveDescriptors.push(desc);
-    await new Promise(r => setTimeout(r, 300)); // wait 0.3s between frames
+    const desc = await getDescriptorFromImage(snapshot, new faceapi.TinyFaceDetectorOptions({inputSize:160, scoreThreshold:0.2}));
+    if (desc) liveDescriptors.push(desc);
+    await new Promise(r => setTimeout(r, 200));
   }
 
   if (!liveDescriptors.length) {
-    faceMsg.textContent = "❌ Failed to capture any face. Try again.";
+    faceMsg.textContent = "❌ No face detected. Try again.";
     return;
   }
 
   faceMsg.textContent = "Matching with stored faces...";
+  let bestMatch = null;
+  let bestDistance = Infinity;
 
-  try {
+  for (const s of storedDescriptors) {
+    const avgDist = liveDescriptors.reduce((sum, d) => sum + euclideanDistance(d, s.descriptor), 0) / liveDescriptors.length;
+    if (avgDist < bestDistance) {
+      bestDistance = avgDist;
+      bestMatch = s;
+    }
+  }
+
+  console.log("🎯 Best match distance:", bestDistance);
+
+  if (bestMatch && bestDistance <= THRESHOLD) {
+    faceMsg.textContent = `✅ Face matched: ${bestMatch.email}. Logging in...`;
+
+    // Fetch user again to check block status
     const res = await fetch(sheetUrl(SHEET_USERS));
     const json = await res.json();
-    const users = json.slice(1);
+    const user = json.slice(1).find(u => u.Email === bestMatch.email);
 
-    let bestMatch = null;
-    let bestDistance = Infinity;
+    if (!user) return faceMsg.textContent = "❌ User not found.";
+    if (user.IsBlocked === "TRUE") return alert("❌ You are blocked by owner!");
 
-    for (const u of users) {
-      if (!u.FaceImageFile) continue;
-
-      const img = new Image();
-      img.src = `https://cingcing12.github.io/System_Dashboard/faces/${u.FaceImageFile}`;
-      await img.decode();
-
-      const options = new faceapi.TinyFaceDetectorOptions({
-        inputSize: 224,
-        scoreThreshold: 0.2
-      });
-
-      const desc = await faceapi
-        .detectSingleFace(img, options)
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-
-      if (!desc) continue;
-
-      const avgDistance =
-        liveDescriptors.reduce((sum, d) => sum + euclideanDistance(d, desc.descriptor), 0) /
-        liveDescriptors.length;
-
-      if (avgDistance < bestDistance) {
-        bestDistance = avgDistance;
-        bestMatch = u;
-      }
-    }
-
-    console.log("🎯 Best match distance:", bestDistance);
-
-
-
-    if (bestMatch && bestDistance <= THRESHOLD) {
-      faceMsg.textContent = `✅ Face matched: ${bestMatch.Email}. Logging in...`;
-      stopCamera();
-      faceModal.style.display = "none";
-      await updateLastLoginAndRedirect(bestMatch);
-    } else {
-      faceMsg.textContent =
-        "❌ No matching face found. Make sure your face matches the stored image and you move slightly.";
-    }
-  } catch (err) {
-    console.error("❌ Face login error:", err);
-    faceMsg.textContent = "Error during face login.";
+    stopCamera();
+    faceModal.style.display = "none";
+    await updateLastLoginAndRedirect(user);
+  } else {
+    faceMsg.textContent = "❌ No matching face found. Try again.";
   }
 });
-
-// ================================
-// ✅ Updated getDescriptorFromImage to accept options
-// ================================
-async function getDescriptorFromImage(imgOrCanvas, options = new faceapi.TinyFaceDetectorOptions({inputSize:512})) {
-  try {
-    const detection = await faceapi
-      .detectSingleFace(imgOrCanvas, options)
-      .withFaceLandmarks()
-      .withFaceDescriptor();
-    return detection ? detection.descriptor : null;
-  } catch (err) {
-    console.error("❌ Error detecting face:", err);
-    return null;
-  }
-}
