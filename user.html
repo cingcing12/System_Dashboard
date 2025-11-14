@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>គ្រប់គ្រងអ្នកប្រើប្រាស់ - Admin</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Khmer+OS+Battambang:wght@400;600;700&display=swap');
+    body { font-family: 'Khmer OS Battambang', sans-serif; min-height:100vh; }
+    .hide-scrollbar::-webkit-scrollbar { display:none; } 
+    .hide-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+    .modal { display:none; position:fixed; inset:0; background:rgba(44,62,80,0.85); justify-content:center; align-items:center; z-index:50; backdrop-filter: blur(4px); }
+    .modal.active { display:flex; }
+    .card-shadow { box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+    input:focus, select:focus, textarea:focus { outline: 2px solid #6b46c1; border-color:#6b46c1; }
+    .img-preview { width:84px; height:84px; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb; }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+<header class="bg-white shadow-lg p-4 sticky top-0 z-10 border-b-2 border-purple-100">
+  <div class="max-w-7xl mx-auto flex justify-between items-center">
+    <h1 class="text-3xl font-extrabold text-purple-700 flex items-center">
+      <i data-lucide="shield-check" class="w-7 h-7 mr-3 text-purple-600"></i> គ្រប់គ្រងអ្នកប្រើប្រាស់
+    </h1>
+    <button onclick="window.location.href='dashboard.html'" class="bg-blue-600 text-white p-3 px-6 rounded-xl font-semibold hover:bg-blue-700 transition duration-200 flex items-center shadow-md">
+      <span class="hidden sm:inline mr-2">ផ្ទាំងគ្រប់គ្រង</span><i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+    </button>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto p-4 md:p-8">
+  <section class="bg-white p-6 rounded-2xl card-shadow mb-8 border-t-8 border-purple-600">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4 sm:mb-0">បញ្ជីគណនី</h2>
+      <button onclick="openModal()" class="bg-purple-600 text-white px-5 py-3 rounded-xl flex items-center font-semibold hover:bg-purple-700 transition duration-200 shadow-lg">
+        <i data-lucide="user-plus" class="w-5 h-5 mr-2"></i> បង្កើតគណនីថ្មី
+      </button>
+    </div>
+
+    <div id="user-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[70vh] overflow-y-auto hide-scrollbar">
+      <p class="col-span-full text-center text-gray-500 py-10 text-lg">កំពុងទាញទិន្នន័យ...</p>
+    </div>
+  </section>
+</main>
+
+<!-- Modal: Create / Edit User -->
+<div id="userModal" class="modal" role="dialog" aria-modal="true">
+  <div class="bg-white rounded-2xl p-6 w-full max-w-lg relative shadow-2xl transform transition-all">
+    <h3 id="modalTitle" class="text-2xl font-bold text-purple-700 mb-4 border-b pb-2">បង្កើតគណនីថ្មី</h3>
+
+    <form id="modalForm" class="space-y-4" enctype="multipart/form-data">
+      <div>
+        <label class="block text-gray-700 mb-1">អ៊ីម៉ែល</label>
+        <input id="modalEmail" name="email" type="email" required class="w-full p-3 border rounded-lg" placeholder="example@gmail.com" />
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-1">ពាក្យសម្ងាត់</label>
+        <input id="modalPassword" name="password" type="password" class="w-full p-3 border rounded-lg" placeholder="ពាក្យសម្ងាត់សម្រាប់គណនី" />
+        <p id="passwordHint" class="text-xs text-gray-500 mt-1">នៅលើការកែប្រែ: លេខសម្ងាត់ឲ្យទុកទំនេរ ប្រសិនបើមិនចង់ផ្លាស់ប្តូរ</p>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-1">តួនាទី</label>
+        <select id="modalRole" name="role" class="w-full p-3 border rounded-lg">
+          <option value="Admin">Admin (អ្នកគ្រប់គ្រង)</option>
+          <option value="Owner">Owner (ម្ចាស់)</option>
+          <option value="Staff" selected>Staff (បុគ្គលិក)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-1">រូបថតមុខ (Face image)</label>
+        <div class="flex items-center space-x-4">
+          <img id="imgPreview" class="img-preview bg-gray-100" src="" alt="Preview" style="display:none"/>
+          <div class="flex-1">
+            <input id="modalImage" name="faceImage" type="file" accept="image/*" class="w-full" />
+            <p class="text-xs text-gray-500 mt-1">JPEG/PNG — សូមផ្ទុករូបថតមុខនៅលើក្បាល (front view)</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-4 border-t">
+        <button type="button" onclick="closeModal()" class="px-5 py-2 bg-gray-200 rounded-xl">បោះបង់</button>
+        <button type="submit" id="modalSaveBtn" class="px-5 py-2 bg-purple-600 text-white rounded-xl">រក្សាទុកទិន្នន័យ</button>
+      </div>
+    </form>
+
+    <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-2 rounded-full">
+      <i data-lucide="x" class="w-6 h-6"></i>
+    </button>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+lucide.createIcons();
+
+const userList = document.getElementById('user-list');
+const modal = document.getElementById('userModal');
+const modalForm = document.getElementById('modalForm');
+const modalTitle = document.getElementById('modalTitle');
+const modalEmail = document.getElementById('modalEmail');
+const modalPassword = document.getElementById('modalPassword');
+const modalRole = document.getElementById('modalRole');
+const modalImage = document.getElementById('modalImage');
+const imgPreview = document.getElementById('imgPreview');
+const modalSaveBtn = document.getElementById('modalSaveBtn');
+
+let editingUserEmail = null;
+const NODE_API_BASE = "http://localhost:3000";
+
+// ---------- Helpers ----------
+function showSwal(icon, title, text) {
+  Swal.fire({ icon, title, text, confirmButtonText: 'យល់ព្រម', confirmButtonColor: '#6b46c1' });
+}
+function getField(u, names) {
+  for (const k of names) if (u[k] !== undefined) return u[k];
+  return "";
+}
+
+// ---------- Modal ----------
+function openModal(user = null) {
+  modal.classList.add('active');
+  modalForm.reset();
+  imgPreview.style.display='none'; imgPreview.src='';
+
+  if(user){
+    editingUserEmail = getField(user,['Email','អ៊ីម៉ែល']);
+    modalTitle.textContent="កែប្រែគណនី";
+    modalEmail.value = editingUserEmail; modalEmail.disabled=true;
+    modalRole.value = getField(user,['Role','តួនាទី'])||'Staff';
+    modalPassword.value="";
+    modalPassword.removeAttribute('required');
+    console.log(user)
+
+    const faceFile = getField(user,['FaceImageFile','FaceImage']);
+    if(faceFile){
+      fetch(`${NODE_API_BASE}/api/face/${encodeURIComponent(editingUserEmail)}`)
+      .then(r=>r.ok?r.blob():Promise.reject()).then(blob=>{
+        imgPreview.src=URL.createObjectURL(blob);
+        imgPreview.style.display='block';
+      }).catch(()=>{imgPreview.style.display='none';});
+    }
+  }else{
+    editingUserEmail = null;
+    modalTitle.textContent="បង្កើតគណនីថ្មី";
+    modalEmail.disabled=false;
+    modalPassword.setAttribute('required','required');
+    modalRole.value='Staff';
+  }
+}
+function closeModal() { modal.classList.remove('active'); modalForm.reset(); imgPreview.style.display='none'; imgPreview.src=''; editingUserEmail=null; }
+
+modalImage.addEventListener('change',(e)=>{
+  const f = e.target.files[0];
+  if(!f){ imgPreview.style.display='none'; imgPreview.src=''; return;}
+  if(!f.type.startsWith('image/')) { showSwal('error','ទម្ងន់ឯកសារ​មិនត្រឹមត្រូវ','សូមជ្រើសរើសរូបភាព។'); modalImage.value=''; return; }
+  imgPreview.src=URL.createObjectURL(f); imgPreview.style.display='block';
+});
+
+// ---------- Load Users ----------
+async function loadUsers(){
+  userList.innerHTML='<p class="col-span-full text-center text-gray-500 py-10 text-lg flex items-center justify-center"><i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-3"></i> កំពុងទាញទិន្នន័យ...</p>';
+  lucide.createIcons();
+  try{
+    const res = await fetch(sheetUrl(SHEET_USERS));
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const users = Array.isArray(data)?data.slice(1):[]; // start row 3
+
+    if(!users.length){ userList.innerHTML='<p class="col-span-full text-center text-gray-500 py-10 text-xl border-dashed border-2 border-gray-300 rounded-lg m-4">⚠️ មិនមានគណនីអ្នកប្រើប្រាស់ទេ</p>'; return; }
+
+    userList.innerHTML=users.map(u=>{
+      const email = getField(u,['Email','អ៊ីម៉ែល'])||'';
+      const role = getField(u,['Role','តួនាទី'])||'Staff';
+      const lastLogin = getField(u,['LastLogin','ចូលចុងក្រោយ'])||'';
+      const face = getField(u,['FaceImageFile','FaceImage'])||'';
+      const isBlocked = (String(u['ស្ថានភាពប្លុក']||'FALSE').toUpperCase()==='TRUE');
+      const blockBtnText = isBlocked?'ដោះ Block':'ដាក់ Block';
+      const blockBtnIcon = isBlocked?'unlock':'lock';
+      const blockBtnColor = isBlocked?'bg-green-500 hover:bg-green-600':'bg-yellow-500 hover:bg-yellow-600';
+      const statusText = isBlocked?'ទប់ស្កាត់':'សកម្ម';
+      const statusColor = isBlocked?'text-red-600 bg-red-100':'text-green-600 bg-green-100';
+      const roleColor = role==='Owner'?'bg-pink-600':(role==='Admin'?'bg-indigo-600':'bg-purple-600');
+
+      return `
+        <div class="user-card bg-white p-5 rounded-xl shadow-lg border-l-4 ${isBlocked?'border-red-500':'border-purple-500'} transition hover:shadow-xl">
+          <div class="flex justify-between items-start mb-3">
+            <div class="flex items-center space-x-3">
+              <div class="w-12 h-12 rounded-md bg-gray-100 flex items-center justify-center text-gray-400">
+                <i data-lucide="user" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <p class="text-lg font-bold text-gray-800 break-words">${email}</p>
+                <span class="text-sm font-semibold px-2 py-0.5 rounded-full ${statusColor}">${statusText}</span>
+              </div>
+            </div>
+            <span class="text-sm font-bold text-white px-3 py-1 rounded-full ${roleColor}">${role}</span>
+          </div>
+          <div class="text-xs text-gray-500 mb-4 border-t pt-2 mt-2">
+            <p>ចូលចុងក្រោយ: ${lastLogin||'មិនធ្លាប់'}</p>
+            <p class="mt-1 text-xs">Face: ${face?'បានដាក់រេចើ':'មិនទាន់មាន'}</p>
+          </div>
+          <div class="flex space-x-2 pt-2 border-t">
+            <button onclick='openModal(${JSON.stringify(u)})' class="flex-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition flex items-center justify-center">
+              <i data-lucide="square-pen" class="w-4 h-4 mr-1"></i> កែប្រែ
+            </button>
+            <button onclick="toggleBlockSwal('${email}','${isBlocked?'TRUE':'FALSE'}')" class="flex-1 text-white px-3 py-2 rounded-lg text-sm font-semibold transition flex items-center justify-center ${blockBtnColor}">
+              <i data-lucide="${blockBtnIcon}" class="w-4 h-4 mr-1"></i> ${blockBtnText}
+            </button>
+            <button onclick="deleteUserSwal('${email}')" class="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-red-600 transition flex items-center justify-center">
+              <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i> លុប
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    lucide.createIcons();
+  }catch(err){
+    userList.innerHTML='<p class="col-span-full text-center text-red-500 py-10 text-lg">❌ មានបញ្ហាក្នុងការទាញទិន្នន័យ។ សូមពិនិត្យមើល Console។</p>';
+    console.error('Error loading users:',err);
+  }
+}
+
+// ---------- Submit ----------
+modalForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  modalSaveBtn.disabled = true;
+  modalSaveBtn.textContent = 'កំពុងរក្សាទុក...';
+
+  const email = modalEmail.value.trim();
+  const password = modalPassword.value.trim();
+  const role = modalRole.value;
+  const faceFile = modalImage.files[0];
+
+  try {
+    if (!editingUserEmail) {
+      // --- Create new user ---
+      if (!email || !password) throw new Error('សូមបញ្ចូលអ៊ីម៉ែល និងពាក្យសម្ងាត់');
+      if (!faceFile) { showSwal('warning','ទិន្នន័យមិនពេញលេញ','សូមជ្រើសរើសរូបភាពមុខសម្រាប់គណនីថ្មី'); return; }
+
+      const fd = new FormData();
+      fd.append('email', email);
+      fd.append('password', password);
+      fd.append('role', role);
+      fd.append('faceImage', faceFile);
+
+      const res = await fetch(`${NODE_API_BASE}/api/register`, { method: 'POST', body: fd });
+      if (!res.ok) throw new Error('Server error');
+      showSwal('success','បង្កើតបានជោគជ័យ',`គណនី ${email} ត្រូវបានបង្កើត។`);
+    } else {
+      // --- Edit user ---
+      const updateData = { 'Role': role }; // ALWAYS update role
+      if (password) updateData['PasswordHash'] = password; // update only if filled
+
+      // Update face if selected
+      if (faceFile) {
+        const fd = new FormData();
+        fd.append('email', editingUserEmail);
+        fd.append('faceImage', faceFile);
+        await fetch(`${NODE_API_BASE}/api/register`, { method:'POST', body:fd });
+      }
+
+      // PATCH the role & password
+      const patchRes = await fetch(`${SHEETDB_BASE_URL}/Email/${encodeURIComponent(editingUserEmail)}`, {
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ data: [updateData] })
+      });
+      if (!patchRes.ok) throw new Error('Failed to update');
+      showSwal('success','កែប្រែបានជោគជ័យ',`គណនី ${editingUserEmail} ត្រូវបានកែប្រែ។`);
+    }
+
+    closeModal();
+    await loadUsers();
+  } catch(err) {
+    console.error(err);
+    showSwal('error','មានបញ្ហា', err.message || String(err));
+  } finally {
+    modalSaveBtn.disabled = false;
+    modalSaveBtn.textContent = 'រក្សាទុកទិន្នន័យ';
+  }
+});
+
+
+// ---------- Block / Delete ----------
+async function toggleBlockSwal(email,currentStatus){
+  const isBlocked = (String(currentStatus).toUpperCase()==='TRUE');
+  const action = isBlocked?'ដោះ Block':'ដាក់ Block';
+  const result = await Swal.fire({
+    title:`តើអ្នកចង់ ${action}?`,
+    icon:'question', showCancelButton:true, confirmButtonText:'យល់ព្រម', cancelButtonText:'បោះបង់', confirmButtonColor:'#6b46c1'
+  });
+  if(!result.isConfirmed) return;
+
+  try{
+    const patchRes = await fetch(`${SHEETDB_BASE_URL}/Email/${encodeURIComponent(email)}`,{
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({data:[{'ស្ថានភាពប្លុក':!isBlocked}]})
+    });
+    if(!patchRes.ok) throw new Error('Failed to update');
+    showSwal('success','បានធ្វើការផ្លាស់ប្តូរ',`${email} ${action} បានជោគជ័យ`);
+    await loadUsers();
+  }catch(err){ showSwal('error','មានបញ្ហា',err.message||String(err)); }
+}
+async function deleteUserSwal(email){
+  const result = await Swal.fire({
+    title:`តើអ្នកចង់លុប ${email}?`, text:'ប្រតិបត្តិការនេះមិនអាចត្រឡប់វិញ', icon:'warning', showCancelButton:true,
+    confirmButtonText:'លុប', cancelButtonText:'បោះបង់', confirmButtonColor:'#e53e3e'
+  });
+  if(!result.isConfirmed) return;
+  try{
+    const res = await fetch(`${SHEETDB_BASE_URL}/Email/${encodeURIComponent(email)}`,{method:'DELETE'});
+    if(!res.ok) throw new Error('Failed to delete');
+    showSwal('success','បានលុប',`${email} ត្រូវបានលុប`);
+    await loadUsers();
+  }catch(err){ showSwal('error','មានបញ្ហា',err.message||String(err)); }
+}
+
+// ---------- Init ----------
+loadUsers();
+</script>
+
+</body>
+</html>

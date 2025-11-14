@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expense System - Login</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Face API library -->
+  <script defer src="https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"></script>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Login to Dashboard</h2>
+
+    <!-- Email / Password Login -->
+    <input type="email" id="email" placeholder="Email" class="input-field">
+    <input type="password" id="password" placeholder="Password" class="input-field">
+    <button id="loginBtn" class="btn btn-primary">Login</button>
+
+    <!-- Face Login -->
+    <button id="faceLoginBtn" class="btn btn-face">Login with Face</button>
+  </div>
+
+  <!-- Face Login Modal -->
+  <div id="faceModal" class="modal">
+    <div class="modal-content">
+      <h3>Face Login</h3>
+      <video id="video" autoplay muted playsinline></video>
+      <canvas id="snapshot" width="480" height="360" hidden></canvas>
+
+      <div class="controls">
+        <button id="captureBtn" class="btn btn-capture">Capture</button>
+        <button id="switchCamBtn" class="btn btn-switch">Switch Camera</button>
+        <button id="cancelFaceBtn" class="btn btn-cancel">Cancel</button>
+      </div>
+
+      <p id="faceMsg" class="face-msg">Initializing...</p>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

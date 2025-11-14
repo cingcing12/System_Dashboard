@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SheetDB Multi-Tab Posting</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f7fafc;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+  <!-- Main Container -->
+  <div class="w-full max-w-lg bg-white shadow-xl rounded-xl p-8 transition-all duration-300 hover:shadow-2xl">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">Multi-Tab Data Submission</h1>
+    <p class="text-gray-500 mb-6">Select a destination tab and enter your details to post data to the correct Google Sheet tab.</p>
+
+    <!-- Status Message Box -->
+    <div id="statusMessage" role="alert" class="hidden p-4 mb-4 text-sm rounded-lg">
+      <span id="statusText"></span>
+    </div>
+
+    <!-- Submission Form -->
+    <form id="dataForm" class="space-y-5">
+      
+      <!-- Destination Tab Selector -->
+      <div>
+        <label for="sheetDestination" class="block text-sm font-medium text-gray-700 mb-1">Destination Tab</label>
+        <select id="sheetDestination" required
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+          <option value="" disabled selected>Select a Google Sheet Tab</option>
+          <option value="test">test</option>
+          <option value="Sheet1">Sheet1</option> 
+        </select>
+      </div>
+
+      <!-- Input Fields -->
+      <div>
+        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+        <input type="text" id="name" name="name" required
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+          placeholder="E.g., Jane Doe">
+      </div>
+
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+        <input type="email" id="email" name="email" required
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+          placeholder="name@example.com">
+      </div>
+
+      <div>
+        <label for="message" class="block text-sm font-medium text-gray-700 mb-1">Your Message</label>
+        <textarea id="message" name="message" rows="4" required
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+          placeholder="What would you like to submit?"></textarea>
+      </div>
+
+      <button type="submit" id="submitButton"
+        class="w-full px-4 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition duration-200 ease-in-out disabled:bg-indigo-400">
+        Submit Data
+      </button>
+    </form>
+  </div>
+
+  <script>
+    const BASE_SHEETDB_URL = "https://sheetdb.io/api/v1/k4pxslcc1oncz"; 
+
+    const form = document.getElementById('dataForm');
+    const statusMessage = document.getElementById('statusMessage');
+    const statusText = document.getElementById('statusText');
+    const submitButton = document.getElementById('submitButton');
+    const sheetDestination = document.getElementById('sheetDestination');
+
+    function showStatus(message, isSuccess) {
+      statusText.textContent = message;
+      statusMessage.classList.remove('hidden', 'bg-red-100', 'text-red-800', 'bg-green-100', 'text-green-800');
+      
+      if (isSuccess) {
+        statusMessage.classList.add('bg-green-100', 'text-green-800');
+      } else {
+        statusMessage.classList.add('bg-red-100', 'text-red-800');
+      }
+    }
+
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      statusMessage.classList.add('hidden');
+      submitButton.disabled = true;
+      submitButton.textContent = 'Submitting...';
+
+      const selectedTabName = sheetDestination.value;
+
+      if (!selectedTabName) {
+        showStatus("Error: Please select a destination tab.", false);
+        submitButton.disabled = false;
+        submitButton.textContent = 'Submit Data';
+        return;
+      }
+
+      const finalSheetdbUrl = `${BASE_SHEETDB_URL}?sheet=${encodeURIComponent(selectedTabName)}`;
+
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+      console.log(finalSheetdbUrl)
+
+      // ✅ Correct SheetDB payload format
+      const payload = {
+        data: [data]
+      };
+
+      try {
+        const response = await fetch(finalSheetdbUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+        console.log("Response:", result);
+
+        if (response.ok && result.created) {
+          showStatus(`✅ Success! Data posted to the "${selectedTabName}" tab.`, true);
+          form.reset();
+          sheetDestination.value = "";
+        } else {
+          console.error('SheetDB Error:', result);
+          showStatus(`❌ Submission failed: ${JSON.stringify(result)}`, false);
+        }
+
+      } catch (error) {
+        console.error('Fetch Error:', error);
+        showStatus(`⚠️ Network error: ${error.message}`, false);
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Submit Data';
+      }
+    });
+  </script>
+</body>
+</html>
