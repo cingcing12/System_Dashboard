@@ -1,18 +1,36 @@
+/*
+Optimized Face Login (Full File)
+- Ultra-fast real-time scanning (auto-scan, no capture button required)
+- Smart matching with fallback model URL
+- Preloads stored face descriptors after models are loaded
+- Keeps email/password login behavior
+- Camera switching, cancel, and robust error handling
+
+Usage:
+- Replace your existing JS file with this file (or import it)
+- Make sure models/ and faces/ are available on your hosting (CORS may apply)
+- If GitHub Pages models fail, the file will try raw.githubusercontent as a fallback
+*/
+
 // ================================
 // ✅ Configuration Variables
 // ================================
-const MODEL_URL = "https://cingcing12.github.io/System_Dashboard/models/"; // path to face-api.js models
+let MODEL_URL = "https://cingcing12.github.io/System_Dashboard/models/"; // primary
+const MODEL_URL_FALLBACK = "https://raw.githubusercontent.com/cingcing12/System_Dashboard/main/models/";
 let modelsLoaded = false;
 let streamRef = null;
 let currentFacing = "user"; // "user" = front, "environment" = back
-const THRESHOLD = 0.5; // similarity threshold
-let storedDescriptors = []; // cache stored face descriptors
+const THRESHOLD = 0.55; // similarity threshold (tunable 0.5-0.6)
+let storedDescriptors = []; // { email, descriptor: Float32Array }
+let scanning = false; // real-time scan state
 
+// Detector options (balance speed & accuracy)
+const detectorOptions = () => new faceapi.TinyFaceDetectorOptions({ inputSize: 192, scoreThreshold: 0.45 });
 
 // ================================
-// ✅ Email + Password Login
+// ✅ Email + Password Login (unchanged behavior)
 // ================================
-document.getElementById("loginBtn").addEventListener("click", loginUser);
+document.getElementById("loginBtn")?.addEventListener("click", loginUser);
 
 async function loginUser() {
   const email = document.getElementById("email").value.trim();
@@ -22,7 +40,7 @@ async function loginUser() {
   try {
     const res = await fetch(sheetUrl(SHEET_USERS));
     const json = await res.json();
-    const users = json.slice(1); // skip headers
+    const users = Array.isArray(json) ? json.slice(1) : [];
     const user = users.find(u => u.Email === email);
 
     if (!user) return alert("User not found!");
@@ -60,7 +78,7 @@ async function updateLastLoginAndRedirect(user) {
 }
 
 // ================================
-// ✅ Face Login Feature
+// ✅ DOM Elements for Face Login
 // ================================
 const faceLoginBtn = document.getElementById("faceLoginBtn");
 const faceModal = document.getElementById("faceModal");
@@ -72,11 +90,12 @@ const switchCamBtn = document.getElementById("switchCamBtn");
 const faceMsg = document.getElementById("faceMsg");
 
 // ================================
-// ✅ Load Face Recognition Models
+// ✅ Load Face Recognition Models (with fallback)
 // ================================
 async function loadModels() {
   if (modelsLoaded) return;
-  faceMsg.textContent = "Loading face recognition models...";
+  faceMsg && (faceMsg.textContent = "Loading face recognition models...");
+
   try {
     await Promise.all([
       faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
@@ -84,40 +103,71 @@ async function loadModels() {
       faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
     ]);
     modelsLoaded = true;
-    console.log("✅ Face models loaded successfully.");
+    console.log("✅ Face models loaded successfully from primary URL.");
+    return;
   } catch (err) {
-    console.error("❌ Failed to load models:", err);
-    faceMsg.textContent = "Error loading face models.";
+    console.warn("Primary MODEL_URL failed, trying fallback...", err);
+  }
+
+  // fallback attempt
+  try {
+    await Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL_FALLBACK),
+      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL_FALLBACK),
+      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL_FALLBACK),
+    ]);
+    modelsLoaded = true;
+    MODEL_URL = MODEL_URL_FALLBACK;
+    console.log("✅ Face models loaded successfully from fallback URL.");
+  } catch (err) {
+    console.error("❌ Failed to load face models from both URLs:", err);
+    faceMsg && (faceMsg.textContent = "Error loading face models. Check model paths and CORS.");
+    throw err; // let caller handle
   }
 }
 
 // ================================
-// ✅ Preload Stored Faces (Cached)
+// ✅ Preload Stored Faces (cached descriptors)
+// - Must be called AFTER models are loaded
+// ================================
 async function preloadStoredFaces() {
   try {
     const res = await fetch(sheetUrl(SHEET_USERS));
     const json = await res.json();
-    const users = json.slice(1);
+    const users = Array.isArray(json) ? json.slice(1) : [];
     storedDescriptors = [];
 
     for (const u of users) {
-      if (!u.FaceImageFile || u.IsBlocked === "TRUE") continue;
-      const img = new Image();
-      img.src = `https://cingcing12.github.io/System_Dashboard/faces/${u.FaceImageFile}`;
-      await img.decode();
-      const desc = await getDescriptorFromImage(img, new faceapi.TinyFaceDetectorOptions({inputSize:160, scoreThreshold:0.2}));
-      if (desc) storedDescriptors.push({email: u.Email, descriptor: desc});
+      try {
+        if (!u.FaceImageFile || u.IsBlocked === "TRUE") continue;
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = `${MODEL_URL.replace(/models\/?$/, '')}faces/${u.FaceImageFile}`; // build path relative to models host
+
+        await img.decode();
+        const desc = await getDescriptorFromImage(img, detectorOptions());
+        if (desc) {
+          storedDescriptors.push({ email: u.Email, descriptor: desc });
+        } else {
+          console.warn("No descriptor for:", u.Email, u.FaceImageFile);
+        }
+      } catch (err) {
+        console.warn("Failed loading face image for user:", u.Email, err);
+      }
     }
-    console.log("✅ Stored faces preloaded:", storedDescriptors.length);
+
+    console.log(`✅ Stored faces preloaded: ${storedDescriptors.length}`);
+    return storedDescriptors.length;
   } catch (err) {
     console.error("❌ Failed to preload stored faces:", err);
+    return 0;
   }
 }
 
 // ================================
 // ✅ Get Face Descriptor
 // ================================
-async function getDescriptorFromImage(imgOrCanvas, options = new faceapi.TinyFaceDetectorOptions({inputSize:512})) {
+async function getDescriptorFromImage(imgOrCanvas, options = detectorOptions()) {
   try {
     const detection = await faceapi
       .detectSingleFace(imgOrCanvas, options)
@@ -134,114 +184,216 @@ async function getDescriptorFromImage(imgOrCanvas, options = new faceapi.TinyFac
 // ✅ Euclidean Distance
 // ================================
 function euclideanDistance(d1, d2) {
-  return Math.sqrt(d1.reduce((sum, v, i) => sum + (v - d2[i]) ** 2, 0));
+  // both are Float32Array
+  let sum = 0;
+  for (let i = 0; i < d1.length; i++) {
+    const diff = d1[i] - d2[i];
+    sum += diff * diff;
+  }
+  return Math.sqrt(sum);
 }
 
 // ================================
-// ✅ Start Face Login
-// ================================
-faceLoginBtn.addEventListener("click", async () => {
-  faceMsg.textContent = "Initializing camera...";
-  await loadModels();
-  await preloadStoredFaces();
-  faceModal.style.display = "flex";
-  await startCamera();
-});
-
-// ================================
-// ✅ Start Camera
+// ✅ Camera Controls
 // ================================
 async function startCamera() {
   stopCamera();
   try {
     streamRef = await navigator.mediaDevices.getUserMedia({
-      video: { width: 480, height: 360, facingMode: currentFacing },
+      video: { width: 640, height: 480, facingMode: currentFacing },
       audio: false,
     });
     video.srcObject = streamRef;
-    faceMsg.textContent = `Using ${currentFacing === "user" ? "front" : "back"} camera. Align your face and blink or move slightly.`;
+    await video.play();
+    faceMsg && (faceMsg.textContent = `Using ${currentFacing === "user" ? "front" : "back"} camera. Please face the camera.`);
   } catch (err) {
     console.error("❌ Camera access error:", err);
-    faceMsg.textContent = "Cannot access camera: " + (err.message || err);
+    faceMsg && (faceMsg.textContent = "Cannot access camera: " + (err.message || err));
+    throw err;
   }
 }
 
-// ================================
-// ✅ Switch Camera
-switchCamBtn.addEventListener("click", async () => {
-  currentFacing = currentFacing === "user" ? "environment" : "user";
-  faceMsg.textContent = `Switching to ${currentFacing === "user" ? "front" : "back"} camera...`;
-  await startCamera();
-});
-
-// ================================
-// ✅ Cancel Face Login
-cancelFaceBtn.addEventListener("click", () => {
-  stopCamera();
-  faceModal.style.display = "none";
-});
-
-// ================================
-// ✅ Stop Camera
 function stopCamera() {
   if (streamRef) {
     streamRef.getTracks().forEach(t => t.stop());
     streamRef = null;
   }
+  try { video.pause(); } catch (e) {}
   video.srcObject = null;
 }
 
 // ================================
-// ✅ Capture & Match (Fast & Smart)
-captureBtn.addEventListener("click", async () => {
-  faceMsg.textContent = "Capturing your face...";
-  const liveDescriptors = [];
+// ✅ Real-time Fast Scan Loop
+// - Uses requestAnimationFrame for smoothness
+// - Matches single live descriptor to stored descriptors
+// ================================
+let rafId = null;
 
-  snapshot.width = video.videoWidth;
-  snapshot.height = video.videoHeight;
+async function startFastScan() {
+  if (scanning) return;
+  scanning = true;
+  faceMsg && (faceMsg.textContent = "Scanning... please face the camera.");
+
   const ctx = snapshot.getContext("2d");
 
-  for (let i = 0; i < 2; i++) { // only 2 frames for speed
+  const loop = async () => {
+    if (!scanning) return;
+
+    // draw current video frame to canvas
+    snapshot.width = video.videoWidth;
+    snapshot.height = video.videoHeight;
     ctx.drawImage(video, 0, 0, snapshot.width, snapshot.height);
-    const desc = await getDescriptorFromImage(snapshot, new faceapi.TinyFaceDetectorOptions({inputSize:160, scoreThreshold:0.2}));
-    if (desc) liveDescriptors.push(desc);
-    await new Promise(r => setTimeout(r, 200));
-  }
 
-  if (!liveDescriptors.length) {
-    faceMsg.textContent = "❌ No face detected. Try again.";
-    return;
-  }
+    try {
+      const detection = await faceapi
+        .detectSingleFace(snapshot, detectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptor();
 
-  faceMsg.textContent = "Matching with stored faces...";
-  let bestMatch = null;
-  let bestDistance = Infinity;
+      if (detection && detection.descriptor) {
+        const liveDesc = detection.descriptor;
 
-  for (const s of storedDescriptors) {
-    const avgDist = liveDescriptors.reduce((sum, d) => sum + euclideanDistance(d, s.descriptor), 0) / liveDescriptors.length;
-    if (avgDist < bestDistance) {
-      bestDistance = avgDist;
-      bestMatch = s;
+        // find best match
+        let bestMatch = null;
+        let bestDistance = Infinity;
+
+        for (const s of storedDescriptors) {
+          const dist = euclideanDistance(liveDesc, s.descriptor);
+          if (dist < bestDistance) {
+            bestDistance = dist;
+            bestMatch = s;
+          }
+        }
+
+        console.log("Live match distance:", bestDistance);
+
+        if (bestMatch && bestDistance <= THRESHOLD) {
+          scanning = false;
+          faceMsg && (faceMsg.textContent = `✅ Face matched (${bestMatch.email}). Logging in...`);
+          await completeFaceLogin(bestMatch.email);
+          return; // stop loop
+        }
+      }
+    } catch (err) {
+      console.warn("Detection error in loop:", err);
     }
-  }
 
-  console.log("🎯 Best match distance:", bestDistance);
+    rafId = requestAnimationFrame(loop);
+  };
 
-  if (bestMatch && bestDistance <= THRESHOLD) {
-    faceMsg.textContent = `✅ Face matched: ${bestMatch.email}. Logging in...`;
+  rafId = requestAnimationFrame(loop);
+}
 
-    // Fetch user again to check block status
+function stopFastScan() {
+  scanning = false;
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = null;
+}
+
+// ================================
+// ✅ Complete face login flow after match
+// ================================
+async function completeFaceLogin(email) {
+  try {
     const res = await fetch(sheetUrl(SHEET_USERS));
     const json = await res.json();
-    const user = json.slice(1).find(u => u.Email === bestMatch.email);
+    const user = Array.isArray(json) ? json.slice(1).find(u => u.Email === email) : null;
 
-    if (!user) return faceMsg.textContent = "❌ User not found.";
+    if (!user) {
+      faceMsg && (faceMsg.textContent = "❌ User not found.");
+      return;
+    }
     if (user.IsBlocked === "TRUE") return alert("❌ You are blocked by owner!");
 
     stopCamera();
+    stopFastScan();
     faceModal.style.display = "none";
     await updateLastLoginAndRedirect(user);
-  } else {
-    faceMsg.textContent = "❌ No matching face found. Try again.";
+  } catch (err) {
+    console.error("Error completing face login:", err);
+    faceMsg && (faceMsg.textContent = "Error completing login.");
   }
-}); 
+}
+
+// ================================
+// ✅ Event Wiring: open modal, load models, preload faces, start camera & scan
+// ================================
+faceLoginBtn?.addEventListener("click", async () => {
+  faceMsg && (faceMsg.textContent = "Initializing face login...");
+  try {
+    await loadModels();
+    await preloadStoredFaces();
+    faceModal.style.display = "flex";
+    await startCamera();
+    startFastScan();
+  } catch (err) {
+    console.error("Face login initialization failed:", err);
+    alert("Failed to start face login. Check console for details.");
+  }
+});
+
+// cancel button
+cancelFaceBtn?.addEventListener("click", () => {
+  stopFastScan();
+  stopCamera();
+  faceModal.style.display = "none";
+});
+
+// switch camera
+switchCamBtn?.addEventListener("click", async () => {
+  currentFacing = currentFacing === "user" ? "environment" : "user";
+  faceMsg && (faceMsg.textContent = `Switching to ${currentFacing === "user" ? "front" : "back"} camera...`);
+  try {
+    await startCamera();
+  } catch (err) {
+    console.error("Switch camera failed:", err);
+  }
+});
+
+// optional: keep captureBtn for manual snapshot fallback
+captureBtn?.addEventListener("click", async () => {
+  // manual one-shot capture (fallback)
+  snapshot.width = video.videoWidth;
+  snapshot.height = video.videoHeight;
+  const ctx = snapshot.getContext("2d");
+  ctx.drawImage(video, 0, 0, snapshot.width, snapshot.height);
+  const desc = await getDescriptorFromImage(snapshot, detectorOptions());
+  if (!desc) return faceMsg && (faceMsg.textContent = "No face detected.");
+
+  let bestMatch = null;
+  let bestDistance = Infinity;
+  for (const s of storedDescriptors) {
+    const dist = euclideanDistance(desc, s.descriptor);
+    if (dist < bestDistance) {
+      bestDistance = dist;
+      bestMatch = s;
+    }
+  }
+  console.log("Manual capture distance:", bestDistance);
+  if (bestMatch && bestDistance <= THRESHOLD) {
+    await completeFaceLogin(bestMatch.email);
+  } else {
+    faceMsg && (faceMsg.textContent = "No matching face found. Try again.");
+  }
+});
+
+// ================================
+// ✅ Cleanup on page unload
+// ================================
+window.addEventListener('beforeunload', () => {
+  stopFastScan();
+  stopCamera();
+});
+
+// ================================
+// ✅ Debug helper: show loaded descriptor count
+// ================================
+window.faceLoginDebug = () => ({ modelsLoaded, storedCount: storedDescriptors.length, currentFacing, scanning });
+
+/*
+Notes / Troubleshooting:
+1. Make sure model files are reachable at MODEL_URL or fallback URL. Check console for 404/CORS errors.
+2. Ensure faces are accessible (CORS) at the same host; we try to load faces from the same base as MODEL_URL.
+3. THRESHOLD can be tuned: lower = stricter (fewer false accepts), higher = more tolerant.
+4. If stored faces are low quality, re-register using a clear frontal image.
+*/
