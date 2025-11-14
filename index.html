@@ -1,40 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Expense System - Login</title>
-  <link rel="stylesheet" href="css/style.css">
-  <!-- Face API library -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <style>
+    /* Smooth fade-in */
+    .fade-in { animation: fadeIn 0.5s ease-in-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
+
+    /* Face scan pulsing ring */
+    .scan-ring {
+      position: absolute;
+      border: 3px solid rgba(0, 255, 180, 0.7);
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      animation: pulse 1.8s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
+      50% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
+    }
+
+    /* Animated scanning line */
+    .scan-line {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: rgba(0, 255, 180, 0.8);
+      animation: scan 2s infinite alternate ease-in-out;
+    }
+    @keyframes scan {
+      from { top: 0; }
+      to { top: 100%; }
+    }
+  </style>
 </head>
-<body>
-  <div class="login-container">
-    <h2>Login to Dashboard</h2>
+<body class="bg-gray-900 flex justify-center items-center min-h-screen p-4">
 
-    <!-- Email / Password Login -->
-    <input type="email" id="email" placeholder="Email" class="input-field">
-    <input type="password" id="password" placeholder="Password" class="input-field">
-    <button id="loginBtn" class="btn btn-primary">Login</button>
+  <!-- Login Card -->
+  <div class="bg-gray-800/60 backdrop-blur-xl p-10 rounded-3xl shadow-2xl w-full max-w-md fade-in">
+    <h2 class="text-3xl font-bold text-center text-white mb-8">Login to Dashboard</h2>
 
-    <!-- Face Login -->
-    <button id="faceLoginBtn" class="btn btn-face">Login with Face</button>
+    <input id="email" type="email" placeholder="Email" class="w-full mb-4 p-3 rounded-xl bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-teal-400" />
+    <input id="password" type="password" placeholder="Password" class="w-full mb-6 p-3 rounded-xl bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-teal-400" />
+
+    <button id="loginBtn" class="w-full bg-teal-500 hover:bg-teal-400 text-gray-900 font-semibold py-3 rounded-xl transition">Login</button>
+
+    <div class="my-4 text-center text-gray-300">— OR —</div>
+
+    <button id="faceLoginBtn" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 rounded-xl transition flex justify-center items-center gap-2">
+      <span>Login with Face</span>
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+    </button>
   </div>
 
   <!-- Face Login Modal -->
-  <div id="faceModal" class="modal">
-    <div class="modal-content">
-      <h3>Face Login</h3>
-      <video id="video" autoplay muted playsinline></video>
-      <canvas id="snapshot" width="480" height="360" hidden></canvas>
+  <div id="faceModal" class="fixed inset-0 bg-black/70 backdrop-blur-lg hidden justify-center items-center p-4">
+    <div class="bg-gray-800 p-6 rounded-3xl shadow-2xl w-full max-w-lg relative">
+      <h3 class="text-xl font-semibold text-white text-center mb-4">Face Login</h3>
 
-      <div class="controls">
-        <button id="captureBtn" class="btn btn-capture">Capture</button>
-        <button id="switchCamBtn" class="btn btn-switch">Switch Camera</button>
-        <button id="cancelFaceBtn" class="btn btn-cancel">Cancel</button>
+      <div class="relative w-full flex justify-center">
+        <video id="video" class="rounded-2xl w-full max-w-sm border border-teal-400 shadow-lg" autoplay muted playsinline></video>
+
+        <div class="scan-ring"></div>
+        <div class="scan-line"></div>
       </div>
 
-      <p id="faceMsg" class="face-msg">Initializing...</p>
+      <canvas id="snapshot" width="480" height="360" class="hidden"></canvas>
+
+      <p id="faceMsg" class="text-center text-gray-300 mt-4">Initializing camera…</p>
+
+      <div class="mt-6 flex justify-between">
+        <button id="captureBtn" class="px-5 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-gray-900 font-semibold">Capture</button>
+        <button id="switchCamBtn" class="px-5 py-2 rounded-xl bg-gray-700 hover:bg-gray-600 text-white font-semibold">Switch</button>
+        <button id="cancelFaceBtn" class="px-5 py-2 rounded-xl bg-red-500 hover:bg-red-400 text-white font-semibold">Cancel</button>
+      </div>
     </div>
   </div>
 
