@@ -1,3 +1,6 @@
+// ---------------------------
+// server.js
+// ---------------------------
 const express = require("express");
 const multer = require("multer");
 const fetch = require("node-fetch");
@@ -8,7 +11,6 @@ const cors = require("cors");
 const app = express();
 const PORT = process.env.PORT || 3000;
 require("dotenv").config();
-
 
 // ---------------------------
 // GitHub Config
@@ -60,6 +62,16 @@ async function uploadImageToGitHub(filePath, repoPath, commitMessage) {
   const content = fs.readFileSync(filePath, { encoding: "base64" });
   const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${repoPath}`;
 
+  // Get existing file SHA if exists
+  let sha;
+  const checkRes = await fetch(`${url}?ref=${GITHUB_BRANCH}`, {
+    headers: { Authorization: `token ${GITHUB_TOKEN}` }
+  });
+  if (checkRes.ok) {
+    const data = await checkRes.json();
+    sha = data.sha;
+  }
+
   const res = await fetch(url, {
     method: "PUT",
     headers: {
@@ -69,6 +81,7 @@ async function uploadImageToGitHub(filePath, repoPath, commitMessage) {
     body: JSON.stringify({
       message: commitMessage,
       content,
+      sha, // undefined if new file
       branch: GITHUB_BRANCH,
     }),
   });
@@ -139,7 +152,37 @@ app.post("/api/register", upload.single("faceImage"), async (req, res) => {
 });
 
 // ---------------------------
-// Fetch All Users
+// Update Face Image Endpoint
+// ---------------------------
+app.post("/api/update-face", upload.single("faceImage"), async (req, res) => {
+  const { email } = req.body;
+  if (!email || !req.file) return res.status(400).json({ error: "Missing email or file" });
+
+  const safeEmail = email.replace(/[@.]/g, "_");
+  const fileName = `${safeEmail}.jpg`;
+  const localFile = path.join(__dirname, "faces", fileName);
+  const githubPath = `faces/${fileName}`;
+
+  try {
+    // Save locally
+    fs.writeFileSync(localFile, fs.readFileSync(req.file.path));
+
+    // Upload to GitHub
+    await uploadImageToGitHub(localFile, githubPath, `Update face image for ${email}`);
+
+    res.json({
+      success: true,
+      message: "Face image updated",
+      githubUrl: `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${githubPath}`
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update face image", details: err.message });
+  }
+});
+
+// ---------------------------
+// Fetch All Users Endpoint
 // ---------------------------
 app.get("/api/users", async (req, res) => {
   try {
@@ -153,26 +196,26 @@ app.get("/api/users", async (req, res) => {
 });
 
 // ---------------------------
-// Fetch Face Image by Email (optional)
+// Fetch Face Image Locally (Optional)
 // ---------------------------
-app.get("/api/face/:email", async (req, res) => {
-  try {
-    const email = req.params.email;
-    const safeEmail = email.replace(/[@.]/g, "_");
-    const filePath = path.join(__dirname, "faces", `${safeEmail}.jpg`);
-
-    console.log("📌 Loading face from:", filePath);
-
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: "Face image not found" });
-    }
-
-    res.setHeader("Content-Type", "image/jpeg");
-    fs.createReadStream(filePath).pipe(res);
-  } catch (err) {
-    console.error("❌ Error fetching face:", err);
-    res.status(500).json({ error: "Failed to load face image" });
+app.get("/api/face/:email", (req, res) => {
+  const email = req.params.email;
+  const filePath = path.join(__dirname, "faces", email.replace(/[@.]/g, "_") + ".jpg");
+  
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send("Face image not found");
   }
+});
+
+app.post('/api/delete-face', (req, res) => {
+  const { email } = req.body;
+  const filePath = path.join(__dirname, 'faces', email.replace(/[@.]/g,'_')+'.jpg');
+  fs.unlink(filePath, err => {
+    if(err && err.code !== 'ENOENT') return res.status(500).json({ error: err.message });
+    res.json({ success:true });
+  });
 });
 
 // ---------------------------
