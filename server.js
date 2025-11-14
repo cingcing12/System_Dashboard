@@ -8,12 +8,11 @@ const simpleGit = require("simple-git");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-require('dotenv').config();
+require("dotenv").config();
 
 // ---------------------------
 // GitHub Config
 // ---------------------------
-// Add your GitHub info as environment variables on Render
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // Personal Access Token
 const GITHUB_REPO = process.env.GITHUB_REPO;   // e.g. username/repo
 const GITHUB_BRANCH = "main";
@@ -34,7 +33,7 @@ app.use(cors());
 app.use(express.json());
 
 // ---------------------------
-// Multer Config (store locally)
+// Multer Config (store locally first)
 // ---------------------------
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -50,53 +49,45 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ---------------------------
-// Auto Git Push Function (via HTTPS token)
+// Git Setup & Push Function
 // ---------------------------
 const git = simpleGit();
-// ---------------------------
-// ⚡ Set author identity for the repo (before any commit)
+
 async function setupGitIdentity() {
   try {
-    await git.addConfig('user.name', 'cingcing12', false);  // false = local repo
-    await git.addConfig('user.email', 'cing16339@gmail.com', false);
-    console.log('✅ Git identity set for commits');
+    await git.addConfig("user.name", "cingcing12", false);
+    await git.addConfig("user.email", "cing16339@gmail.com", false);
+    console.log("✅ Git identity set for commits");
   } catch (err) {
-    console.error('❌ Failed to set Git identity:', err);
+    console.error("❌ Failed to set Git identity:", err);
   }
 }
 
-// Push function
 async function pushToGit(commitMessage) {
   try {
-    // Ensure Git identity
-    await git.addConfig('user.name', 'cingcing12', false);
-    await git.addConfig('user.email', 'cing16339@gmail.com', false);
+    await setupGitIdentity();
 
-    // Stage all files in faces folder, recursively
-    await git.add('./faces/**', {'-f': null}); // -f = force
+    // Stage faces folder
+    await git.add("./faces/**", { "-f": null });
 
-    // Commit (only if changes exist)
     const status = await git.status();
     if (status.modified.length === 0 && status.not_added.length === 0) {
-      console.log('ℹ️ No new files to commit');
+      console.log("ℹ️ No new files to commit");
       return;
     }
 
     await git.commit(commitMessage);
 
-    // Push using token
+    // Push via HTTPS token
     await git.push(
       `https://${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git`,
       GITHUB_BRANCH
     );
-
-    console.log('✅ Auto git push done!');
+    console.log("✅ Auto Git push done!");
   } catch (err) {
-    console.error('❌ Git push failed:', err);
+    console.error("❌ Git push failed:", err);
   }
 }
-
-
 
 // ---------------------------
 // Register User Endpoint
@@ -142,9 +133,13 @@ app.post("/api/register", upload.single("faceImage"), async (req, res) => {
     // -----------------------------
     await pushToGit(`Add face image for ${email}`);
 
+    // GitHub URL of the image
+    const githubUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/faces/${fileName}`;
+
     res.json({
       success: true,
       message: "User saved and face image pushed to GitHub",
+      githubUrl,
     });
   } catch (err) {
     console.error("❌ Error:", err);
@@ -167,7 +162,7 @@ app.get("/api/users", async (req, res) => {
 });
 
 // ---------------------------
-// Fetch Face Image by Email
+// Fetch Face Image by Email (optional if you want)
 // ---------------------------
 app.get("/api/face/:email", async (req, res) => {
   try {
@@ -188,8 +183,6 @@ app.get("/api/face/:email", async (req, res) => {
     res.status(500).json({ error: "Failed to load face image" });
   }
 });
-
-
 
 // ---------------------------
 // Start Server
