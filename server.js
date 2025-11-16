@@ -35,7 +35,7 @@ app.use(cors());
 app.use(express.json());
 
 // ---------------------------
-// Multer Config (store locally first)
+// Multer Config
 // ---------------------------
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -51,7 +51,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ---------------------------
-// GitHub Upload Function
+// GitHub Upload Function (replace file)
 // ---------------------------
 async function uploadImageToGitHub(filePath, repoPath, commitMessage) {
   if (!fs.existsSync(filePath)) {
@@ -62,33 +62,40 @@ async function uploadImageToGitHub(filePath, repoPath, commitMessage) {
   const content = fs.readFileSync(filePath, { encoding: "base64" });
   const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${repoPath}`;
 
-  // Get existing file SHA if exists
-  let sha;
-  const checkRes = await fetch(`${url}?ref=${GITHUB_BRANCH}`, {
-    headers: { Authorization: `token ${GITHUB_TOKEN}` }
-  });
-  if (checkRes.ok) {
-    const data = await checkRes.json();
-    sha = data.sha;
+  try {
+    // Check if file exists on GitHub to get SHA
+    let sha;
+    const checkRes = await fetch(`${url}?ref=${GITHUB_BRANCH}`, {
+      headers: { Authorization: `token ${GITHUB_TOKEN}` },
+    });
+
+    if (checkRes.ok) {
+      const data = await checkRes.json();
+      sha = data.sha;
+    }
+
+    // Upload or replace file
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: {
+        Authorization: `token ${GITHUB_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: commitMessage,
+        content,
+        sha, // if exists, it replaces
+        branch: GITHUB_BRANCH,
+      }),
+    });
+
+    const data = await res.json();
+    if (res.ok) console.log("✅ Uploaded to GitHub:", repoPath);
+    else console.error("❌ GitHub upload error:", data);
+
+  } catch (err) {
+    console.error("❌ GitHub upload exception:", err);
   }
-
-  const res = await fetch(url, {
-    method: "PUT",
-    headers: {
-      Authorization: `token ${GITHUB_TOKEN}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      message: commitMessage,
-      content,
-      sha, // undefined if new file
-      branch: GITHUB_BRANCH,
-    }),
-  });
-
-  const data = await res.json();
-  if (res.ok) console.log("✅ Uploaded to GitHub:", repoPath);
-  else console.error("❌ GitHub upload error:", data);
 }
 
 // ---------------------------
@@ -106,9 +113,6 @@ app.post("/api/register", upload.single("faceImage"), async (req, res) => {
   const githubPath = `faces/${fileName}`;
 
   try {
-    // -----------------------------
-    // Save user to SheetDB
-    // -----------------------------
     const userData = {
       Email: email,
       PasswordHash: password,
@@ -133,17 +137,13 @@ app.post("/api/register", upload.single("faceImage"), async (req, res) => {
       });
     }
 
-    // -----------------------------
     // Upload face image to GitHub
-    // -----------------------------
     await uploadImageToGitHub(localFile, githubPath, `Add face image for ${email}`);
-
-    const githubUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${githubPath}`;
 
     res.json({
       success: true,
       message: "User saved and face image uploaded to GitHub",
-      githubUrl,
+      githubUrl: `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${githubPath}`,
     });
   } catch (err) {
     console.error("❌ Error:", err);
@@ -152,7 +152,7 @@ app.post("/api/register", upload.single("faceImage"), async (req, res) => {
 });
 
 // ---------------------------
-// Update Face Image Endpoint
+// Update Face Image Endpoint (delete old local & GitHub, then upload new)
 // ---------------------------
 app.post("/api/update-face", upload.single("faceImage"), async (req, res) => {
   const { email } = req.body;
@@ -164,16 +164,25 @@ app.post("/api/update-face", upload.single("faceImage"), async (req, res) => {
   const githubPath = `faces/${fileName}`;
 
   try {
-    // Save locally
+    // -----------------------------
+    // 1️⃣ Delete old local file
+    // -----------------------------
+    if (fs.existsSync(localFile)) fs.unlinkSync(localFile);
+
+    // -----------------------------
+    // 2️⃣ Save new local file
+    // -----------------------------
     fs.writeFileSync(localFile, fs.readFileSync(req.file.path));
 
-    // Upload to GitHub
+    // -----------------------------
+    // 3️⃣ Upload new file to GitHub (replace old one)
+    // -----------------------------
     await uploadImageToGitHub(localFile, githubPath, `Update face image for ${email}`);
 
     res.json({
       success: true,
-      message: "Face image updated",
-      githubUrl: `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${githubPath}`
+      message: "Face image updated (local + GitHub)",
+      githubUrl: `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${githubPath}`,
     });
   } catch (err) {
     console.error(err);
@@ -209,6 +218,9 @@ app.get("/api/face/:email", (req, res) => {
   }
 });
 
+// ---------------------------
+// Delete Face Locally (Optional)
+// ---------------------------
 app.post('/api/delete-face', (req, res) => {
   const { email } = req.body;
   const filePath = path.join(__dirname, 'faces', email.replace(/[@.]/g,'_')+'.jpg');
