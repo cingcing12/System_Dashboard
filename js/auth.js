@@ -9,7 +9,7 @@ const THRESHOLD = 0.5; // similarity threshold
 let storedDescriptors = []; // cache stored face descriptors
 
 
-// ================================
+// ================================ 
 // ✅ Email + Password Login
 // ================================
 document.getElementById("loginBtn").addEventListener("click", loginUser);
