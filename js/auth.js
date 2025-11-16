@@ -7,7 +7,7 @@ let streamRef = null;
 let currentFacing = "user";
 const THRESHOLD = 0.5;
 let storedDescriptors = [];
-
+ 
 // ================================
 // ✅ Universal Block Check
 // ================================
