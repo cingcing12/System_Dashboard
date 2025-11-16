@@ -4,9 +4,9 @@
 const MODEL_URL = "https://cingcing12.github.io/System_Dashboard/models/"; 
 let modelsLoaded = false;
 let streamRef = null;
-let currentFacing = "user"; 
-const THRESHOLD = 0.5; 
-let storedDescriptors = []; 
+let currentFacing = "user";
+const THRESHOLD = 0.5;
+let storedDescriptors = [];
 
 // ================================
 // ✅ Universal Block Check
@@ -246,20 +246,4 @@ captureBtn.addEventListener("click", async () => {
 
   if (!bestMatch || bestDistance > THRESHOLD) {
     faceMsg.textContent = "❌ No matching face.";
-    return;
-  }
-
-  faceMsg.textContent = "Face match found! Checking user...";
-
-  // Reload user to verify block status
-  const res = await fetch(sheetUrl(SHEET_USERS));
-  const json = await res.json();
-  const user = json.slice(1).find(u => u.Email === bestMatch.email);
-
-  if (!user) return faceMsg.textContent = "❌ User not found!";
-  if (isBlocked(user)) return faceMsg.textContent = "❌ You are blocked by owner!";
-
-  stopCamera();
-  faceModal.style.display = "none";
-  await updateLastLoginAndRedirect(user);
-});
+    return
