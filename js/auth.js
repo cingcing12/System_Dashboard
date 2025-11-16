@@ -155,12 +155,25 @@ function euclideanDistance(d1, d2) {
 // ✅ Start Face Login
 // ================================
 faceLoginBtn.addEventListener("click", async () => {
-  faceMsg.textContent = "Initializing camera...";
-  await loadModels();
-  await preloadStoredFaces();
+  const loading = document.getElementById("faceLoading");
   faceModal.style.display = "flex";
-  await startCamera();
+  loading.classList.remove("hidden"); // Show loading
+
+  faceMsg.textContent = "Initializing camera...";
+  
+  try {
+    await loadModels();           // load face-api models
+    await preloadStoredFaces();   // preload stored faces
+    await startCamera();          // start webcam
+    faceMsg.textContent = "Align your face with the camera.";
+  } catch (err) {
+    faceMsg.textContent = "❌ Error initializing face login.";
+    console.error(err);
+  } finally {
+    loading.classList.add("hidden"); // Hide loading after initialization
+  }
 });
+
 
 // ================================
 // ✅ Start Camera
