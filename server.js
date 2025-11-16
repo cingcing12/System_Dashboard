@@ -4,14 +4,12 @@
 const express = require("express");
 const multer = require("multer");
 const fetch = require("node-fetch");
-const path = require("path");
-const fs = require("fs");
 const cors = require("cors");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 require("dotenv").config();
- 
+
 // ---------------------------
 // GitHub Config
 // ---------------------------
@@ -35,40 +33,24 @@ app.use(cors());
 app.use(express.json());
 
 // ---------------------------
-// Multer Config
+// Multer Config (memory storage)
 // ---------------------------
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(__dirname, "faces");
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    const emailSafe = req.body.email.replace(/[@.]/g, "_");
-    cb(null, `${emailSafe}.jpg`);
-  },
-});
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // ---------------------------
-// GitHub Upload Function (replace file)
+// GitHub Upload Function (from buffer)
 // ---------------------------
-async function uploadImageToGitHub(filePath, repoPath, commitMessage) {
-  if (!fs.existsSync(filePath)) {
-    console.log("File not found:", filePath);
-    return;
-  }
-
-  const content = fs.readFileSync(filePath, { encoding: "base64" });
+async function uploadImageToGitHubBuffer(buffer, repoPath, commitMessage) {
+  const content = buffer.toString("base64");
   const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${repoPath}`;
 
   try {
-    // Check if file exists on GitHub to get SHA
+    // Check if file exists on GitHub
     let sha;
     const checkRes = await fetch(`${url}?ref=${GITHUB_BRANCH}`, {
       headers: { Authorization: `token ${GITHUB_TOKEN}` },
     });
-
     if (checkRes.ok) {
       const data = await checkRes.json();
       sha = data.sha;
@@ -84,7 +66,7 @@ async function uploadImageToGitHub(filePath, repoPath, commitMessage) {
       body: JSON.stringify({
         message: commitMessage,
         content,
-        sha, // if exists, it replaces
+        sha, // if exists, replaces
         branch: GITHUB_BRANCH,
       }),
     });
@@ -103,13 +85,11 @@ async function uploadImageToGitHub(filePath, repoPath, commitMessage) {
 // ---------------------------
 app.post("/api/register", upload.single("faceImage"), async (req, res) => {
   const { email, password, role } = req.body;
-
   if (!email || !password || !req.file)
     return res.status(400).json({ error: "Missing required fields" });
 
   const safeEmail = email.replace(/[@.]/g, "_");
   const fileName = `${safeEmail}.jpg`;
-  const localFile = path.join(__dirname, "faces", fileName);
   const githubPath = `faces/${fileName}`;
 
   try {
@@ -137,8 +117,8 @@ app.post("/api/register", upload.single("faceImage"), async (req, res) => {
       });
     }
 
-    // Upload face image to GitHub
-    await uploadImageToGitHub(localFile, githubPath, `Add face image for ${email}`);
+    // Upload face image to GitHub directly from buffer
+    await uploadImageToGitHubBuffer(req.file.buffer, githubPath, `Add face image for ${email}`);
 
     res.json({
       success: true,
@@ -152,7 +132,7 @@ app.post("/api/register", upload.single("faceImage"), async (req, res) => {
 });
 
 // ---------------------------
-// Update Face Image Endpoint (delete old local & GitHub, then upload new)
+// Update Face Image Endpoint (memory, replace old on GitHub)
 // ---------------------------
 app.post("/api/update-face", upload.single("faceImage"), async (req, res) => {
   const { email } = req.body;
@@ -160,28 +140,15 @@ app.post("/api/update-face", upload.single("faceImage"), async (req, res) => {
 
   const safeEmail = email.replace(/[@.]/g, "_");
   const fileName = `${safeEmail}.jpg`;
-  const localFile = path.join(__dirname, "faces", fileName);
   const githubPath = `faces/${fileName}`;
 
   try {
-    // -----------------------------
-    // 1️⃣ Delete old local file
-    // -----------------------------
-    if (fs.existsSync(localFile)) fs.unlinkSync(localFile);
-
-    // -----------------------------
-    // 2️⃣ Save new local file
-    // -----------------------------
-    fs.writeFileSync(localFile, fs.readFileSync(req.file.path));
-
-    // -----------------------------
-    // 3️⃣ Upload new file to GitHub (replace old one)
-    // -----------------------------
-    await uploadImageToGitHub(localFile, githubPath, `Update face image for ${email}`);
+    // Upload new file to GitHub directly from buffer (replaces old one)
+    await uploadImageToGitHubBuffer(req.file.buffer, githubPath, `Update face image for ${email}`);
 
     res.json({
       success: true,
-      message: "Face image updated (local + GitHub)",
+      message: "Face image updated on GitHub",
       githubUrl: `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${githubPath}`,
     });
   } catch (err) {
@@ -202,32 +169,6 @@ app.get("/api/users", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch users" });
   }
-});
-
-// ---------------------------
-// Fetch Face Image Locally (Optional)
-// ---------------------------
-app.get("/api/face/:email", (req, res) => {
-  const email = req.params.email;
-  const filePath = path.join(__dirname, "faces", email.replace(/[@.]/g, "_") + ".jpg");
-  
-  if (fs.existsSync(filePath)) {
-    res.sendFile(filePath);
-  } else {
-    res.status(404).send("Face image not found");
-  }
-});
-
-// ---------------------------
-// Delete Face Locally (Optional)
-// ---------------------------
-app.post('/api/delete-face', (req, res) => {
-  const { email } = req.body;
-  const filePath = path.join(__dirname, 'faces', email.replace(/[@.]/g,'_')+'.jpg');
-  fs.unlink(filePath, err => {
-    if(err && err.code !== 'ENOENT') return res.status(500).json({ error: err.message });
-    res.json({ success:true });
-  });
 });
 
 // ---------------------------
