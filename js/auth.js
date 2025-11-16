@@ -246,4 +246,27 @@ captureBtn.addEventListener("click", async () => {
 
   if (!bestMatch || bestDistance > THRESHOLD) {
     faceMsg.textContent = "❌ No matching face.";
-    return
+    return;
+  }
+
+  faceMsg.textContent = "Face match found! Checking user...";
+
+  // Reload to check block status
+  const res = await fetch(sheetUrl(SHEET_USERS));
+  const json = await res.json();
+  const user = json.slice(1).find(u => u.Email === bestMatch.email);
+
+  if (!user) {
+    faceMsg.textContent = "❌ User not found!";
+    return;
+  }
+
+  if (isBlocked(user)) {
+    faceMsg.textContent = "❌ You are blocked by owner!";
+    return;
+  }
+
+  stopCamera();
+  faceModal.style.display = "none";
+  await updateLastLoginAndRedirect(user);
+});
