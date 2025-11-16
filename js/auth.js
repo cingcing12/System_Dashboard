@@ -1,19 +1,35 @@
 // ================================
 // ✅ Configuration Variables
 // ================================
-const MODEL_URL = "https://cingcing12.github.io/System_Dashboard/models/"; 
+const MODEL_URL = "https://cingcing12.github.io/System_Dashboard/models/";
 let modelsLoaded = false;
 let streamRef = null;
 let currentFacing = "user";
 const THRESHOLD = 0.5;
 let storedDescriptors = [];
- 
+
 // ================================
 // ✅ Universal Block Check
 // ================================
 function isBlocked(user) {
   return String(user.IsBlocked).trim().toLowerCase() === "true";
 }
+
+// ================================
+// ✅ Redirect already logged-in users
+// ================================
+(function redirectIfLoggedIn() {
+  const storedUser = localStorage.getItem("user");
+  if (storedUser) {
+    const userObj = JSON.parse(storedUser);
+    if (!isBlocked(userObj)) {
+      window.location.href = "dashboard.html"; // Already logged in
+    } else {
+      localStorage.removeItem("user"); // Blocked user cannot stay logged in
+      alert("You are blocked by owner!");
+    }
+  }
+})();
 
 // ================================
 // ✅ Email + Password Login
@@ -78,13 +94,18 @@ const captureBtn = document.getElementById("captureBtn");
 const cancelFaceBtn = document.getElementById("cancelFaceBtn");
 const switchCamBtn = document.getElementById("switchCamBtn");
 const faceMsg = document.getElementById("faceMsg");
+const faceLoading = document.createElement("div"); // loading overlay
+
+faceLoading.className = "absolute inset-0 bg-black/50 flex justify-center items-center z-50 text-white text-lg font-bold";
+faceLoading.textContent = "Loading face login...";
+faceLoading.style.display = "none";
+faceModal.appendChild(faceLoading);
 
 // ================================
 // ✅ Load Face Models
 // ================================
 async function loadModels() {
   if (modelsLoaded) return;
-
   faceMsg.textContent = "Loading face recognition models...";
   try {
     await Promise.all([
@@ -122,7 +143,6 @@ async function preloadStoredFaces() {
 
       if (desc) storedDescriptors.push({ email: u.Email, descriptor: desc });
     }
-
   } catch (err) {
     console.error("❌ Failed to preload stored faces:", err);
   }
@@ -155,25 +175,22 @@ function euclideanDistance(d1, d2) {
 // ✅ Start Face Login
 // ================================
 faceLoginBtn.addEventListener("click", async () => {
-  const loading = document.getElementById("faceLoading");
   faceModal.style.display = "flex";
-  loading.classList.remove("hidden"); // Show loading
-
+  faceLoading.style.display = "flex"; // show loading
   faceMsg.textContent = "Initializing camera...";
-  
+
   try {
-    await loadModels();           // load face-api models
-    await preloadStoredFaces();   // preload stored faces
-    await startCamera();          // start webcam
+    await loadModels();
+    await preloadStoredFaces();
+    await startCamera();
     faceMsg.textContent = "Align your face with the camera.";
   } catch (err) {
     faceMsg.textContent = "❌ Error initializing face login.";
     console.error(err);
   } finally {
-    loading.classList.add("hidden"); // Hide loading after initialization
+    faceLoading.style.display = "none"; // hide loading
   }
 });
-
 
 // ================================
 // ✅ Start Camera
@@ -186,7 +203,6 @@ async function startCamera() {
       audio: false,
     });
     video.srcObject = streamRef;
-    faceMsg.textContent = "Align your face with the camera.";
   } catch (err) {
     console.error("❌ Camera error:", err);
     faceMsg.textContent = "Cannot access camera.";
@@ -198,7 +214,6 @@ async function startCamera() {
 // ================================
 switchCamBtn.addEventListener("click", async () => {
   currentFacing = currentFacing === "user" ? "environment" : "user";
-  faceMsg.textContent = "Switching camera...";
   await startCamera();
 });
 
@@ -226,7 +241,6 @@ function stopCamera() {
 // ================================
 captureBtn.addEventListener("click", async () => {
   faceMsg.textContent = "Capturing face...";
-
   const descriptors = [];
   snapshot.width = video.videoWidth;
   snapshot.height = video.videoHeight;
