@@ -15,94 +15,36 @@
         body {
             font-family: 'Khmer OS Battambang', sans-serif;
             min-height: 100vh;
-            background-color: #f7f9fc; /* Light background for modern feel */
+            background-color: #f7f9fc; 
         }
 
-        /* Custom Scrollbar for better UX */
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
-
-        /* General Modal Styling */
-        .modal { 
-            display: none; 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(0, 0, 0, 0.7); 
-            justify-content: center; 
-            align-items: center; 
-            z-index: 999; 
-            backdrop-filter: blur(4px);
-            transition: opacity 0.3s ease;
-        }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); justify-content: center; align-items: center; z-index: 999; backdrop-filter: blur(4px); transition: opacity 0.3s ease; }
         .modal.active { display:flex; }
-        
-        /* MODERN CARD SHADOW */
         .card-shadow-lg { box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08); }
-
-        /* Dropdown */
         .dropdown { position: relative; }
         .dropdown-menu { display: none; position: absolute; right: 0; top: 100%; min-width: 240px; background-color: white; border-radius: 12px; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); z-index: 100; margin-top: 12px; transform: translateY(-10px); opacity: 0; transition: all 0.2s ease-out; }
         .dropdown-menu.active { display: block; transform: translateY(0); opacity: 1; }
-        
-        /* List Item Hover Effect */
-        .expense-item {
-            transition: all 0.3s ease;
-            border: 1px solid #e2e8f0; 
-        }
-        .expense-item:hover {
-            cursor: pointer;
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            border-color: #93c5fd; /* Light blue border on hover */
-        }
-        
-        /* Floating Action Button (FAB) */
-        #fab-add-btn {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            z-index: 50;
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
-        }
-        @media(max-width:1023px){ 
-            #fab-add-btn{ display: inline-flex !important; }
-            /* Mobile Modal Fix */
-            #mobileFormModal .modal-content-mobile { width: 95%; max-width: 480px; margin: 10px; }
-        }
-        
-        /* Improved Form Visibility Logic: Hide/Show based on screen size */
+        .expense-item { transition: all 0.3s ease; border: 1px solid #e2e8f0; }
+        .expense-item:hover { cursor: pointer; transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); border-color: #93c5fd; }
+        #fab-add-btn { position: fixed; bottom: 24px; right: 24px; z-index: 50; width: 64px; height: 64px; border-radius: 50%; display: none; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3); }
+        @media(max-width:1023px){ #fab-add-btn{ display: inline-flex !important; } #mobileFormModal .modal-content-mobile { width: 95%; max-width: 480px; margin: 10px; } }
         #main-expense-form-container { display: none; }
-        @media (min-width: 1024px) { 
-            #main-expense-form-container { display: block !important; }
-            #mobileFormModal { display: none !important; }
-        }
-        
-        /* Avatar Styling */
+        @media (min-width: 1024px) { #main-expense-form-container { display: block !important; } #mobileFormModal { display: none !important; } }
         .avatar-initials {
             width: 40px; height: 40px; border-radius: 50%; 
             background-color: #6366f1; color: white; 
             font-size: 16px; font-weight: 700;
             display: flex; align-items: center; justify-content: center;
             flex-shrink: 0;
+            /* Placeholder for image/profile: We will check if an image URL exists */
+            background-size: cover;
+            background-position: center;
         }
-
-        /* Confirmation Modal Animation */
-        .confirm-modal-content {
-            animation: fadeInScale 0.3s ease-out;
-        }
-        @keyframes fadeInScale {
-            from { opacity: 0; transform: scale(0.9) translateY(-20px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        /* Print styles */
+        .confirm-modal-content { animation: fadeInScale 0.3s ease-out; }
+        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.9) translateY(-20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         @media print {
             body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: #ffffff !important; }
             .card-shadow-lg { box-shadow: none !important; border: 1px solid #ccc; }
@@ -219,7 +161,14 @@
                 </div>
 
                 <div class="mb-6 p-4 border rounded-xl bg-gray-50">
-                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-4">
+                         <div class="sm:col-span-1">
+                            <label for="filter-today" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមថ្ងៃ:</label>
+                            <select id="filter-today" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()">
+                                <option value="all">ទាំងអស់</option>
+                                <option value="today">ថ្ងៃនេះ</option>
+                            </select>
+                        </div>
                         <div class="sm:col-span-1">
                             <label for="filter-month" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមខែ:</label>
                             <select id="filter-month" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()"></select>
@@ -261,7 +210,7 @@
             
             <div class="space-y-4">
                 <div class="p-3 bg-gray-50 rounded-lg border flex items-center space-x-3">
-                    <div id="modal-profile-avatar" class="avatar-initials w-10 h-10 text-base">...</div>
+                    <div id="modal-profile-avatar" class="avatar-initials w-12 h-12 text-lg">...</div> 
                     <div>
                         <label class="block text-sm font-medium text-gray-500">អ៊ីម៉ែល</label>
                         <p class="font-semibold text-gray-800" id="modal-profile-email">N/A</p>
@@ -415,7 +364,7 @@
             "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ"
         ];
 
-        // --- NEW: AVATAR INITIALS FUNCTION ---
+        // --- NEW: AVATAR & IMAGE HANDLING FUNCTION ---
         function getInitials(email) {
             if (!email) return 'U';
             const parts = email.split('@')[0].split('.');
@@ -424,8 +373,25 @@
             if (parts.length > 1) initials += parts[parts.length - 1][0];
             return initials.toUpperCase().slice(0, 2);
         }
+        
+        /**
+         * Sets the background image of an avatar element, using initials as fallback.
+         * Since we cannot truly fetch a user image without a backend/Gravatar,
+         * we prioritize initials for robustness in this client-side code.
+         */
+        function setAvatar(element, email, imageUrl = null) {
+            const initials = getInitials(email);
+            element.textContent = initials;
+            
+            // In a real application, you would try to fetch the image first.
+            // For now, we keep it simple with initials.
+            element.style.backgroundImage = '';
+            element.style.backgroundColor = '#6366f1';
+            element.style.color = 'white';
+        }
 
-        // --- NEW: POPULATE DATE FILTERS ---
+
+        // --- NEW: POPULATE DATE FILTERS (UPDATED to include Today) ---
         function populateDateFilters() {
             const currentYear = new Date().getFullYear();
             const monthSelect = document.getElementById('filter-month');
@@ -435,8 +401,6 @@
             monthSelect.innerHTML = MONTH_NAMES.map((name, index) => 
                 `<option value="${index === 0 ? 'all' : index}">${name}</option>`
             ).join('');
-            
-            // Set current month as default (but keep 'all' as index 0)
             monthSelect.value = 'all';
 
             // 2. Year Filter
@@ -444,15 +408,16 @@
             const existingYears = [...new Set(allExpenses.map(x => new Date(x.Date).getFullYear()))].filter(y => !years.includes(y)).sort((a, b) => b - a);
             
             yearSelect.innerHTML = `<option value="all">ទាំងអស់</option>` + years
-                .filter((y, index) => y !== 'all' && years.indexOf(y) === index) // Unique and exclude 'all'
+                .filter((y, index) => y !== 'all' && years.indexOf(y) === index) 
                 .concat(existingYears)
                 .map(year => `<option value="${year}">${year}</option>`)
                 .join('');
-            
             yearSelect.value = 'all';
+            
+            // 3. Today Filter is static in HTML, no need to populate.
         }
 
-        // --- TOAST, CONFIRMATION, LOGOUT (UNCHANGED, except customLogout calls resolveCustomConfirm) ---
+        // --- TOAST, CONFIRMATION, LOGOUT (UNCHANGED logic) ---
         function showToast(message, type = 'info', duration = 4000) {
             const container = document.getElementById('toast-container');
             if (!container) return;
@@ -542,11 +507,10 @@
             showToast("⚠️ សូមចូលប្រព័ន្ធជាមុនសិន។", 'warning');
             window.location.href = "index.html";
         } else {
-            const initials = getInitials(user.Email);
             document.getElementById("dropdown-email").textContent = user.Email || 'N/A';
             document.getElementById("dropdown-role").textContent = user.Role || 'User';
-            document.getElementById("user-avatar-initials").textContent = initials;
-            document.getElementById("dropdown-avatar-initials").textContent = initials;
+            setAvatar(document.getElementById("user-avatar-initials"), user.Email, user.ProfileImage);
+            setAvatar(document.getElementById("dropdown-avatar-initials"), user.Email, user.ProfileImage);
             if (user.Role === 'Owner') {
                 document.getElementById('user-management-link').classList.remove('hidden');
                 document.getElementById('user-management-link').classList.add('flex');
@@ -575,12 +539,12 @@
             closeDropdown();
             document.getElementById('modal-profile-email').textContent = user.Email;
             document.getElementById('modal-profile-role').textContent = user.Role;
-            document.getElementById('modal-profile-avatar').textContent = getInitials(user.Email);
+            setAvatar(document.getElementById("modal-profile-avatar"), user.Email, user.ProfileImage);
             document.getElementById('profileModal').classList.add('active');
         }
         function closeProfileModal() { document.getElementById('profileModal').classList.remove('active'); }
         
-        // Detail Modal functions (UNCHANGED logic)
+        // Detail Modal functions (UNCHANGED logic, but triggered by handleCardClick now)
         function openDetailModal(record) {
             activeDetailRecord = record;
             document.getElementById('detail-date').textContent = record.Date;
@@ -706,8 +670,10 @@
             updateAmountSummary(mobileForm);
         }
         
+        // --- CLICK HANDLER (UPDATED to always show detail modal on desktop, and only open edit form on mobile) ---
         function handleCardClick(record) {
             const isMobile = window.innerWidth < 1024;
+            // On desktop, click opens detail modal. On mobile, it opens the edit form.
             if (isMobile) {
                 editExpense(record.ID, false); 
             } else {
@@ -757,7 +723,7 @@
                    d1.getDate() === d2.getDate();
         }
 
-        // --- SUMMARY & FILTERING LOGIC (CRITICAL UPDATE) ---
+        // --- SUMMARY & FILTERING LOGIC (CRITICAL UPDATE: Filter logic updated) ---
         let filteredDataForReport = []; 
 
         function calculateSummary(data) {
@@ -809,6 +775,7 @@
         }
         
         function filterRecords() {
+            const filterToday = document.getElementById('filter-today').value;
             const filterMonth = document.getElementById('filter-month').value;
             const filterYear = document.getElementById('filter-year').value;
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
@@ -821,24 +788,42 @@
                                      
             let filtered = dataToFilter;
 
+            const today = new Date();
+
             filtered = filtered.filter(x => {
                 const recordDate = new Date(x.Date);
                 const description = (x.Description || '').toLowerCase(); 
                 
+                let matchesToday = true;
                 let matchesMonth = true;
                 let matchesYear = true;
                 let matchesSearch = true;
 
+                // Today Filter
+                if (filterToday === 'today') {
+                    matchesToday = isSameDay(x.Date, today);
+                } else {
+                    matchesToday = true; // 'all' selected or ignored
+                }
+
                 // Month Filter (1-indexed for select value, 0-indexed for Date object)
                 if (filterMonth !== 'all') {
-                    const monthIndex = parseInt(filterMonth) - 1;
-                    matchesMonth = recordDate.getMonth() === monthIndex;
+                    // If 'today' is selected, ignore month/year filtering
+                    if (filterToday === 'today') { matchesMonth = true; } 
+                    else {
+                        const monthIndex = parseInt(filterMonth) - 1;
+                        matchesMonth = recordDate.getMonth() === monthIndex;
+                    }
                 }
 
                 // Year Filter
                 if (filterYear !== 'all') {
-                    const yearValue = parseInt(filterYear);
-                    matchesYear = recordDate.getFullYear() === yearValue;
+                    // If 'today' is selected, ignore month/year filtering
+                    if (filterToday === 'today') { matchesYear = true; }
+                    else {
+                        const yearValue = parseInt(filterYear);
+                        matchesYear = recordDate.getFullYear() === yearValue;
+                    }
                 }
                 
                 // Search Filter
@@ -846,7 +831,7 @@
                     matchesSearch = description.includes(searchTerm);
                 }
                 
-                return matchesMonth && matchesYear && matchesSearch;
+                return matchesToday && matchesMonth && matchesYear && matchesSearch;
             }).sort((a, b) => new Date(b.Date) - new Date(a.Date)); 
 
             filteredDataForReport = filtered;
@@ -865,6 +850,7 @@
             trashBtn.classList.toggle('text-white', view === 'trash');
             trashBtn.classList.toggle('text-gray-600', view === 'active');
             
+            document.getElementById('filter-today').value = 'all';
             document.getElementById('filter-month').value = 'all';
             document.getElementById('filter-year').value = 'all';
             document.getElementById('search-input').value = '';
@@ -946,7 +932,7 @@
             lucide.createIcons();
         }
 
-        // --- CRUD/DATA OPERATIONS (UNCHANGED logic, only need to ensure correct data is sent) ---
+        // --- CRUD/DATA OPERATIONS (UNCHANGED logic) ---
         
         async function handleFormSubmission(e, source) {
             e.preventDefault();
@@ -1193,13 +1179,14 @@
             document.getElementById("expense-list").innerHTML = '<p class="text-center text-gray-500 py-10 flex items-center justify-center"><i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-3"></i> កំពុងទាញទិន្នន័យ...</p>';
 
             try {
+                // Ensure sheetUrl and SHEET_EXPENSES are correctly defined in config.js
                 const res = await fetch(sheetUrl(SHEET_EXPENSES));
                 const data = await res.json();
                 
                 allExpenses = data.filter(x => x.ID && (x.Type === 'Expense' || x.Status === 'Deleted') && x.Amount !== undefined); 
                 
                 calculateSummary(allExpenses); 
-                populateDateFilters(); // CRITICAL: Populate filters after data load
+                populateDateFilters(); 
                 filterRecords(); 
             } catch (error) {
                 document.getElementById("expense-list").innerHTML = '<p class="text-center text-red-500 py-10 text-lg">❌ មានបញ្ហាក្នុងការទាញទិន្នន័យ។ សូមពិនិត្យមើល Column headers ក្នុង SheetDB</p>';
