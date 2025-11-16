@@ -42,9 +42,29 @@
       from { top: 0; }
       to { top: 100%; }
     }
+    #faceLoading {
+  transition: opacity 0.3s ease-in-out;
+}
+
+#faceLoading.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#faceLoading:not(.hidden) {
+  opacity: 1;
+  pointer-events: all;
+}
+
   </style>
 </head>
 <body class="bg-gray-900 flex justify-center items-center min-h-screen p-4">
+
+  <!-- Loading overlay -->
+<div id="faceLoading" class="absolute inset-0 bg-black/50 flex flex-col justify-center items-center rounded-3xl hidden">
+  <div class="w-16 h-16 border-4 border-teal-400 border-t-transparent border-b-transparent rounded-full animate-spin mb-4"></div>
+  <p class="text-teal-400 font-semibold">Loading face recognition...</p>
+</div>
 
   <!-- Login Card -->
   <div class="bg-gray-800/60 backdrop-blur-xl p-10 rounded-3xl shadow-2xl w-full max-w-md fade-in">
