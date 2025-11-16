@@ -15,109 +15,85 @@
         body {
             font-family: 'Khmer OS Battambang', sans-serif;
             min-height: 100vh;
+            background-color: #f7f9fc; /* Light background for modern feel */
         }
 
-        /* Simple hide scrollbar */
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Custom Scrollbar for better UX */
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
 
         /* General Modal Styling */
         .modal { 
             display: none; 
             position: fixed; 
             inset: 0; 
-            background: rgba(0, 0, 0, 0.65); 
+            background: rgba(0, 0, 0, 0.7); 
             justify-content: center; 
             align-items: center; 
             z-index: 999; 
-            backdrop-filter: blur(3px);
+            backdrop-filter: blur(4px);
             transition: opacity 0.3s ease;
         }
         .modal.active { display:flex; }
         
-        /* Custom status badges (Slightly improved colors) */
-        .badge-expense { background-color: #fee2e2; color: #b91c1c; }
-        .badge-income { background-color: #dcfce7; color: #15803d; }
-        .badge-deleted { background-color: #f3f4f6; color: #6b7280; }
-
-        /* Modern shadow for cards */
-        .card-shadow { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        /* MODERN CARD SHADOW */
+        .card-shadow-lg { box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08); }
 
         /* Dropdown */
         .dropdown { position: relative; }
-        .dropdown-menu { display: none; position: absolute; right: 0; top: 100%; min-width: 200px; background-color: white; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); z-index: 100; margin-top: 10px; }
-        .dropdown-menu.active { display: block; }
+        .dropdown-menu { display: none; position: absolute; right: 0; top: 100%; min-width: 240px; background-color: white; border-radius: 12px; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); z-index: 100; margin-top: 12px; transform: translateY(-10px); opacity: 0; transition: all 0.2s ease-out; }
+        .dropdown-menu.active { display: block; transform: translateY(0); opacity: 1; }
         
         /* List Item Hover Effect */
         .expense-item {
-            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-            border: 1px solid #e5e7eb; /* Added subtle border */
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0; 
         }
         .expense-item:hover {
             cursor: pointer;
-            transform: translateY(-3px);
-            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border-color: #93c5fd; /* Light blue border on hover */
         }
         
-        /* FAB forced visibility on mobile via CSS */
+        /* Floating Action Button (FAB) */
         #fab-add-btn {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
+            bottom: 24px;
+            right: 24px;
             z-index: 50;
-            width: 60px;
-            height: 60px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
             display: none;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
         }
-        @media(max-width:1023px){ /* Smaller than lg */
-            #fab-add-btn{
-                display: inline-flex !important;
-            }
+        @media(max-width:1023px){ 
+            #fab-add-btn{ display: inline-flex !important; }
+            /* Mobile Modal Fix */
+            #mobileFormModal .modal-content-mobile { width: 95%; max-width: 480px; margin: 10px; }
         }
         
-        /* Mobile Modal Fix (Ensures the modal form is 100% on small screens) */
-        #mobileFormModal .modal-content-mobile {
-            width: 95%; /* Limit width slightly on small screens */
-            max-width: 480px; /* Max-width for mobile modal */
-            margin: 20px;
+        /* Improved Form Visibility Logic: Hide/Show based on screen size */
+        #main-expense-form-container { display: none; }
+        @media (min-width: 1024px) { 
+            #main-expense-form-container { display: block !important; }
+            #mobileFormModal { display: none !important; }
+        }
+        
+        /* Avatar Styling */
+        .avatar-initials {
+            width: 40px; height: 40px; border-radius: 50%; 
+            background-color: #6366f1; color: white; 
+            font-size: 16px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
         }
 
-        /* Improved Form Visibility Logic: Hide/Show based on screen size */
-        #main-expense-form-container {
-            display: none;
-        }
-        @media (min-width: 1024px) { 
-            #main-expense-form-container {
-                display: block !important;
-            }
-        }
-        /* Hide the mobile modal on desktop */
-        @media (min-width: 1024px) {
-            #mobileFormModal {
-                display: none !important;
-            }
-        }
-        /* New PDF styles to prevent cutoff issues when generating the PDF */
-        @media print {
-            body {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                background-color: #ffffff !important;
-            }
-            .card-shadow { box-shadow: none !important; border: 1px solid #ccc; }
-            .hide-on-print { display: none !important; }
-            /* Force list items to not break across pages badly */
-            .expense-item { page-break-inside: avoid; }
-            
-            /* Hide unnecessary elements for printing */
-            header, #fab-add-btn, .item-actions, #main-expense-form-container { display: none !important; }
-        }
-        
-        /* Custom Confirmation Modal Styling */
+        /* Confirmation Modal Animation */
         .confirm-modal-content {
             animation: fadeInScale 0.3s ease-out;
         }
@@ -125,13 +101,22 @@
             from { opacity: 0; transform: scale(0.9) translateY(-20px); }
             to { opacity: 1; transform: scale(1) translateY(0); }
         }
+
+        /* Print styles */
+        @media print {
+            body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: #ffffff !important; }
+            .card-shadow-lg { box-shadow: none !important; border: 1px solid #ccc; }
+            .hide-on-print { display: none !important; }
+            .expense-item { page-break-inside: avoid; border: 1px solid #eee; margin-bottom: 5px !important; }
+            header, #fab-add-btn, .item-actions, #main-expense-form-container, #data-view-section > div:first-child { display: none !important; }
+            #data-view-section { border: none !important; box-shadow: none !important; padding: 0 !important; }
+            #expense-list { max-height: unset !important; overflow-y: visible !important; }
+        }
     </style>
 </head>
-<body class="bg-gray-50">
+<body>
     
-    <div id="toast-container" class="fixed top-4 right-4 z-[1000] space-y-3 pointer-events-none">
-        </div>
-    
+    <div id="toast-container" class="fixed top-4 right-4 z-[1000] space-y-3 pointer-events-none"></div>
     <div id="customConfirmModal" class="modal">
         <div class="confirm-modal-content bg-white rounded-2xl p-8 w-full max-w-sm relative shadow-2xl">
             <div id="confirm-icon-box" class="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center text-white bg-red-100">
@@ -147,21 +132,24 @@
         </div>
     </div>
     
-    <header class="bg-white shadow-md p-4 sticky top-0 z-50 border-b border-gray-200">
+    <header class="bg-white shadow-lg p-4 sticky top-0 z-50 border-b border-gray-200">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl sm:text-3xl font-bold text-blue-700 flex items-center">
+            <h1 class="text-xl sm:text-3xl font-bold text-indigo-700 flex items-center">
                 <i data-lucide="wallet" class="w-6 h-6 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-indigo-500"></i>
-                ប្រព័ន្ធគ្រប់គ្រងចំណាយ
+                ប្រព័ន្ធគ្រប់គ្រងចំណាយគ្រឿងទេស
             </h1>
             
             <div class="dropdown">
                 <button onclick="toggleDropdown(event)" class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-semibold hover:bg-indigo-600 transition duration-150 relative ring-2 ring-indigo-300 ring-offset-2">
-                    <i data-lucide="user" class="w-6 h-6"></i>
+                    <div id="user-avatar-initials" class="avatar-initials w-full h-full text-sm">...</div>
                 </button>
                 <div id="profile-dropdown-menu" class="dropdown-menu">
-                    <div class="p-3 border-b text-center bg-gray-50">
-                        <p class="font-bold text-gray-800 truncate" id="dropdown-email">Loading...</p>
-                        <span class="text-sm text-indigo-500" id="dropdown-role">Loading...</span>
+                    <div class="p-4 border-b text-left bg-gray-50 rounded-t-xl flex items-center space-x-3">
+                        <div id="dropdown-avatar-initials" class="avatar-initials w-10 h-10 text-base">...</div>
+                        <div>
+                            <p class="font-bold text-gray-800 truncate" id="dropdown-email">Loading...</p>
+                            <span class="text-sm text-indigo-500" id="dropdown-role">Loading...</span>
+                        </div>
                     </div>
                     
                     <a href="user.html" id="user-management-link" class="hidden items-center p-3 hover:bg-indigo-50 transition text-purple-700">
@@ -183,51 +171,46 @@
         
         <section class="mb-8">
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-red-500 hover:shadow-lg transition">
-                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="receipt" class="w-4 h-4 mr-2 text-red-500"></i> ចំណាយសរុបរួម</p>
-                    <p class="text-2xl sm:text-4xl font-extrabold text-red-600 truncate" id="total-expense-summary">-- ៛</p>
+                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-red-600 hover:shadow-xl transition transform hover:scale-[1.01]">
+                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="receipt" class="w-4 h-4 mr-2 text-red-600"></i> ចំណាយសរុបរួម</p>
+                    <p class="text-2xl sm:text-4xl font-extrabold text-red-700 truncate" id="total-expense-summary">-- ៛</p>
                 </div>
-                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-red-400 hover:shadow-lg transition">
-                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="calendar-check" class="w-4 h-4 mr-2 text-red-400"></i> ចំណាយថ្ងៃនេះ</p>
-                    <p class="text-2xl sm:text-4xl font-extrabold text-red-500 truncate" id="today-expense-summary">0 ៛</p>
+                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-red-500 hover:shadow-xl transition transform hover:scale-[1.01]">
+                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="calendar" class="w-4 h-4 mr-2 text-red-500"></i> ចំណាយប្រចាំខែ</p>
+                    <p class="text-2xl sm:text-4xl font-extrabold text-red-600 truncate" id="monthly-expense-summary">0 ៛</p>
                 </div>
-                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-red-300 hover:shadow-lg transition">
-                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="calendar" class="w-4 h-4 mr-2 text-red-300"></i> ចំណាយប្រចាំខែ</p>
-                    <p class="text-2xl sm:text-4xl font-extrabold text-red-400 truncate" id="monthly-expense-summary">0 ៛</p>
-                </div>
-                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-gray-400 hover:shadow-lg transition">
-                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="hash" class="w-4 h-4 mr-2 text-gray-500"></i> ចំនួនកំណត់ត្រា</p>
-                    <p class="text-2xl sm:text-4xl font-extrabold text-gray-700" id="total-count-summary">-- កំណត់ត្រា</p>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-4">
-                <div class="lg:col-span-1 hidden lg:block"></div> 
-                
-                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-orange-500 hover:shadow-lg transition">
+                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-orange-500 hover:shadow-xl transition transform hover:scale-[1.01]">
                     <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="utensils" class="w-4 h-4 mr-2 text-orange-500"></i> សាច់សរុប</p>
                     <p class="text-2xl sm:text-4xl font-extrabold text-orange-600 truncate" id="meat-total-summary">-- ៛</p>
                 </div>
-                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-green-500 hover:shadow-lg transition">
+                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-green-500 hover:shadow-xl transition transform hover:scale-[1.01]">
                     <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="leaf" class="w-4 h-4 mr-2 text-green-500"></i> បន្លែសរុប</p>
                     <p class="text-2xl sm:text-4xl font-extrabold text-green-600 truncate" id="vegetable-total-summary">-- ៛</p>
                 </div>
-                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-yellow-500 hover:shadow-lg transition">
+                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-yellow-500 hover:shadow-xl transition transform hover:scale-[1.01] mt-4 lg:mt-0">
                     <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="apple" class="w-4 h-4 mr-2 text-yellow-500"></i> ផ្លែឈើសរុប</p>
                     <p class="text-2xl sm:text-4xl font-extrabold text-yellow-600 truncate" id="fruit-total-summary">-- ៛</p>
                 </div>
+                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-red-300 hover:shadow-xl transition transform hover:scale-[1.01] mt-4 lg:mt-0">
+                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="calendar-check" class="w-4 h-4 mr-2 text-red-300"></i> ចំណាយថ្ងៃនេះ</p>
+                    <p class="text-2xl sm:text-4xl font-extrabold text-red-500 truncate" id="today-expense-summary">0 ៛</p>
+                </div>
+                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-gray-400 hover:shadow-xl transition transform hover:scale-[1.01] mt-4 lg:mt-0">
+                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="hash" class="w-4 h-4 mr-2 text-gray-500"></i> ចំនួនកំណត់ត្រា</p>
+                    <p class="text-2xl sm:text-4xl font-extrabold text-gray-700" id="total-count-summary">-- កំណត់ត្រា</p>
+                </div>
+                <div class="lg:col-span-1 hidden lg:block mt-4 lg:mt-0"></div> 
             </div>
         </section>
 
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
             
-            <section id="main-expense-form-container" class="lg:col-span-1 bg-white p-6 rounded-2xl card-shadow h-fit lg:sticky lg:top-24 border border-gray-100">
+            <section id="main-expense-form-container" class="lg:col-span-1 bg-white p-6 rounded-2xl card-shadow-lg h-fit lg:sticky lg:top-24 border border-gray-100">
                 <h2 class="text-2xl font-bold mb-6 text-indigo-600 border-b pb-3" id="main-form-title">➕ បញ្ចូលកំណត់ត្រាថ្មី</h2>
-                <form id="expense-form" class="space-y-4">
-                    </form>
+                <form id="expense-form" class="space-y-4"></form>
             </section>
             
-            <section id="data-view-section" class="lg:col-span-3 bg-white p-4 sm:p-6 rounded-2xl card-shadow border border-gray-100">
+            <section id="data-view-section" class="lg:col-span-3 bg-white p-4 sm:p-6 rounded-2xl card-shadow-lg border border-gray-100">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-2">
                     <h2 class="text-xl sm:text-2xl font-bold text-gray-700 mb-2 sm:mb-0">បញ្ជីប្រតិបត្តិការចំណាយ</h2>
                     <button onclick="switchView('trash')" id="trash-btn" class="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition flex items-center font-semibold text-sm shadow-sm">
@@ -236,18 +219,17 @@
                 </div>
 
                 <div class="mb-6 p-4 border rounded-xl bg-gray-50">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4">
                         <div class="sm:col-span-1">
-                            <label for="report-type" class="block text-xs font-medium text-gray-500 mb-1">របាយការណ៍សរុបតាម:</label>
-                            <select id="report-type" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()">
-                                <option value="all">ទាំងអស់</option>
-                                <option value="daily">ប្រចាំថ្ងៃ</option>
-                                <option value="monthly">ប្រចាំខែ</option>
-                                <option value="yearly">ប្រចាំឆ្នាំ</option>
-                            </select>
+                            <label for="filter-month" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមខែ:</label>
+                            <select id="filter-month" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()"></select>
+                        </div>
+                        <div class="sm:col-span-1">
+                             <label for="filter-year" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមឆ្នាំ:</label>
+                            <select id="filter-year" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()"></select>
                         </div>
                         <div class="sm:col-span-2">
-                             <label for="search-input" class="block text-xs font-medium text-gray-500 mb-1">ស្វែងរក (តាមពិពណ៌នា):</label>
+                            <label for="search-input" class="block text-xs font-medium text-gray-500 mb-1">ស្វែងរក (តាមពិពណ៌នា):</label>
                              <input type="text" id="search-input" oninput="filterRecords()" placeholder="ឧ. ទិញម្ហូប សម្រាប់ពិធី" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
                         </div>
                     </div>
@@ -262,7 +244,7 @@
                     </div>
                 </div>
 
-                <div id="expense-list" class="space-y-3 max-h-[65vh] overflow-y-auto pr-2 hide-scrollbar">
+                <div id="expense-list" class="space-y-4 max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
                     <p class="text-center text-gray-500 py-10">កំពុងទាញទិន្នន័យ...</p>
                 </div>
             </section>
@@ -278,9 +260,12 @@
             <h3 class="text-2xl font-bold text-blue-700 mb-6 border-b pb-2">ព័ត៌មានគណនី</h3>
             
             <div class="space-y-4">
-                <div class="p-3 bg-gray-50 rounded-lg border">
-                    <label class="block text-sm font-medium text-gray-500">អ៊ីម៉ែល</label>
-                    <p class="font-semibold text-gray-800" id="modal-profile-email">N/A</p>
+                <div class="p-3 bg-gray-50 rounded-lg border flex items-center space-x-3">
+                    <div id="modal-profile-avatar" class="avatar-initials w-10 h-10 text-base">...</div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">អ៊ីម៉ែល</label>
+                        <p class="font-semibold text-gray-800" id="modal-profile-email">N/A</p>
+                    </div>
                 </div>
                 <div class="p-3 bg-gray-50 rounded-lg border">
                     <label class="block text-sm font-medium text-gray-500">តួនាទី</label>
@@ -324,15 +309,15 @@
 
                 <div class="grid grid-cols-3 gap-3">
                     <div class="p-3 bg-white rounded-lg border shadow-sm">
-                        <label class="block text-xs font-medium text-gray-500">សាច់</label>
+                        <label class="block text-xs font-medium text-gray-500 flex items-center"><i data-lucide="utensils" class="w-3 h-3 mr-1 text-orange-500"></i> សាច់</label>
                         <p class="font-semibold text-base text-orange-600" id="detail-meat">0 ៛</p>
                     </div>
                     <div class="p-3 bg-white rounded-lg border shadow-sm">
-                        <label class="block text-xs font-medium text-gray-500">បន្លែ</label>
+                        <label class="block text-xs font-medium text-gray-500 flex items-center"><i data-lucide="leaf" class="w-3 h-3 mr-1 text-green-500"></i> បន្លែ</label>
                         <p class="font-semibold text-base text-green-600" id="detail-vegetable">0 ៛</p>
                     </div>
                     <div class="p-3 bg-white rounded-lg border shadow-sm">
-                        <label class="block text-xs font-medium text-gray-500">ផ្លែឈើ</label>
+                        <label class="block text-xs font-medium text-gray-500 flex items-center"><i data-lucide="apple" class="w-3 h-3 mr-1 text-yellow-500"></i> ផ្លែឈើ</label>
                         <p class="font-semibold text-base text-yellow-600" id="detail-fruit">0 ៛</p>
                     </div>
                 </div>
@@ -364,8 +349,7 @@
     <div id="mobileFormModal" class="modal">
         <div class="modal-content-mobile bg-white rounded-2xl p-6 w-full relative shadow-2xl">
             <h3 class="text-2xl font-bold text-indigo-600 mb-6 border-b pb-2" id="mobile-form-title">➕ បញ្ចូលកំណត់ត្រាថ្មី</h3>
-            <form id="mobile-expense-form" class="space-y-4">
-            </form>
+            <form id="mobile-expense-form" class="space-y-4"></form>
             <button onclick="closeFormModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition">
                 <i data-lucide="x" class="w-6 h-6"></i>
             </button>
@@ -386,15 +370,15 @@
             
             <div>
                 <label for="meat" class="block text-sm font-medium text-gray-700">សាច់ ($)</label>
-                <input id="meat" type="number" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-600 focus:border-orange-600 transition expense-input" placeholder="0">
+                <input id="meat" type="number" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-600 focus:border-orange-600 transition expense-input" placeholder="0" min="0">
             </div>
             <div>
                 <label for="vegetable" class="block text-sm font-medium text-gray-700">បន្លែ ($)</label>
-                <input id="vegetable" type="number" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-600 focus:border-green-600 transition expense-input" placeholder="0">
+                <input id="vegetable" type="number" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-600 focus:border-green-600 transition expense-input" placeholder="0" min="0">
             </div>
             <div>
                 <label for="fruit" class="block text-sm font-medium text-gray-700">ផ្លែឈើ ($)</label>
-                <input id="fruit" type="number" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-600 focus:border-yellow-600 transition expense-input" placeholder="0">
+                <input id="fruit" type="number" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-600 focus:border-yellow-600 transition expense-input" placeholder="0" min="0">
             </div>
         </div>
         
@@ -425,7 +409,50 @@
         let customConfirmResolver; 
         let activeFormElement = null; 
         
-        // --- NEW: TOAST NOTIFICATION FUNCTION (UNCHANGED) ---
+        // --- HELPER ARRAYS ---
+        const MONTH_NAMES = [
+            "ទាំងអស់", "មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា", 
+            "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ"
+        ];
+
+        // --- NEW: AVATAR INITIALS FUNCTION ---
+        function getInitials(email) {
+            if (!email) return 'U';
+            const parts = email.split('@')[0].split('.');
+            let initials = '';
+            if (parts.length > 0) initials += parts[0][0];
+            if (parts.length > 1) initials += parts[parts.length - 1][0];
+            return initials.toUpperCase().slice(0, 2);
+        }
+
+        // --- NEW: POPULATE DATE FILTERS ---
+        function populateDateFilters() {
+            const currentYear = new Date().getFullYear();
+            const monthSelect = document.getElementById('filter-month');
+            const yearSelect = document.getElementById('filter-year');
+
+            // 1. Month Filter
+            monthSelect.innerHTML = MONTH_NAMES.map((name, index) => 
+                `<option value="${index === 0 ? 'all' : index}">${name}</option>`
+            ).join('');
+            
+            // Set current month as default (but keep 'all' as index 0)
+            monthSelect.value = 'all';
+
+            // 2. Year Filter
+            const years = ['all', currentYear + 1, currentYear, currentYear - 1, currentYear - 2]; 
+            const existingYears = [...new Set(allExpenses.map(x => new Date(x.Date).getFullYear()))].filter(y => !years.includes(y)).sort((a, b) => b - a);
+            
+            yearSelect.innerHTML = `<option value="all">ទាំងអស់</option>` + years
+                .filter((y, index) => y !== 'all' && years.indexOf(y) === index) // Unique and exclude 'all'
+                .concat(existingYears)
+                .map(year => `<option value="${year}">${year}</option>`)
+                .join('');
+            
+            yearSelect.value = 'all';
+        }
+
+        // --- TOAST, CONFIRMATION, LOGOUT (UNCHANGED, except customLogout calls resolveCustomConfirm) ---
         function showToast(message, type = 'info', duration = 4000) {
             const container = document.getElementById('toast-container');
             if (!container) return;
@@ -458,7 +485,6 @@
             }, duration);
         }
 
-        // --- NEW: CUSTOM CONFIRMATION MODAL FUNCTION (UNCHANGED) ---
         function customConfirm(title, message, actionText, type = 'delete') {
             return new Promise((resolve) => {
                 const modal = document.getElementById('customConfirmModal');
@@ -511,20 +537,23 @@
         }
         function logout() { customLogout(); } 
 
-        // --- INIT & AUTH (UNCHANGED) ---
+        // --- INIT & AUTH (UPDATED with Avatar logic) ---
         if (!user) {
             showToast("⚠️ សូមចូលប្រព័ន្ធជាមុនសិន។", 'warning');
             window.location.href = "index.html";
         } else {
+            const initials = getInitials(user.Email);
             document.getElementById("dropdown-email").textContent = user.Email || 'N/A';
             document.getElementById("dropdown-role").textContent = user.Role || 'User';
+            document.getElementById("user-avatar-initials").textContent = initials;
+            document.getElementById("dropdown-avatar-initials").textContent = initials;
             if (user.Role === 'Owner') {
                 document.getElementById('user-management-link').classList.remove('hidden');
                 document.getElementById('user-management-link').classList.add('flex');
             }
         }
         
-        // --- PROFILE/DROPDOWN/MODALS (UNCHANGED) ---
+        // --- PROFILE/DROPDOWN/MODALS (UPDATED with Avatar logic) ---
         function toggleDropdown(event) {
             const menu = document.getElementById('profile-dropdown-menu');
             document.querySelectorAll('.dropdown-menu.active').forEach(m => {
@@ -546,54 +575,39 @@
             closeDropdown();
             document.getElementById('modal-profile-email').textContent = user.Email;
             document.getElementById('modal-profile-role').textContent = user.Role;
+            document.getElementById('modal-profile-avatar').textContent = getInitials(user.Email);
             document.getElementById('profileModal').classList.add('active');
         }
         function closeProfileModal() { document.getElementById('profileModal').classList.remove('active'); }
         
-        // --- DETAIL MODAL (UNCHANGED logic) ---
+        // Detail Modal functions (UNCHANGED logic)
         function openDetailModal(record) {
             activeDetailRecord = record;
-
             document.getElementById('detail-date').textContent = record.Date;
             document.getElementById('detail-amount').textContent = formatCurrency(parseFloat(record.Amount)); 
             document.getElementById('detail-amount').className = 'text-3xl font-extrabold mt-1 text-red-600'; 
-            
-            // NEW: Populate Breakdown
             document.getElementById('detail-meat').textContent = formatCurrency(parseFloat(record.Meat));
             document.getElementById('detail-vegetable').textContent = formatCurrency(parseFloat(record.Vegetable));
             document.getElementById('detail-fruit').textContent = formatCurrency(parseFloat(record.Fruit));
-            
-            // Use Description
             document.getElementById('detail-desc').textContent = record.Description || 'គ្មានពិពណ៌នា';
-            
             document.getElementById('detail-modified').textContent = record.ModifiedDate ? new Date(record.ModifiedDate).toLocaleString('km-KH') : 'N/A';
             document.getElementById('detail-status').textContent = record.Status === 'Deleted' ? 'លុបបណ្ដោះអាសន្ន' : 'សកម្ម';
-            
             document.getElementById('detailModal').classList.add('active');
             lucide.createIcons();
         }
-
         function closeDetailModal() {
             document.getElementById('detailModal').classList.remove('active');
             activeDetailRecord = null;
         }
         
-        // --- FORM LOGIC (UNCHANGED logic) ---
-        
+        // Form logic (UNCHANGED logic)
         function updateAmountSummary(formElement) {
             const meat = parseFloat(formElement.querySelector("#meat").value) || 0;
             const vegetable = parseFloat(formElement.querySelector("#vegetable").value) || 0;
             const fruit = parseFloat(formElement.querySelector("#fruit").value) || 0;
-            
             const total = meat + vegetable + fruit;
-            
-            // Update the display field
             formElement.querySelector("#amount-summary").value = formatCurrency(total);
-            
-            // Update the hidden field used for data submission (We use the hidden field with ID 'amount' for submission)
             formElement.querySelector("#amount").value = total;
-            
-            // Apply visual cue if total is zero
             const summaryInput = formElement.querySelector("#amount-summary");
             if (total === 0) {
                 summaryInput.classList.remove('text-red-600');
@@ -606,16 +620,12 @@
         
         function setupForms() {
             const formTemplate = document.getElementById('form-template').innerHTML;
-            
-            // Setup Desktop Form
             const desktopForm = document.getElementById('expense-form');
             desktopForm.innerHTML = formTemplate;
             desktopForm.addEventListener('submit', (e) => handleFormSubmission(e, 'desktop'));
             desktopForm.querySelectorAll('.expense-input').forEach(input => {
                 input.addEventListener('input', () => updateAmountSummary(desktopForm));
             });
-            
-            // Setup Mobile Form
             const mobileForm = document.getElementById('mobile-expense-form');
             mobileForm.innerHTML = formTemplate;
             mobileForm.addEventListener('submit', (e) => handleFormSubmission(e, 'mobile'));
@@ -625,12 +635,12 @@
         }
 
         function openFormModal() {
-             resetForm();
-             document.getElementById('mobile-form-title').textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
-             document.getElementById('mobileFormModal').classList.add('active');
-             activeFormElement = document.getElementById('mobile-expense-form');
-             if(activeFormElement) activeFormElement.reset();
-             lucide.createIcons();
+            resetForm();
+            document.getElementById('mobile-form-title').textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
+            document.getElementById('mobileFormModal').classList.add('active');
+            activeFormElement = document.getElementById('mobile-expense-form');
+            if(activeFormElement) activeFormElement.reset();
+            lucide.createIcons();
         }
 
         function closeFormModal() {
@@ -641,13 +651,10 @@
 
         function populateForm(formElement, record) {
             formElement.querySelector("#date").value = record.Date;
-            // Use the specific columns for populating the input fields
             formElement.querySelector("#meat").value = parseFloat(record.Meat) || 0;
             formElement.querySelector("#vegetable").value = parseFloat(record.Vegetable) || 0;
             formElement.querySelector("#fruit").value = parseFloat(record.Fruit) || 0;
             formElement.querySelector("#desc").value = record.Description;
-
-            // Update Total Amount display after populating sub-fields
             updateAmountSummary(formElement);
 
             const isEditing = record !== null;
@@ -670,20 +677,19 @@
         }
         
         function resetFormUI(formElement) {
-             const submitBtn = formElement.querySelector('#submit-btn');
-             const cancelBtn = formElement.querySelector('#cancel-btn');
-             
-             submitBtn.innerHTML = '<i data-lucide="plus" class="w-5 h-5 mr-1"></i> បន្ថែមកំណត់ត្រា';
-             submitBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
-             submitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-             cancelBtn.classList.add('hidden');
-             
-             document.getElementById('main-form-title').textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
-             const mobileTitle = document.getElementById('mobile-form-title');
-             if(mobileTitle) mobileTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
-             
-             // Also reset the amount summary
-             updateAmountSummary(formElement);
+            const submitBtn = formElement.querySelector('#submit-btn');
+            const cancelBtn = formElement.querySelector('#cancel-btn');
+            
+            submitBtn.innerHTML = '<i data-lucide="plus" class="w-5 h-5 mr-1"></i> បន្ថែមកំណត់ត្រា';
+            submitBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+            submitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+            cancelBtn.classList.add('hidden');
+            
+            document.getElementById('main-form-title').textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
+            const mobileTitle = document.getElementById('mobile-form-title');
+            if(mobileTitle) mobileTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
+            
+            updateAmountSummary(formElement);
         }
 
         function resetForm() {
@@ -696,21 +702,17 @@
             resetFormUI(mobileForm);
             activeFormElement = null; 
             lucide.createIcons();
-            
-            // Ensure summary is zero after reset
             updateAmountSummary(desktopForm);
             updateAmountSummary(mobileForm);
         }
         
         function handleCardClick(record) {
-             const isMobile = window.innerWidth < 1024;
-             if (isMobile) {
-                 // In mobile, clicking the card means open for quick edit/detail
-                 editExpense(record.ID, false); 
-             } else {
-                 // In desktop, clicking the card means open detail modal
-                 openDetailModal(record); 
-             }
+            const isMobile = window.innerWidth < 1024;
+            if (isMobile) {
+                editExpense(record.ID, false); 
+            } else {
+                openDetailModal(record); 
+            }
         }
         
         async function editExpense(id, scrollToForm=true) {
@@ -737,7 +739,7 @@
             }
             
             if(scrollToForm && !isMobile) {
-                 document.getElementById("main-expense-form-container").scrollIntoView({ behavior: 'smooth', block: 'start' });
+                document.getElementById("main-expense-form-container").scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
@@ -747,12 +749,6 @@
             return `${num.toLocaleString('km-KH')} ៛`;
         }
         
-        /**
-         * Checks if two date strings are the same day (ignoring time).
-         * @param {string} date1 - ISO date string.
-         * @param {string} date2 - ISO date string.
-         * @returns {boolean}
-         */
         function isSameDay(date1, date2) {
             const d1 = new Date(date1);
             const d2 = new Date(date2);
@@ -761,7 +757,7 @@
                    d1.getDate() === d2.getDate();
         }
 
-        // --- SUMMARY & FILTERING LOGIC (UPDATED for Today/Monthly/Yearly) ---
+        // --- SUMMARY & FILTERING LOGIC (CRITICAL UPDATE) ---
         let filteredDataForReport = []; 
 
         function calculateSummary(data) {
@@ -782,7 +778,7 @@
                 const amount = parseFloat(x.Amount) || 0;
                 const recordDate = new Date(x.Date);
                 
-                // --- Breakdown Sums ---
+                // Breakdown Sums
                 const meat = parseFloat(x.Meat) || 0;
                 const vegetable = parseFloat(x.Vegetable) || 0;
                 const fruit = parseFloat(x.Fruit) || 0;
@@ -790,7 +786,7 @@
                 totalVegetable += vegetable;
                 totalFruit += fruit;
                 
-                // --- Time-based Sums (Uses the Amount from the Sheet's formula) ---
+                // Time-based Sums
                 totalExpense += amount; 
 
                 if (isSameDay(x.Date, today)) {
@@ -802,20 +798,19 @@
                 }
             });
             
-            // --- Rendering Summary Cards ---
+            // Rendering Summary Cards
             document.getElementById('total-expense-summary').textContent = formatCurrency(totalExpense);
             document.getElementById('today-expense-summary').textContent = formatCurrency(todayExpense);
             document.getElementById('monthly-expense-summary').textContent = formatCurrency(monthlyExpense);
-
             document.getElementById('meat-total-summary').textContent = formatCurrency(totalMeat);
             document.getElementById('vegetable-total-summary').textContent = formatCurrency(totalVegetable);
             document.getElementById('fruit-total-summary').textContent = formatCurrency(totalFruit);
-
             document.getElementById('total-count-summary').textContent = `${totalCount} កំណត់ត្រា`;
         }
         
         function filterRecords() {
-            const reportType = document.getElementById('report-type').value;
+            const filterMonth = document.getElementById('filter-month').value;
+            const filterYear = document.getElementById('filter-year').value;
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
             
             const expenseOnlyData = allExpenses.filter(x => x.Type === "Expense" || x.Status === "Deleted");
@@ -826,38 +821,32 @@
                                      
             let filtered = dataToFilter;
 
-            const today = new Date();
-            const currentYear = today.getFullYear();
-            const currentMonth = today.getMonth();
-
             filtered = filtered.filter(x => {
                 const recordDate = new Date(x.Date);
                 const description = (x.Description || '').toLowerCase(); 
                 
-                let matchesReport = true;
+                let matchesMonth = true;
+                let matchesYear = true;
                 let matchesSearch = true;
 
-                switch (reportType) {
-                    case 'daily':
-                        matchesReport = isSameDay(x.Date, today);
-                        break;
-                    case 'monthly':
-                        matchesReport = recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
-                        break;
-                    case 'yearly':
-                        matchesReport = recordDate.getFullYear() === currentYear;
-                        break;
-                    case 'all':
-                    default:
-                        matchesReport = true;
-                        break;
+                // Month Filter (1-indexed for select value, 0-indexed for Date object)
+                if (filterMonth !== 'all') {
+                    const monthIndex = parseInt(filterMonth) - 1;
+                    matchesMonth = recordDate.getMonth() === monthIndex;
+                }
+
+                // Year Filter
+                if (filterYear !== 'all') {
+                    const yearValue = parseInt(filterYear);
+                    matchesYear = recordDate.getFullYear() === yearValue;
                 }
                 
+                // Search Filter
                 if (searchTerm) {
                     matchesSearch = description.includes(searchTerm);
                 }
                 
-                return matchesReport && matchesSearch;
+                return matchesMonth && matchesYear && matchesSearch;
             }).sort((a, b) => new Date(b.Date) - new Date(a.Date)); 
 
             filteredDataForReport = filtered;
@@ -876,13 +865,14 @@
             trashBtn.classList.toggle('text-white', view === 'trash');
             trashBtn.classList.toggle('text-gray-600', view === 'active');
             
-            document.getElementById('report-type').value = 'all';
+            document.getElementById('filter-month').value = 'all';
+            document.getElementById('filter-year').value = 'all';
             document.getElementById('search-input').value = '';
             filterRecords();
             lucide.createIcons();
         }
 
-        // --- RENDER LIST (UPDATED to use Amount and show breakdown) ---
+        // --- RENDER LIST (UNCHANGED logic) ---
         function renderExpenseList(data) {
             const list = document.getElementById("expense-list");
             const isTrashView = currentView === 'trash';
@@ -897,17 +887,18 @@
 
             list.innerHTML = data.map(x => {
                 const isDeleted = x.Status === 'Deleted';
-                const badgeClass = isDeleted ? 'badge-deleted' : 'badge-expense';
+                const badgeClass = isDeleted ? 'bg-gray-200 text-gray-600' : 'bg-red-100 text-red-700';
                 const amountTextClass = isDeleted ? 'text-gray-500 line-through' : 'text-red-600';
                 const icon = 'arrow-down-left'; 
                 
                 const recordJson = JSON.stringify(x).split("'").join("\\'");
                 
-                // Use the data from the sheet directly
                 const breakdown = `
-                    <span class="text-xs text-gray-500 block">សាច់: ${formatCurrency(x.Meat)}</span>
-                    <span class="text-xs text-gray-500 block">បន្លែ: ${formatCurrency(x.Vegetable)}</span>
-                    <span class="text-xs text-gray-500 block">ផ្លែឈើ: ${formatCurrency(x.Fruit)}</span>
+                    <div class="flex flex-wrap text-xs text-gray-500 mt-2 space-x-3">
+                        <span><i data-lucide="utensils" class="w-3 h-3 mr-1 inline-block text-orange-500"></i>សាច់: ${formatCurrency(x.Meat)}</span>
+                        <span><i data-lucide="leaf" class="w-3 h-3 mr-1 inline-block text-green-500"></i>បន្លែ: ${formatCurrency(x.Vegetable)}</span>
+                        <span><i data-lucide="apple" class="w-3 h-3 mr-1 inline-block text-yellow-500"></i>ផ្លែឈើ: ${formatCurrency(x.Fruit)}</span>
+                    </div>
                 `;
                 
                 const actionButtons = isDeleted ? `
@@ -935,7 +926,7 @@
                             </div>
                             <p class="text-base font-bold text-gray-800 truncate">ចំណាយគ្រឿងទេស</p>
                             <p class="text-sm text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
-                            ${isDeleted ? '' : breakdown}
+                            ${!isDeleted ? breakdown : ''}
                         </div>
 
                         <div class="text-right ml-4">
@@ -955,93 +946,86 @@
             lucide.createIcons();
         }
 
-        // --- CRUD/DATA OPERATIONS (CRITICAL UPDATE) ---
+        // --- CRUD/DATA OPERATIONS (UNCHANGED logic, only need to ensure correct data is sent) ---
         
         async function handleFormSubmission(e, source) {
-             e.preventDefault();
-             const formElement = source === 'mobile' ? document.getElementById('mobile-expense-form') : document.getElementById('expense-form');
-             
-             const date = formElement.querySelector("#date").value;
-             // const amount = parseFloat(formElement.querySelector("#amount").value); // Calculated, but NOT sent to SheetDB!
-             
-             const meat = parseFloat(formElement.querySelector("#meat").value) || 0;
-             const vegetable = parseFloat(formElement.querySelector("#vegetable").value) || 0;
-             const fruit = parseFloat(formElement.querySelector("#fruit").value) || 0;
-             const desc = formElement.querySelector("#desc").value;
-             
-             const type = 'Expense'; 
-             
-             const submitBtn = formElement.querySelector("#submit-btn");
+            e.preventDefault();
+            const formElement = source === 'mobile' ? document.getElementById('mobile-expense-form') : document.getElementById('expense-form');
+            
+            const date = formElement.querySelector("#date").value;
+            const meat = parseFloat(formElement.querySelector("#meat").value) || 0;
+            const vegetable = parseFloat(formElement.querySelector("#vegetable").value) || 0;
+            const fruit = parseFloat(formElement.querySelector("#fruit").value) || 0;
+            const desc = formElement.querySelector("#desc").value;
+            const type = 'Expense'; 
+            
+            const submitBtn = formElement.querySelector("#submit-btn");
 
-             if (!date || (meat + vegetable + fruit) <= 0) {
-                 showToast("⚠️ សូមបំពេញកាលបរិច្ឆេទ និងត្រូវតែមានចំនួនប្រាក់ចំណាយសរុប!", 'warning');
-                 return;
-             }
+            if (!date || (meat + vegetable + fruit) <= 0) {
+                showToast("⚠️ សូមបំពេញកាលបរិច្ឆេទ និងត្រូវតែមានចំនួនប្រាក់ចំណាយសរុប!", 'warning');
+                return;
+            }
 
-             const originalText = submitBtn.textContent;
-             submitBtn.innerHTML = editingID ? '<i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-1"></i> កំពុងកែប្រែ...' : '<i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-1"></i> កំពុងបន្ថែម...';
-             lucide.createIcons();
-             submitBtn.disabled = true;
+            const originalText = submitBtn.textContent;
+            submitBtn.innerHTML = editingID ? '<i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-1"></i> កំពុងកែប្រែ...' : '<i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-1"></i> កំពុងបន្ថែម...';
+            lucide.createIcons();
+            submitBtn.disabled = true;
 
-             const recordData = {
-                 Date: date,
-                 // CRITICAL: ONLY send the individual expense values. Do NOT send 'Amount' (it's a formula).
-                 Type: type,
-                 Meat: meat, 
-                 Vegetable: vegetable, 
-                 Fruit: fruit, 
-                 Description: desc,
-                 ModifiedDate: new Date().toISOString()
-             };
+            const recordData = {
+                Date: date,
+                Type: type,
+                Meat: meat, 
+                Vegetable: vegetable, 
+                Fruit: fruit, 
+                Description: desc,
+                ModifiedDate: new Date().toISOString()
+            };
 
-             let res;
-             if (editingID) {
-                 const url = `${SHEETDB_BASE_URL}/ID/${editingID}?sheet=${SHEET_EXPENSES}`;
-                 res = await fetch(url, {
-                     method: "PATCH",
-                     headers: { "Content-Type": "application/json" },
-                     body: JSON.stringify({ data: [recordData] })
-                 });
-                 if (res.ok) showToast("✅ កំណត់ត្រាត្រូវបានកែប្រែដោយជោគជ័យ!", 'success');
-             } else {
-                 const payload = {
-                     data: [{
-                         ID: Date.now(),
-                         Date: date,
-                         // Note: We deliberately skip the 'Amount' column here
-                         Type: type,
-                         Meat: meat,
-                         Vegetable: vegetable,
-                         Fruit: fruit,
-                         Description: desc,
-                         UserEmail: user.Email,
-                         Status: "Active",
-                         ModifiedDate: new Date().toISOString()
-                     }]
-                 };
-                 res = await fetch(sheetUrl(SHEET_EXPENSES), {
-                     method: "POST",
-                     headers: { "Content-Type": "application/json" },
-                     body: JSON.stringify(payload)
-                 });
-                 if (res.ok) showToast("✅ កំណត់ត្រាត្រូវបានបន្ថែមដោយជោគជ័យ!", 'success');
-             }
+            let res;
+            if (editingID) {
+                const url = `${SHEETDB_BASE_URL}/ID/${editingID}?sheet=${SHEET_EXPENSES}`;
+                res = await fetch(url, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ data: [recordData] })
+                });
+                if (res.ok) showToast("✅ កំណត់ត្រាត្រូវបានកែប្រែដោយជោគជ័យ!", 'success');
+            } else {
+                const payload = {
+                    data: [{
+                        ID: Date.now(),
+                        Date: date,
+                        Type: type,
+                        Meat: meat,
+                        Vegetable: vegetable,
+                        Fruit: fruit,
+                        Description: desc,
+                        UserEmail: user.Email,
+                        Status: "Active",
+                        ModifiedDate: new Date().toISOString()
+                    }]
+                };
+                res = await fetch(sheetUrl(SHEET_EXPENSES), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) showToast("✅ កំណត់ត្រាត្រូវបានបន្ថែមដោយជោគជ័យ!", 'success');
+            }
 
-             if (res.ok) {
-                 if(source === 'mobile') closeFormModal();
-                 resetForm();
-                 // Delay loading data briefly to allow Google Sheet's formula to calculate 'Amount'
-                 setTimeout(loadAllData, 1500); 
-             } else {
-                 showToast("❌ ប្រតិបត្តិការបរាជ័យ។", 'error');
-             }
+            if (res.ok) {
+                if(source === 'mobile') closeFormModal();
+                resetForm();
+                setTimeout(loadAllData, 1500); 
+            } else {
+                showToast("❌ ប្រតិបត្តិការបរាជ័យ។", 'error');
+            }
 
-             submitBtn.textContent = originalText;
-             submitBtn.disabled = false;
-             lucide.createIcons();
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+            lucide.createIcons();
         }
 
-        // --- Soft Delete/Restore/Permanent Delete functions (UNCHANGED logic) ---
         async function deleteExpense(id) {
             const confirmed = await customConfirm(
                 "បញ្ជាក់ការលុបបណ្ដោះអាសន្ន",
@@ -1092,21 +1076,22 @@
 
             if (res.ok) {
                 showToast(`✅ កំណត់ត្រាត្រូវបាន${actionName}ដោយជោគជ័យ។`, 'success'); 
-                // Delay loading data briefly to allow Google Sheet's formula to update
                 setTimeout(loadAllData, 1500);
             } else {
                 showToast("❌ ប្រតិបត្តិការបរាជ័យ។", 'error'); 
             }
         }
         
-        // --- DATA EXPORT (UPDATED to use correct column names) ---
+        // --- DATA EXPORT (UNCHANGED logic) ---
         async function exportData(format) {
             const dataToExport = filteredDataForReport; 
-            const reportName = document.getElementById('report-type').options[document.getElementById('report-type').selectedIndex].text;
+            const filterMonth = document.getElementById('filter-month').value;
+            const filterYear = document.getElementById('filter-year').value;
+            const reportName = `របាយការណ៍_${MONTH_NAMES[filterMonth] || 'ទាំងអស់'}_${filterYear || 'ទាំងអស់'}`;
 
             if (dataToExport.length === 0) {
-                 showToast("⚠️ មិនមានទិន្នន័យសម្រាប់ទាញយកទេ។ សូមជ្រើសរើសរបាយការណ៍ផ្សេងទៀត។", 'warning', 6000); 
-                 return;
+                showToast("⚠️ មិនមានទិន្នន័យសម្រាប់ទាញយកទេ។ សូមជ្រើសរើសរបាយការណ៍ផ្សេងទៀត។", 'warning', 6000); 
+                return;
             }
             
             // --- EXCEL EXPORT ---
@@ -1130,8 +1115,8 @@
                 try {
                     const workbook = XLSX.utils.book_new();
                     const worksheet = XLSX.utils.json_to_sheet(structuredData);
-                    XLSX.utils.book_append_sheet(workbook, worksheet, reportName);
-                    XLSX.writeFile(workbook, `${reportName}_ExpenseReport_${new Date().toISOString().slice(0,10)}.xlsx`);
+                    XLSX.utils.book_append_sheet(workbook, worksheet, 'ExpenseData');
+                    XLSX.writeFile(workbook, `${reportName}_${new Date().toISOString().slice(0,10)}.xlsx`);
                     showToast(`✅ ឯកសារ Excel (.xlsx) ត្រូវបានទាញយកដោយជោគជ័យ!`, 'success');
                 } catch (error) {
                     console.error("Excel Export Failed:", error);
@@ -1141,65 +1126,65 @@
             } 
             // --- PDF EXPORT (UNCHANGED Logic) ---
             else if (format === 'pdf') {
-                 const { jsPDF } = window.jspdf;
-                 const inputElement = document.getElementById('data-view-section'); 
-                 
-                 document.querySelectorAll('.item-actions').forEach(el => el.style.display = 'none');
-                 
-                 const pdfBtn = document.querySelector('button[onclick="exportData(\'pdf\')"]');
-                 const originalPdfBtnContent = pdfBtn.innerHTML;
-                 pdfBtn.innerHTML = '<i data-lucide="loader-2" class="animate-spin w-4 h-4 mr-1"></i> កំពុងរៀបចំ PDF...';
-                 pdfBtn.disabled = true;
+                const { jsPDF } = window.jspdf;
+                const inputElement = document.getElementById('data-view-section'); 
+                
+                document.querySelectorAll('.item-actions').forEach(el => el.style.display = 'none');
+                
+                const pdfBtn = document.querySelector('button[onclick="exportData(\'pdf\')"]');
+                const originalPdfBtnContent = pdfBtn.innerHTML;
+                pdfBtn.innerHTML = '<i data-lucide="loader-2" class="animate-spin w-4 h-4 mr-1"></i> កំពុងរៀបចំ PDF...';
+                pdfBtn.disabled = true;
 
-                 try {
-                     const canvas = await html2canvas(inputElement, {
-                         scale: 2, 
-                         useCORS: true, 
-                         windowWidth: inputElement.scrollWidth,
-                         windowHeight: inputElement.scrollHeight
-                     });
+                try {
+                    const canvas = await html2canvas(inputElement, {
+                        scale: 2, 
+                        useCORS: true, 
+                        windowWidth: inputElement.scrollWidth,
+                        windowHeight: inputElement.scrollHeight
+                    });
 
-                     const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                     const pdf = new jsPDF('p', 'mm', 'a4');
-                     
-                     const pdfWidth = pdf.internal.pageSize.getWidth();
-                     const pdfHeight = pdf.internal.pageSize.getHeight();
-                     
-                     const imgHeight = canvas.height * pdfWidth / canvas.width;
-                     let heightLeft = imgHeight;
-                     let position = 0;
-                     
-                     pdf.setFontSize(16);
-                     pdf.text(`របាយការណ៍ចំណាយ: ${reportName}`, 10, 10);
-                     pdf.setFontSize(10);
-                     pdf.text(`កាលបរិច្ឆេទ: ${new Date().toLocaleDateString('km-KH')}`, 10, 17);
-                     
-                     position = 25; 
-                     
-                     while (heightLeft >= 0) {
-                         if (position > 25) { 
-                             pdf.addPage();
-                         }
-                         
-                         pdf.addImage(imgData, 'JPEG', 0, position - imgHeight, pdfWidth, imgHeight);
-                         
-                         heightLeft -= pdfHeight - 15; 
-                         
-                         position -= pdfHeight - 15; 
-                     }
+                    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    
+                    const imgHeight = canvas.height * pdfWidth / canvas.width;
+                    let position = 25; // Adjusted start position for header
+                    
+                    // Add Title Header
+                    pdf.setFontSize(18);
+                    pdf.text(`របាយការណ៍ចំណាយ: ${reportName}`, 10, 10);
+                    pdf.setFontSize(10);
+                    pdf.text(`កាលបរិច្ឆេទបង្កើត: ${new Date().toLocaleDateString('km-KH')}`, 10, 17);
+                    
+                    let heightLeft = imgHeight;
+                    let imgX = 0; // Start X position of image
 
-                     pdf.save(`${reportName}_Report_${new Date().toISOString().slice(0,10)}.pdf`);
-                     showToast(`✅ ឯកសារ PDF ត្រូវបានទាញយកដោយជោគជ័យ!`, 'success');
+                    while (heightLeft > 0) {
+                        pdf.addImage(imgData, 'JPEG', imgX, position, pdfWidth, imgHeight, undefined, 'FAST');
+                        heightLeft -= pdfHeight - 20; // 20mm margin
+                        position -= pdfHeight - 20;
+                        
+                        if (heightLeft > 0) { 
+                            pdf.addPage();
+                            position = 10; // New position on new page
+                        }
+                    }
 
-                 } catch(error) {
-                     console.error("PDF Export failed:", error);
-                     showToast("❌ ការទាញយក PDF បរាជ័យ។", 'error');
-                 } finally {
-                     document.querySelectorAll('.item-actions').forEach(el => el.style.display = 'flex');
-                     pdfBtn.innerHTML = originalPdfBtnContent; 
-                     pdfBtn.disabled = false;
-                     lucide.createIcons(); 
-                 }
+                    pdf.save(`${reportName}_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+                    showToast(`✅ ឯកសារ PDF ត្រូវបានទាញយកដោយជោគជ័យ!`, 'success');
+
+                } catch(error) {
+                    console.error("PDF Export failed:", error);
+                    showToast("❌ ការទាញយក PDF បរាជ័យ។", 'error');
+                } finally {
+                    document.querySelectorAll('.item-actions').forEach(el => el.style.display = 'flex');
+                    pdfBtn.innerHTML = originalPdfBtnContent; 
+                    pdfBtn.disabled = false;
+                    lucide.createIcons(); 
+                }
             }
         }
 
@@ -1208,19 +1193,18 @@
             document.getElementById("expense-list").innerHTML = '<p class="text-center text-gray-500 py-10 flex items-center justify-center"><i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-3"></i> កំពុងទាញទិន្នន័យ...</p>';
 
             try {
-                 const res = await fetch(sheetUrl(SHEET_EXPENSES));
-                 const data = await res.json();
-                 
-                 // CRITICAL: Filter records and ensure the necessary fields exist
-                 // Note: We check for 'Amount' existence which should be output by the formula in the sheet.
-                 allExpenses = data.filter(x => x.ID && (x.Type === 'Expense' || x.Status === 'Deleted') && x.Amount !== undefined); 
-                 
-                 calculateSummary(allExpenses); 
-                 filterRecords(); 
+                const res = await fetch(sheetUrl(SHEET_EXPENSES));
+                const data = await res.json();
+                
+                allExpenses = data.filter(x => x.ID && (x.Type === 'Expense' || x.Status === 'Deleted') && x.Amount !== undefined); 
+                
+                calculateSummary(allExpenses); 
+                populateDateFilters(); // CRITICAL: Populate filters after data load
+                filterRecords(); 
             } catch (error) {
-                 document.getElementById("expense-list").innerHTML = '<p class="text-center text-red-500 py-10 text-lg">❌ មានបញ្ហាក្នុងការទាញទិន្នន័យ។ សូមពិនិត្យមើល Column headers ក្នុង SheetDB</p>';
-                 console.error("Error loading expenses:", error);
-                 showToast("❌ កំហុសក្នុងការផ្ទុកទិន្នន័យចំណាយ! (ពិនិត្យ Column names ក្នុង SheetDB)", 'error', 6000); 
+                document.getElementById("expense-list").innerHTML = '<p class="text-center text-red-500 py-10 text-lg">❌ មានបញ្ហាក្នុងការទាញទិន្នន័យ។ សូមពិនិត្យមើល Column headers ក្នុង SheetDB</p>';
+                console.error("Error loading expenses:", error);
+                showToast("❌ កំហុសក្នុងការផ្ទុកទិន្នន័យចំណាយ! (ពិនិត្យ Column names ក្នុង SheetDB)", 'error', 6000); 
             }
         }
         
