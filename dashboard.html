@@ -122,17 +122,25 @@
         #dashboard-expense-form-container {
             display: none !important;
         }
+        /* Report form is hidden on mobile by default, but always displayed on desktop in Report tab */
         #report-expense-form-container {
-            display: none;
+            display: none; /* Hide on mobile by default */
+        }
+        
+        /* HIDE FILTER CONTROLS ON MOBILE */
+        @media (max-width: 1023px) {
+            #report-controls {
+                display: none !important;
+            }
         }
 
         /* Desktop Layout: Report Form is visible on Desktop by default */
         @media (min-width: 1024px) {
             #report-tab #report-expense-form-container {
-                display: block; 
+                display: block; /* Show the form container on Desktop/Report tab */
             }
             #report-tab #data-view-section {
-                grid-column: span 3 / span 3; 
+                grid-column: span 3 / span 3; /* List takes 3 columns */
             }
             /* Hide the mobile modal on desktop */
             #mobileFormModal, #mobileExportModal {
@@ -140,36 +148,6 @@
             }
         }
 
-        /* --- MOBILE SPECIFIC UX/UI --- */
-        #show-list-btn {
-            display: none;
-        }
-        .list-hidden-container {
-             display: none;
-        }
-        @media (max-width: 1023px) {
-            /* Hide list and controls by default on mobile */
-            #report-controls, #expense-list {
-                display: none !important;
-            }
-            /* Show the toggle button */
-            #show-list-btn {
-                display: block;
-            }
-            /* Show list and controls when the container is marked as showing list */
-            #report-tab.show-mobile-list #report-controls,
-            #report-tab.show-mobile-list #expense-list {
-                display: block !important;
-            }
-            /* Hide toggle button when list is shown */
-            #report-tab.show-mobile-list #show-list-btn {
-                display: none !important;
-            }
-            /* Hide Export Buttons inside controls on mobile */
-            #report-controls .flex-wrap {
-                display: none !important;
-            }
-        }
         /* Print Styles */
         @media print {
             body {
@@ -182,7 +160,7 @@
             .expense-item { page-break-inside: avoid; }
 
             /* Hide unnecessary elements for printing */
-            header, #fab-add-btn, #fab-export-btn, .item-actions, #report-expense-form-container, #report-controls, #report-tabs, #add-report-btn, #show-list-btn { display: none !important; }
+            header, #fab-add-btn, #fab-export-btn, .item-actions, #report-expense-form-container, #report-controls, #report-tabs, #add-report-btn { display: none !important; }
 
             /* Force the report content to show up for printing */
             #report-tab { display: block !important; }
@@ -323,12 +301,6 @@
                             <h2 class="text-xl sm:text-2xl font-bold text-gray-700 mb-2 sm:mb-0">បញ្ជីប្រតិបត្តិការចំណាយ</h2>
                             <button onclick="switchView('trash')" id="trash-btn" class="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition flex items-center font-semibold text-sm shadow-sm">
                                 <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប
-                            </button>
-                        </div>
-                        
-                        <div id="show-list-btn" class="mb-4">
-                            <button onclick="toggleMobileList()" class="w-full bg-indigo-600 text-white px-4 py-3 rounded-xl font-semibold shadow-lg hover:bg-indigo-700 transition flex items-center justify-center">
-                                <i data-lucide="list-ordered" class="w-5 h-5 mr-2"></i> មើលបញ្ជីប្រតិបត្តិការ
                             </button>
                         </div>
 
@@ -578,28 +550,13 @@
         let activeFormElement = null;
 
         const dayNames = ["អាទិត្យ", "ច័ន្ទ", "អង្គារ", "ពុធ", "ព្រហស្បតិ៍", "សុក្រ", "សៅរ៍"];
-        
+
         // --- NEW: Export Modal Functions ---
         function openExportModal() {
             document.getElementById('mobileExportModal').classList.add('active');
         }
         function closeExportModal() {
             document.getElementById('mobileExportModal').classList.remove('active');
-        }
-
-        // --- NEW: Toggle Mobile List Function ---
-        function toggleMobileList() {
-            const reportTab = document.getElementById('report-tab');
-            reportTab.classList.toggle('show-mobile-list');
-            
-            // If list is shown, scroll to controls and load data
-            if(reportTab.classList.contains('show-mobile-list')) {
-                filterRecords();
-                const controls = document.getElementById('report-controls');
-                if (controls) {
-                    controls.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            }
         }
 
         // --- NEW: TAB SWITCHING FUNCTION ---
@@ -620,7 +577,7 @@
             activeBtn.classList.remove('text-gray-500', 'border-transparent', 'hover:border-gray-300', 'hover:text-gray-700');
             activeBtn.classList.add('text-indigo-600', 'border-indigo-600');
 
-            // Handle FAB visibility (only on screens < 1024px)
+            // Handle FAB visibility 
             const fabBtnAdd = document.getElementById('fab-add-btn');
             const fabBtnExport = document.getElementById('fab-export-btn');
             const isDesktop = window.innerWidth >= 1024;
@@ -640,13 +597,14 @@
             if (tabName === 'report') {
                 const reportForm = document.getElementById('report-form');
                 if (reportForm) {
-                    resetForm(reportForm); 
+                    resetForm(reportForm); // Reset the desktop form
                     if (isDesktop) activeFormElement = reportForm; 
                 }
                 
-                document.getElementById('filter-day').value = 'all';
-                document.getElementById('filter-month').value = 'all';
-                document.getElementById('filter-year').value = 'all';
+                // Reset all filters
+                if(document.getElementById('filter-day')) document.getElementById('filter-day').value = 'all';
+                if(document.getElementById('filter-month')) document.getElementById('filter-month').value = 'all';
+                if(document.getElementById('filter-year')) document.getElementById('filter-year').value = 'all';
                 
                 filterRecords();
             } else {
@@ -1203,18 +1161,8 @@
             const reportTab = document.getElementById('report-tab');
             const isMobile = window.innerWidth < 1024;
             
-            // On mobile, if the list is not explicitly shown, hide it (CSS handles this, but set button visibility)
-            if (isMobile && !reportTab.classList.contains('show-mobile-list')) {
-                 document.getElementById('show-list-btn').style.display = 'block';
-                 list.innerHTML = ''; // Clear content when hidden
-                 return;
-            } else if (isMobile) {
-                // If mobile and list is shown, show back button and filters
-                document.getElementById('show-list-btn').innerHTML = '<i data-lucide="arrow-left" class="w-5 h-5 mr-2"></i> លាក់បញ្ជី';
-                document.getElementById('show-list-btn').onclick = () => { toggleMobileList(); };
-            }
+            // On mobile, the list is now always visible (CSS was changed)
             
-            // --- Rendering Logic ---
             if (data.length === 0) {
                 list.innerHTML = `<p class="text-center text-gray-500 py-10 text-xl border-dashed border-2 border-gray-300 rounded-lg m-4 bg-gray-50">
                     ${isTrashView ? '🗑️ មិនមានទិន្នន័យក្នុងធុងសំរាមទេ។' : '✅ មិនមានកំណត់ត្រាចំណាយសកម្មទេ។'}
@@ -1365,7 +1313,7 @@
                  if(source === 'mobile') closeFormModal();
                  
                  resetForm(formElement); // Reset the specific form that submitted
-                 // Delay loading data briefly to allow Google Sheet's formula to update
+                 // Delay loading data briefly to allow Google Sheet's formula to calculate 'Amount'
                  setTimeout(loadAllData, 1500);
              } else {
                  showToast("❌ ប្រតិបត្តិការបរាជ័យ។", 'error');
@@ -1438,7 +1386,7 @@
         async function exportData(format) {
             const dataToExport = filteredDataForReport;
             
-            // Reconstruct report name from individual filters
+            // Reconstruct report name from individual filters (Use current filter states, even if hidden)
             const dayText = document.getElementById('filter-day').options[document.getElementById('filter-day').selectedIndex].text;
             const monthText = document.getElementById('filter-month').options[document.getElementById('filter-month').selectedIndex].text;
             const yearText = document.getElementById('filter-year').options[document.getElementById('filter-year').selectedIndex].text;
@@ -1494,20 +1442,6 @@
 
 
                  try {
-                     // Temporary hide mobile list toggle for clean PDF capture
-                     const showListBtn = document.getElementById('show-list-btn');
-                     if(showListBtn) showListBtn.style.display = 'none';
-
-                     // IMPORTANT: Ensure list and controls are temporarily visible for PDF generation
-                     const reportTab = document.getElementById('report-tab');
-                     const isMobile = window.innerWidth < 1024;
-                     let originalMobileListState = false;
-                     if (isMobile) {
-                        originalMobileListState = reportTab.classList.contains('show-mobile-list');
-                        reportTab.classList.add('show-mobile-list');
-                     }
-
-
                      const canvas = await html2canvas(inputElement, {
                          scale: 2,
                          useCORS: true,
@@ -1556,13 +1490,6 @@
                          pdfBtn.innerHTML = '<i data-lucide="file-text" class="w-4 h-4 mr-1"></i> ទាញយក PDF';
                          pdfBtn.disabled = false;
                      }
-                     // Restore mobile list state
-                     const reportTab = document.getElementById('report-tab');
-                     if (window.innerWidth < 1024) {
-                         reportTab.classList.remove('show-mobile-list');
-                     }
-                     const showListBtn = document.getElementById('show-list-btn');
-                     if(showListBtn) showListBtn.style.display = 'block';
                      
                      lucide.createIcons();
                  }
