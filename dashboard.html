@@ -87,14 +87,23 @@
         }
 
         /* Improved Form Visibility Logic: Hide/Show based on screen size */
-        #main-expense-form-container {
+        /* Dashboard form is only active on desktop */
+        #dashboard-expense-form-container {
+            display: none;
+        }
+        /* Report form is only active on desktop */
+        #report-expense-form-container {
             display: none;
         }
         @media (min-width: 1024px) {
-            #main-expense-form-container {
+            #dashboard-tab #dashboard-expense-form-container {
+                display: block !important;
+            }
+            #report-tab #report-expense-form-container {
                 display: block !important;
             }
         }
+
         /* Hide the mobile modal on desktop */
         @media (min-width: 1024px) {
             #mobileFormModal {
@@ -114,7 +123,7 @@
             .expense-item { page-break-inside: avoid; }
 
             /* Hide unnecessary elements for printing */
-            header, #fab-add-btn, .item-actions, #main-expense-form-container, #report-controls, #report-tabs { display: none !important; }
+            header, #fab-add-btn, .item-actions, #dashboard-expense-form-container, #report-expense-form-container, #report-controls, #report-tabs { display: none !important; }
 
             /* Force the report content to show up for printing */
             #report-tab { display: block !important; }
@@ -234,7 +243,7 @@
             </section>
 
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                <section id="main-expense-form-container" class="lg:col-span-1 bg-white p-6 rounded-2xl card-shadow h-fit lg:sticky lg:top-24 border border-gray-100">
+                <section id="dashboard-expense-form-container" class="lg:col-span-1 bg-white p-6 rounded-2xl card-shadow h-fit lg:sticky lg:top-24 border border-gray-100">
                     <h2 class="text-2xl font-bold mb-6 text-indigo-600 border-b pb-3" id="main-form-title">➕ បញ្ចូលកំណត់ត្រាថ្មី</h2>
                     <form id="expense-form" class="space-y-4">
                     </form>
@@ -249,45 +258,78 @@
         </div>
 
         <div id="report-tab" class="tab-content" style="display: none;">
-            <section id="data-view-section" class="bg-white p-4 sm:p-6 rounded-2xl card-shadow border border-gray-100">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-2">
-                    <h2 class="text-xl sm:text-2xl font-bold text-gray-700 mb-2 sm:mb-0">បញ្ជីប្រតិបត្តិការចំណាយ</h2>
-                    <button onclick="switchView('trash')" id="trash-btn" class="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition flex items-center font-semibold text-sm shadow-sm">
-                        <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប
-                    </button>
-                </div>
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                <section id="report-expense-form-container" class="lg:col-span-1 bg-white p-6 rounded-2xl card-shadow h-fit lg:sticky lg:top-24 border border-gray-100">
+                    <h2 class="text-2xl font-bold mb-6 text-indigo-600 border-b pb-3" id="report-form-title">➕ បញ្ចូលកំណត់ត្រាថ្មី</h2>
+                    <form id="report-form" class="space-y-4">
+                    </form>
+                </section>
 
-                <div id="report-controls" class="mb-6 p-4 border rounded-xl bg-gray-50">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                        <div class="sm:col-span-1">
-                            <label for="report-type" class="block text-xs font-medium text-gray-500 mb-1">របាយការណ៍សរុបតាម:</label>
-                            <select id="report-type" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()">
-                                <option value="all">ទាំងអស់</option>
-                                <option value="daily">ប្រចាំថ្ងៃ</option>
-                                <option value="monthly">ប្រចាំខែ</option>
-                                <option value="yearly">ប្រចាំឆ្នាំ</option>
-                            </select>
+                <section id="data-view-section" class="lg:col-span-3 bg-white p-4 sm:p-6 rounded-2xl card-shadow border border-gray-100">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-2">
+                        <h2 class="text-xl sm:text-2xl font-bold text-gray-700 mb-2 sm:mb-0">បញ្ជីប្រតិបត្តិការចំណាយ</h2>
+                        <button onclick="switchView('trash')" id="trash-btn" class="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition flex items-center font-semibold text-sm shadow-sm">
+                            <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប
+                        </button>
+                    </div>
+
+                    <div id="report-controls" class="mb-6 p-4 border rounded-xl bg-gray-50">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                            <div class="sm:col-span-1">
+                                <label for="report-type" class="block text-xs font-medium text-gray-500 mb-1">របាយការណ៍សរុបតាម:</label>
+                                <select id="report-type" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()">
+                                    <option value="all">ទាំងអស់</option>
+                                    <optgroup label="តាមថ្ងៃ">
+                                        <option value="daily">ប្រចាំថ្ងៃ</option>
+                                        <option value="day_mon">ច័ន្ទ</option>
+                                        <option value="day_tue">អង្គារ</option>
+                                        <option value="day_wed">ពុធ</option>
+                                        <option value="day_thu">ព្រហស្បតិ៍</option>
+                                        <option value="day_fri">សុក្រ</option>
+                                        <option value="day_sat">សៅរ៍</option>
+                                        <option value="day_sun">អាទិត្យ</option>
+                                    </optgroup>
+                                    <optgroup label="តាមខែ">
+                                        <option value="monthly">ប្រចាំខែ</option>
+                                        <option value="month_0">មករា</option>
+                                        <option value="month_1">កុម្ភៈ</option>
+                                        <option value="month_2">មីនា</option>
+                                        <option value="month_3">មេសា</option>
+                                        <option value="month_4">ឧសភា</option>
+                                        <option value="month_5">មិថុនា</option>
+                                        <option value="month_6">កក្កដា</option>
+                                        <option value="month_7">សីហា</option>
+                                        <option value="month_8">កញ្ញា</option>
+                                        <option value="month_9">តុលា</option>
+                                        <option value="month_10">វិច្ឆិកា</option>
+                                        <option value="month_11">ធ្នូ</option>
+                                    </optgroup>
+                                    <optgroup label="តាមឆ្នាំ">
+                                        <option value="yearly">ប្រចាំឆ្នាំ</option>
+                                        </optgroup>
+                                </select>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label for="search-input" class="block text-xs font-medium text-gray-500 mb-1">ស្វែងរក (តាមពិពណ៌នា):</label>
+                                <input type="text" id="search-input" oninput="filterRecords()" placeholder="ឧ. ទិញម្ហូប សម្រាប់ពិធី" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
                         </div>
-                        <div class="sm:col-span-2">
-                            <label for="search-input" class="block text-xs font-medium text-gray-500 mb-1">ស្វែងរក (តាមពិពណ៌នា):</label>
-                            <input type="text" id="search-input" oninput="filterRecords()" placeholder="ឧ. ទិញម្ហូប សម្រាប់ពិធី" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+
+                        <div class="flex flex-wrap justify-end gap-3 border-t pt-3 mt-3">
+                            <button onclick="exportData('pdf')" class="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-red-700 transition text-sm font-semibold shadow-md">
+                                <i data-lucide="file-text" class="w-4 h-4 mr-1"></i> ទាញយក PDF
+                            </button>
+                            <button onclick="exportData('excel')" class="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-green-700 transition text-sm font-semibold shadow-md">
+                                <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1"></i> ទាញយក Excel
+                            </button>
                         </div>
                     </div>
 
-                    <div class="flex flex-wrap justify-end gap-3 border-t pt-3 mt-3">
-                        <button onclick="exportData('pdf')" class="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-red-700 transition text-sm font-semibold shadow-md">
-                            <i data-lucide="file-text" class="w-4 h-4 mr-1"></i> ទាញយក PDF
-                        </button>
-                        <button onclick="exportData('excel')" class="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-green-700 transition text-sm font-semibold shadow-md">
-                            <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1"></i> ទាញយក Excel
-                        </button>
+                    <div id="expense-list" class="space-y-3 max-h-[65vh] overflow-y-auto pr-2 hide-scrollbar">
+                        <p class="text-center text-gray-500 py-10">កំពុងទាញទិន្នន័យ...</p>
                     </div>
-                </div>
-
-                <div id="expense-list" class="space-y-3 max-h-[65vh] overflow-y-auto pr-2 hide-scrollbar">
-                    <p class="text-center text-gray-500 py-10">កំពុងទាញទិន្នន័យ...</p>
-                </div>
-            </section>
+                </section>
+            </div>
         </div>
     </main>
 
@@ -442,11 +484,13 @@
         const user = JSON.parse(localStorage.getItem("user"));
         let allExpenses = [];
         let currentView = 'active';
-        let activeTab = 'dashboard'; // NEW: Track active tab
+        let activeTab = 'dashboard';
         let editingID = null;
         let activeDetailRecord = null;
         let customConfirmResolver;
         let activeFormElement = null;
+
+        const dayNames = ["អាទិត្យ", "ច័ន្ទ", "អង្គារ", "ពុធ", "ព្រហស្បតិ៍", "សុក្រ", "សៅរ៍"];
 
         // --- NEW: TAB SWITCHING FUNCTION ---
         function setActiveTab(tabName) {
@@ -466,20 +510,29 @@
             activeBtn.classList.remove('text-gray-500', 'border-transparent', 'hover:border-gray-300', 'hover:text-gray-700');
             activeBtn.classList.add('text-indigo-600', 'border-indigo-600');
 
-            // Hide FAB button in Report tab on mobile (since it's a list view)
+            // Handle FAB visibility on mobile
             if (window.innerWidth < 1024) {
-                document.getElementById('fab-add-btn').style.display = tabName === 'dashboard' ? 'inline-flex' : 'none';
+                document.getElementById('fab-add-btn').style.display = 'inline-flex';
+            } else if (tabName === 'report' && window.innerWidth >= 1024) {
+                // Hide FAB on desktop report view since there's a dedicated form container
+                document.getElementById('fab-add-btn').style.display = 'none';
+            } else {
+                document.getElementById('fab-add-btn').style.display = 'inline-flex';
             }
 
             lucide.createIcons();
             // In case of switching to report tab, ensure a fresh view is loaded
             if (tabName === 'report') {
+                 // Ensure the report form gets the same initial state as dashboard form
+                 resetForm(document.getElementById('report-form'));
                  filterRecords();
+            } else {
+                 resetForm(document.getElementById('expense-form'));
             }
         }
 
 
-        // --- NEW: TOAST NOTIFICATION FUNCTION (UNCHANGED) ---
+        // --- TOAST NOTIFICATION FUNCTION (UNCHANGED) ---
         function showToast(message, type = 'info', duration = 4000) {
             const container = document.getElementById('toast-container');
             if (!container) return;
@@ -512,7 +565,7 @@
             }, duration);
         }
 
-        // --- NEW: CUSTOM CONFIRMATION MODAL FUNCTION (UNCHANGED) ---
+        // --- CUSTOM CONFIRMATION MODAL FUNCTION (UNCHANGED) ---
         function customConfirm(title, message, actionText, type = 'delete') {
             return new Promise((resolve) => {
                 const modal = document.getElementById('customConfirmModal');
@@ -632,7 +685,7 @@
             activeDetailRecord = null;
         }
 
-        // --- FORM LOGIC (UNCHANGED logic) ---
+        // --- FORM LOGIC (MODIFIED to handle two forms) ---
 
         function updateAmountSummary(formElement) {
             const meat = parseFloat(formElement.querySelector("#meat").value) || 0;
@@ -661,7 +714,7 @@
         function setupForms() {
             const formTemplate = document.getElementById('form-template').innerHTML;
 
-            // Setup Desktop Form
+            // Setup Dashboard Form
             const desktopForm = document.getElementById('expense-form');
             desktopForm.innerHTML = formTemplate;
             desktopForm.addEventListener('submit', (e) => handleFormSubmission(e, 'desktop'));
@@ -669,6 +722,14 @@
                 input.addEventListener('input', () => updateAmountSummary(desktopForm));
             });
 
+            // Setup Report Form (NEW)
+            const reportForm = document.getElementById('report-form');
+            reportForm.innerHTML = formTemplate;
+            reportForm.addEventListener('submit', (e) => handleFormSubmission(e, 'report-desktop'));
+            reportForm.querySelectorAll('.expense-input').forEach(input => {
+                input.addEventListener('input', () => updateAmountSummary(reportForm));
+            });
+            
             // Setup Mobile Form
             const mobileForm = document.getElementById('mobile-expense-form');
             mobileForm.innerHTML = formTemplate;
@@ -679,34 +740,37 @@
         }
 
         function openFormModal() {
-             resetForm();
+             resetForm(document.getElementById('mobile-expense-form'));
              document.getElementById('mobile-form-title').textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
              document.getElementById('mobileFormModal').classList.add('active');
              activeFormElement = document.getElementById('mobile-expense-form');
-             if(activeFormElement) activeFormElement.reset();
              lucide.createIcons();
         }
 
         function closeFormModal() {
-            resetForm();
+            resetForm(document.getElementById('mobile-expense-form'));
             document.getElementById('mobileFormModal').classList.remove('active');
             activeFormElement = null;
         }
 
         function populateForm(formElement, record) {
             formElement.querySelector("#date").value = record.Date;
-            // Use the specific columns for populating the input fields
             formElement.querySelector("#meat").value = parseFloat(record.Meat) || 0;
             formElement.querySelector("#vegetable").value = parseFloat(record.Vegetable) || 0;
             formElement.querySelector("#fruit").value = parseFloat(record.Fruit) || 0;
             formElement.querySelector("#desc").value = record.Description;
 
-            // Update Total Amount display after populating sub-fields
             updateAmountSummary(formElement);
 
             const isEditing = record !== null;
             const submitBtn = formElement.querySelector('#submit-btn');
             const cancelBtn = formElement.querySelector('#cancel-btn');
+            
+            // Determine which title to update
+            const dashboardTitle = document.getElementById('main-form-title');
+            const reportTitle = document.getElementById('report-form-title');
+            const mobileTitle = document.getElementById('mobile-form-title');
+
 
             if (isEditing) {
                 submitBtn.innerHTML = '<i data-lucide="save" class="w-5 h-5 mr-1"></i> រក្សាទុកការកែប្រែ';
@@ -714,9 +778,10 @@
                 submitBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
                 cancelBtn.classList.remove('hidden');
 
-                document.getElementById('main-form-title').textContent = "📝 កែប្រែកំណត់ត្រា";
-                const mobileTitle = document.getElementById('mobile-form-title');
-                if(mobileTitle) mobileTitle.textContent = "📝 កែប្រែកំណត់ត្រា";
+                if (dashboardTitle) dashboardTitle.textContent = "📝 កែប្រែកំណត់ត្រា";
+                if (reportTitle) reportTitle.textContent = "📝 កែប្រែកំណត់ត្រា";
+                if (mobileTitle) mobileTitle.textContent = "📝 កែប្រែកំណត់ត្រា";
+                
             } else {
                 resetFormUI(formElement);
             }
@@ -732,37 +797,44 @@
              submitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
              cancelBtn.classList.add('hidden');
 
-             document.getElementById('main-form-title').textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
+             const dashboardTitle = document.getElementById('main-form-title');
+             const reportTitle = document.getElementById('report-form-title');
              const mobileTitle = document.getElementById('mobile-form-title');
-             if(mobileTitle) mobileTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
 
-             // Also reset the amount summary
+             if (dashboardTitle) dashboardTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
+             if (reportTitle) reportTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
+             if (mobileTitle) mobileTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
+
              updateAmountSummary(formElement);
         }
 
-        function resetForm() {
+        function resetForm(formToReset = null) {
             editingID = null;
-            const desktopForm = document.getElementById('expense-form');
-            const mobileForm = document.getElementById('mobile-expense-form');
-            desktopForm.reset();
-            mobileForm.reset();
-            resetFormUI(desktopForm);
-            resetFormUI(mobileForm);
+            
+            // Reset specified form or both main forms if none specified
+            if (formToReset) {
+                formToReset.reset();
+                resetFormUI(formToReset);
+            } else {
+                const desktopForm = document.getElementById('expense-form');
+                const reportForm = document.getElementById('report-form');
+                const mobileForm = document.getElementById('mobile-expense-form');
+                
+                if(desktopForm) { desktopForm.reset(); resetFormUI(desktopForm); }
+                if(reportForm) { reportForm.reset(); resetFormUI(reportForm); }
+                if(mobileForm) { mobileForm.reset(); resetFormUI(mobileForm); }
+            }
+            
             activeFormElement = null;
             lucide.createIcons();
-
-            // Ensure summary is zero after reset
-            updateAmountSummary(desktopForm);
-            updateAmountSummary(mobileForm);
         }
 
         function handleCardClick(record) {
              const isMobile = window.innerWidth < 1024;
-             if (isMobile || activeTab === 'report') { // Allow quick edit on report tab too, regardless of size
-                 // In mobile/Report, clicking the card means open for quick edit/detail
+             if (isMobile || activeTab === 'report') {
+                 // Open modal for editing/viewing on mobile or if on the report tab (regardless of size)
                  editExpense(record.ID, false);
              } else {
-                 // In desktop/dashboard, clicking the card means open detail modal
                  openDetailModal(record);
              }
         }
@@ -779,11 +851,10 @@
 
             const isMobile = window.innerWidth < 1024;
 
-            if (isMobile || activeTab === 'report') { // Use mobile form modal logic for report view on desktop too for consistency
+            if (isMobile || activeTab === 'report') {
                 openFormModal();
                 activeFormElement = document.getElementById('mobile-expense-form');
             } else {
-                // When editing from the main dashboard (only active on desktop)
                 activeFormElement = document.getElementById('expense-form');
             }
 
@@ -791,8 +862,9 @@
                 populateForm(activeFormElement, record);
             }
 
-            if(scrollToForm && !isMobile && activeTab === 'dashboard') {
-                 document.getElementById("main-expense-form-container").scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if(scrollToForm && !isMobile) {
+                const targetId = activeTab === 'dashboard' ? "dashboard-expense-form-container" : "report-expense-form-container";
+                 document.getElementById(targetId).scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
@@ -801,12 +873,9 @@
             const num = parseFloat(amount) || 0;
             return `${num.toLocaleString('km-KH')} ៛`;
         }
-
+        
         /**
          * Checks if two date strings are the same day (ignoring time).
-         * @param {string} date1 - ISO date string.
-         * @param {string} date2 - ISO date string.
-         * @returns {boolean}
          */
         function isSameDay(date1, date2) {
             const d1 = new Date(date1);
@@ -816,7 +885,7 @@
                    d1.getDate() === d2.getDate();
         }
 
-        // --- SUMMARY & FILTERING LOGIC (UPDATED for Today/Monthly/Yearly) ---
+        // --- SUMMARY & FILTERING LOGIC (UPDATED) ---
         let filteredDataForReport = [];
 
         function calculateSummary(data) {
@@ -869,6 +938,31 @@
             document.getElementById('total-count-summary').textContent = `${totalCount} កំណត់ត្រា`;
         }
 
+        // NEW: Populate years dynamically for filtering
+        function populateYearOptions(data) {
+            const select = document.getElementById('report-type');
+            const yearsOptionGroup = select.querySelector('optgroup[label="តាមឆ្នាំ"]');
+            
+            // Clear existing custom year options (keep default 'yearly')
+            let existingYearOptions = yearsOptionGroup.querySelectorAll('option:not([value="yearly"])');
+            existingYearOptions.forEach(opt => opt.remove());
+
+            const uniqueYears = new Set();
+            data.filter(x => x.Status === "Active").forEach(x => {
+                const year = new Date(x.Date).getFullYear();
+                uniqueYears.add(year);
+            });
+            
+            const sortedYears = Array.from(uniqueYears).sort((a, b) => b - a);
+
+            sortedYears.forEach(year => {
+                const option = document.createElement('option');
+                option.value = `year_${year}`;
+                option.textContent = year;
+                yearsOptionGroup.appendChild(option);
+            });
+        }
+
         function filterRecords() {
             const reportType = document.getElementById('report-type').value;
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
@@ -884,9 +978,13 @@
             const today = new Date();
             const currentYear = today.getFullYear();
             const currentMonth = today.getMonth();
+            const currentDay = today.getDay(); // 0 (Sun) to 6 (Sat)
 
             filtered = filtered.filter(x => {
                 const recordDate = new Date(x.Date);
+                const recordYear = recordDate.getFullYear();
+                const recordMonth = recordDate.getMonth();
+                const recordDay = recordDate.getDay();
                 const description = (x.Description || '').toLowerCase();
 
                 let matchesReport = true;
@@ -897,14 +995,38 @@
                         matchesReport = isSameDay(x.Date, today);
                         break;
                     case 'monthly':
-                        matchesReport = recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
+                        matchesReport = recordMonth === currentMonth && recordYear === currentYear;
                         break;
                     case 'yearly':
-                        matchesReport = recordDate.getFullYear() === currentYear;
+                        matchesReport = recordYear === currentYear;
                         break;
-                    case 'all':
+                    // Filter by specific day of the week
+                    case 'day_sun': matchesReport = recordDay === 0; break;
+                    case 'day_mon': matchesReport = recordDay === 1; break;
+                    case 'day_tue': matchesReport = recordDay === 2; break;
+                    case 'day_wed': matchesReport = recordDay === 3; break;
+                    case 'day_thu': matchesReport = recordDay === 4; break;
+                    case 'day_fri': matchesReport = recordDay === 5; break;
+                    case 'day_sat': matchesReport = recordDay === 6; break;
+                    // Filter by specific month
+                    case 'month_0': matchesReport = recordMonth === 0 && recordYear === currentYear; break;
+                    case 'month_1': matchesReport = recordMonth === 1 && recordYear === currentYear; break;
+                    case 'month_2': matchesReport = recordMonth === 2 && recordYear === currentYear; break;
+                    case 'month_3': matchesReport = recordMonth === 3 && recordYear === currentYear; break;
+                    case 'month_4': matchesReport = recordMonth === 4 && recordYear === currentYear; break;
+                    case 'month_5': matchesReport = recordMonth === 5 && recordYear === currentYear; break;
+                    case 'month_6': matchesReport = recordMonth === 6 && recordYear === currentYear; break;
+                    case 'month_7': matchesReport = recordMonth === 7 && recordYear === currentYear; break;
+                    case 'month_8': matchesReport = recordMonth === 8 && recordYear === currentYear; break;
+                    case 'month_9': matchesReport = recordMonth === 9 && recordYear === currentYear; break;
+                    case 'month_10': matchesReport = recordMonth === 10 && recordYear === currentYear; break;
+                    case 'month_11': matchesReport = recordMonth === 11 && recordYear === currentYear; break;
+                    // Filter by specific year
                     default:
-                        matchesReport = true;
+                        if (reportType.startsWith('year_')) {
+                            const targetYear = parseInt(reportType.split('_')[1]);
+                            matchesReport = recordYear === targetYear;
+                        }
                         break;
                 }
 
@@ -937,10 +1059,11 @@
             lucide.createIcons();
         }
 
-        // --- RENDER LIST (UPDATED to use Amount and show breakdown) ---
+        // --- RENDER LIST (UPDATED to show day name and 'Today' badge) ---
         function renderExpenseList(data) {
             const list = document.getElementById("expense-list");
             const isTrashView = currentView === 'trash';
+            const today = new Date().toISOString().slice(0, 10);
 
             if (data.length === 0) {
                 list.innerHTML = `<p class="text-center text-gray-500 py-10 text-xl border-dashed border-2 border-gray-300 rounded-lg m-4 bg-gray-50">
@@ -955,6 +1078,11 @@
                 const badgeClass = isDeleted ? 'badge-deleted' : 'badge-expense';
                 const amountTextClass = isDeleted ? 'text-gray-500 line-through' : 'text-red-600';
                 const icon = 'arrow-down-left';
+
+                const recordDate = new Date(x.Date + 'T00:00:00'); // Add time to fix potential timezone issues with date objects
+                const dayName = dayNames[recordDate.getDay()];
+                const isToday = x.Date === today;
+                const dateDisplay = `${dayName} | ${x.Date}${isToday ? ' <span class="font-bold text-red-500">(ថ្ងៃនេះ)</span>' : ''}`;
 
                 const recordJson = JSON.stringify(x).split("'").join("\\'");
 
@@ -990,7 +1118,7 @@
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center space-x-2 mb-1">
                                 <span class="text-xs font-medium px-2 py-0.5 rounded-full ${badgeClass}">ចំណាយ</span>
-                                <span class="text-sm text-gray-500">${x.Date}</span>
+                                <span class="text-sm text-gray-50">${dateDisplay}</span>
                             </div>
                             <p class="text-base font-bold text-gray-800 truncate">ចំណាយគ្រឿងទេស</p>
                             <p class="text-sm text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
@@ -1018,11 +1146,10 @@
 
         async function handleFormSubmission(e, source) {
              e.preventDefault();
-             const formElement = source === 'mobile' ? document.getElementById('mobile-expense-form') : document.getElementById('expense-form');
+             // Determine which form submitted the data
+             const formElement = source === 'mobile' ? document.getElementById('mobile-expense-form') : (source === 'report-desktop' ? document.getElementById('report-form') : document.getElementById('expense-form'));
 
              const date = formElement.querySelector("#date").value;
-             // const amount = parseFloat(formElement.querySelector("#amount").value); // Calculated, but NOT sent to SheetDB!
-
              const meat = parseFloat(formElement.querySelector("#meat").value) || 0;
              const vegetable = parseFloat(formElement.querySelector("#vegetable").value) || 0;
              const fruit = parseFloat(formElement.querySelector("#fruit").value) || 0;
@@ -1044,7 +1171,6 @@
 
              const recordData = {
                  Date: date,
-                 // CRITICAL: ONLY send the individual expense values. Do NOT send 'Amount' (it's a formula).
                  Type: type,
                  Meat: meat,
                  Vegetable: vegetable,
@@ -1067,7 +1193,6 @@
                      data: [{
                          ID: Date.now(),
                          Date: date,
-                         // Note: We deliberately skip the 'Amount' column here
                          Type: type,
                          Meat: meat,
                          Vegetable: vegetable,
@@ -1088,7 +1213,7 @@
 
              if (res.ok) {
                  if(source === 'mobile') closeFormModal();
-                 resetForm();
+                 resetForm(formElement); // Reset the specific form that submitted
                  // Delay loading data briefly to allow Google Sheet's formula to calculate 'Amount'
                  setTimeout(loadAllData, 1500);
              } else {
@@ -1158,7 +1283,7 @@
             }
         }
 
-        // --- DATA EXPORT (UPDATED to use correct column names) ---
+        // --- DATA EXPORT (UNCHANGED logic) ---
         async function exportData(format) {
             const dataToExport = filteredDataForReport;
             const reportName = document.getElementById('report-type').options[document.getElementById('report-type').selectedIndex].text;
@@ -1274,9 +1399,9 @@
                  const data = await res.json();
 
                  // CRITICAL: Filter records and ensure the necessary fields exist
-                 // Note: We check for 'Amount' existence which should be output by the formula in the sheet.
                  allExpenses = data.filter(x => x.ID && (x.Type === 'Expense' || x.Status === 'Deleted') && x.Amount !== undefined);
 
+                 populateYearOptions(allExpenses); // NEW: Populate year options
                  calculateSummary(allExpenses);
                  filterRecords();
             } catch (error) {
