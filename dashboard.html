@@ -116,7 +116,7 @@
         #mobileExportModal.active .modal-content-export {
             transform: translateY(0);
         }
-        
+
         /* Filter Modal Custom Style for Mobile (Fixed & Centered) */
         #filterModal .modal-content-filter {
             width: 95%;
@@ -131,16 +131,15 @@
         #dashboard-expense-form-container {
             display: none !important;
         }
-        /* Report form is hidden on mobile by default, but always displayed on desktop in Report tab */
+        /* Report form is visible on desktop, hidden on mobile */
         #report-expense-form-container {
-            display: none; /* Hide on mobile by default */
+            display: none; 
         }
         
         /* HIDE FILTER CONTROLS ON MOBILE */
         @media (max-width: 1023px) {
             #report-controls {
-                /* Display is set to 'none' by default in HTML and controlled by JS toggle */
-                display: none;
+                display: none; /* Hidden by default, toggled by JS button */
             }
         }
 
@@ -161,25 +160,41 @@
             }
         }
 
-        /* Mobile List Item Style Improvement */
+        /* Mobile List Item Style Improvement (COMPACT) */
         @media (max-width: 640px) {
+            .expense-item {
+                padding: 12px; /* Smaller padding */
+                align-items: flex-start;
+            }
+            .expense-item .flex-1 {
+                min-width: 60%;
+            }
             .expense-item .mobile-breakdown {
-                display: block;
-                margin-top: 8px;
+                display: flex;
+                flex-wrap: wrap; /* Allow items to wrap */
+                gap: 5px 8px; /* Compact horizontal spacing */
+                margin-top: 4px;
             }
             .expense-item .mobile-breakdown span {
-                display: block;
-                padding-left: 0;
-                font-size: 13px; /* Slightly larger breakdown text */
-                line-height: 1.3;
+                display: inline-block;
+                font-size: 11px; /* Smaller breakdown text */
+                line-height: 1;
+                white-space: nowrap;
             }
             .expense-item .mobile-breakdown .pipe-separator {
-                display: none;
+                display: none; 
             }
             .expense-item .mobile-amount {
-                font-size: 1.5rem; /* Larger final amount */
-                margin-top: 5px;
+                font-size: 1.25rem; /* Smaller final amount */
+                margin-top: 0;
             }
+            .expense-item .item-actions {
+                flex-direction: column;
+                margin-left: 8px;
+            }
+             .expense-item .item-actions button {
+                padding: 4px; /* Smaller touch target */
+             }
         }
         /* Print Styles */
         @media print {
@@ -1251,13 +1266,13 @@
                 const recordDate = new Date(x.Date + 'T00:00:00'); // Add time to fix potential timezone issues with date objects
                 const dayName = dayNames[recordDate.getDay()];
                 const isToday = x.Date === today;
-                const dateDisplay = `${dayName} | ${x.Date}${isToday ? ' <span class="font-bold text-red-500">(ថ្ងៃនេះ)</span>' : ''}`;
+                const dateDisplay = `<span class="text-xs text-gray-500">${dayName} | ${x.Date}</span>${isToday ? ' <span class="font-bold text-red-500 text-xs">(ថ្ងៃនេះ)</span>' : ''}`;
 
                 const recordJson = JSON.stringify(x).split("'").join("\\'");
 
-                // Use the data from the sheet directly
+                // Compact Breakdown for Mobile
                 const breakdown = `
-                    <div class="text-xs text-gray-500 mt-1 mobile-breakdown flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
+                    <div class="text-xs text-gray-500 mt-1 mobile-breakdown">
                         <span>សាច់: <span class="text-orange-600">${formatCurrency(x.Meat)}</span></span>
                         <span class="pipe-separator hidden sm:inline">|</span>
                         <span>បន្លែ: <span class="text-green-600">${formatCurrency(x.Vegetable)}</span></span>
@@ -1283,26 +1298,25 @@
                 `;
 
                 return `
-                    <div onclick="handleCardClick(${recordJson})" class="expense-item bg-white p-4 rounded-xl shadow-md border-l-4 ${isDeleted ? 'border-gray-500' : 'border-red-500'} flex justify-between items-center">
+                    <div onclick="handleCardClick(${recordJson})" class="expense-item bg-white p-4 rounded-xl shadow-md border-l-4 ${isDeleted ? 'border-gray-500' : 'border-red-500'} flex justify-between items-start">
                         <div class="flex-1 min-w-0">
-                            <div class="flex items-center space-x-2 mb-1">
-                                <span class="text-xs font-medium px-2 py-0.5 rounded-full ${badgeClass}">ចំណាយ</span>
-                                <span class="text-sm text-gray-500">${dateDisplay}</span>
+                            <div class="flex flex-col space-y-1 mb-1">
+                                <span class="text-xs font-medium px-2 py-0.5 rounded-full ${badgeClass} self-start">${x.Type === 'Expense' ? 'ចំណាយ' : 'ចំណូល'}</span>
+                                ${dateDisplay}
                             </div>
                             <p class="text-base font-bold text-gray-800 truncate">ចំណាយគ្រឿងទេស</p>
-                            <p class="text-sm text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
+                            <p class="text-xs text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
                             ${isDeleted ? '' : breakdown}
                         </div>
 
-                        <div class="text-right ml-4">
+                        <div class="text-right ml-4 flex flex-col justify-between items-end">
                             <p class="text-xl sm:text-2xl font-extrabold ${amountTextClass} flex items-center justify-end whitespace-nowrap mobile-amount">
                                 ${!isDeleted ? `<i data-lucide="${icon}" class="w-5 h-5 mr-1"></i>` : ''}
                                 ${formatCurrency(parseFloat(x.Amount))}
                             </p>
-                        </div>
-
-                        <div class="item-actions flex space-x-1 ml-4 flex-shrink-0">
-                            ${actionButtons}
+                             <div class="item-actions flex space-x-1 mt-2 flex-shrink-0">
+                                ${actionButtons}
+                            </div>
                         </div>
                     </div>
                 `;
