@@ -91,13 +91,21 @@
         #dashboard-expense-form-container {
             display: none !important;
         }
-        /* Report form is only active on desktop */
+        /* Report form visibility is toggled by JS on Desktop */
         #report-expense-form-container {
             display: none;
         }
         @media (min-width: 1024px) {
-            #report-tab #report-expense-form-container {
+             /* When the report form container is active, it takes 1 column and pushes list to 3 columns */
+            #report-tab.show-report-form .lg\:col-span-1 {
                 display: block !important;
+            }
+            #report-tab.show-report-form #data-view-section {
+                grid-column: span 3 / span 3;
+            }
+             /* When the report form container is hidden, the list takes 4 columns */
+            #report-tab:not(.show-report-form) #data-view-section {
+                grid-column: span 4 / span 4;
             }
         }
 
@@ -120,7 +128,7 @@
             .expense-item { page-break-inside: avoid; }
 
             /* Hide unnecessary elements for printing */
-            header, #fab-add-btn, .item-actions, #report-expense-form-container, #report-controls, #report-tabs { display: none !important; }
+            header, #fab-add-btn, .item-actions, #report-expense-form-container, #report-controls, #report-tabs, #add-report-btn { display: none !important; }
 
             /* Force the report content to show up for printing */
             #report-tab { display: block !important; }
@@ -238,8 +246,7 @@
                     </div>
                 </div>
             </section>
-
-            </div>
+        </div>
 
         <div id="report-tab" class="tab-content" style="display: none;">
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -250,7 +257,13 @@
                     </form>
                 </section>
 
-                <section id="data-view-section" class="lg:col-span-3">
+                <section id="data-view-section" class="lg:col-span-4 transition-all duration-300">
+                    
+                    <div class="flex justify-end mb-4 pr-1">
+                        <button id="add-report-btn" onclick="toggleReportForm()" class="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-green-700 transition text-sm font-semibold shadow-md hidden lg:inline-flex">
+                            <i data-lucide="plus" class="w-4 h-4 mr-1"></i> បន្ថែមកំណត់ត្រា
+                        </button>
+                    </div>
                     
                     <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-red-500 hover:shadow-lg transition mb-6">
                         <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="receipt" class="w-4 h-4 mr-2 text-red-500"></i> ចំណាយសរុបនៃរបាយការណ៍</p>
@@ -267,7 +280,7 @@
 
                         <div id="report-controls" class="mb-6 p-4 border rounded-xl bg-gray-50">
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                                <div class="sm:col-span-1">
+                                <div class="sm:col-span-3">
                                     <label for="report-type" class="block text-xs font-medium text-gray-500 mb-1">របាយការណ៍សរុបតាម:</label>
                                     <select id="report-type" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()">
                                         <option value="all">ទាំងអស់</option>
@@ -301,10 +314,6 @@
                                             </optgroup>
                                     </select>
                                 </div>
-                                <div class="sm:col-span-2">
-                                    <label for="search-input" class="block text-xs font-medium text-gray-500 mb-1">ស្វែងរក (តាមពិពណ៌នា):</label>
-                                    <input type="text" id="search-input" oninput="filterRecords()" placeholder="ឧ. ទិញម្ហូប សម្រាប់ពិធី" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                                </div>
                             </div>
 
                             <div class="flex flex-wrap justify-end gap-3 border-t pt-3 mt-3">
@@ -332,7 +341,7 @@
 
     <div id="profileModal" class="modal">
         <div class="bg-white rounded-2xl p-8 w-full max-w-md relative shadow-2xl">
-            <h3 class="text-2xl font-bold text-blue-700 mb-6 border-b pb-2">ព័ត៌មានគណនី</h3>
+            <h3 class="text-2xl font-bold text-blue-700 mb-6 border-b pb-2">ព័ត្វមានគណនី</h3>
 
             <div class="space-y-4">
                 <div class="p-3 bg-gray-50 rounded-lg border">
@@ -505,12 +514,31 @@
 
             // Handle FAB visibility on mobile
             const fabBtn = document.getElementById('fab-add-btn');
+            const reportFormContainer = document.getElementById('report-expense-form-container');
+            const reportTab = document.getElementById('report-tab');
+            const addReportBtn = document.getElementById('add-report-btn');
+
             if (window.innerWidth < 1024) {
                 fabBtn.style.display = 'inline-flex';
             } else if (tabName === 'report' && window.innerWidth >= 1024) {
-                // Hide FAB on desktop report view since the form is always visible on the side
+                // Desktop Report view - Hide FAB, manage desktop form visibility
                 fabBtn.style.display = 'none';
+                
+                // Show/Hide Report Form based on current state
+                const isFormVisible = reportFormContainer.style.display !== 'none';
+                
+                if (isFormVisible) {
+                    reportTab.classList.add('show-report-form');
+                    reportFormContainer.style.display = 'block';
+                    addReportBtn.innerHTML = '<i data-lucide="x" class="w-4 h-4 mr-1"></i> បិទការបញ្ចូល';
+                } else {
+                    reportTab.classList.remove('show-report-form');
+                    reportFormContainer.style.display = 'none';
+                    addReportBtn.innerHTML = '<i data-lucide="plus" class="w-4 h-4 mr-1"></i> បន្ថែមកំណត់ត្រា';
+                }
+
             } else {
+                // Desktop Dashboard view - Show FAB
                 fabBtn.style.display = 'inline-flex';
             }
 
@@ -521,8 +549,30 @@
                  resetForm(document.getElementById('report-form'));
                  filterRecords();
             } else {
-                 resetForm(document.getElementById('expense-form'));
+                 resetForm(document.getElementById('expense-form')); // Clean up potential previous dashboard form state
             }
+        }
+        
+        // NEW: Toggle Report Form visibility on Desktop
+        function toggleReportForm() {
+            const reportFormContainer = document.getElementById('report-expense-form-container');
+            const reportTab = document.getElementById('report-tab');
+            const addReportBtn = document.getElementById('add-report-btn');
+            
+            const isVisible = reportFormContainer.style.display === 'block';
+
+            if (isVisible) {
+                reportFormContainer.style.display = 'none';
+                reportTab.classList.remove('show-report-form');
+                addReportBtn.innerHTML = '<i data-lucide="plus" class="w-4 h-4 mr-1"></i> បន្ថែមកំណត់ត្រា';
+            } else {
+                reportFormContainer.style.display = 'block';
+                reportTab.classList.add('show-report-form');
+                addReportBtn.innerHTML = '<i data-lucide="x" class="w-4 h-4 mr-1"></i> បិទការបញ្ចូល';
+                resetForm(document.getElementById('report-form'));
+                document.getElementById("report-expense-form-container").scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            lucide.createIcons();
         }
 
 
@@ -709,14 +759,7 @@
             const formTemplate = document.getElementById('form-template').innerHTML;
 
             // Setup Dashboard Form (Only visible on desktop)
-            const desktopForm = document.getElementById('expense-form');
-            if (desktopForm) {
-                desktopForm.innerHTML = formTemplate;
-                desktopForm.addEventListener('submit', (e) => handleFormSubmission(e, 'desktop'));
-                desktopForm.querySelectorAll('.expense-input').forEach(input => {
-                    input.addEventListener('input', () => updateAmountSummary(desktopForm));
-                });
-            }
+            // Removed for Dashboard tab.
 
             // Setup Report Form (Desktop Only)
             const reportForm = document.getElementById('report-form');
@@ -815,7 +858,6 @@
                 const reportForm = document.getElementById('report-form');
                 const mobileForm = document.getElementById('mobile-expense-form');
                 
-                // Note: Desktop dashboard form is not managed here since it's removed
                 if(reportForm) { reportForm.reset(); resetFormUI(reportForm); }
                 if(mobileForm) { mobileForm.reset(); resetFormUI(mobileForm); }
             }
@@ -852,10 +894,18 @@
                     activeFormElement = document.getElementById('mobile-expense-form');
                 } else {
                     activeFormElement = document.getElementById('report-form');
+                    // Show report form automatically when editing on desktop
+                    const reportFormContainer = document.getElementById('report-expense-form-container');
+                    const reportTab = document.getElementById('report-tab');
+                    const addReportBtn = document.getElementById('add-report-btn');
+                    
+                    reportFormContainer.style.display = 'block';
+                    reportTab.classList.add('show-report-form');
+                    addReportBtn.innerHTML = '<i data-lucide="x" class="w-4 h-4 mr-1"></i> បិទការបញ្ចូល';
                 }
             } else {
-                // This case should theoretically not happen since the dashboard form is removed
-                activeFormElement = document.getElementById('expense-form'); 
+                // This case should not happen in this version
+                return;
             }
 
             if(activeFormElement) {
@@ -937,7 +987,10 @@
             document.getElementById('total-count-summary').textContent = `${totalCount} កំណត់ត្រា`;
             
             // Set the filtered total to the overall total initially
-            document.getElementById('filtered-expense-summary').textContent = formatCurrency(totalExpense);
+            const filteredSummaryElement = document.getElementById('filtered-expense-summary');
+            if (filteredSummaryElement) {
+                filteredSummaryElement.textContent = formatCurrency(totalExpense);
+            }
         }
 
         // NEW: Populate years dynamically for filtering
@@ -945,6 +998,8 @@
             const select = document.getElementById('report-type');
             const yearsOptionGroup = select.querySelector('optgroup[label="តាមឆ្នាំ"]');
             
+            if (!yearsOptionGroup) return;
+
             // Clear existing custom year options (keep default 'yearly')
             let existingYearOptions = yearsOptionGroup.querySelectorAll('option:not([value="yearly"])');
             existingYearOptions.forEach(opt => opt.remove());
@@ -967,7 +1022,6 @@
 
         function filterRecords() {
             const reportType = document.getElementById('report-type').value;
-            const searchTerm = document.getElementById('search-input').value.toLowerCase();
 
             const expenseOnlyData = allExpenses.filter(x => x.Type === "Expense" || x.Status === "Deleted");
 
@@ -980,7 +1034,6 @@
             const today = new Date();
             const currentYear = today.getFullYear();
             const currentMonth = today.getMonth();
-            const currentDay = today.getDay(); // 0 (Sun) to 6 (Sat)
             let filteredTotal = 0;
 
 
@@ -989,12 +1042,13 @@
                 const recordYear = recordDate.getFullYear();
                 const recordMonth = recordDate.getMonth();
                 const recordDay = recordDate.getDay();
-                const description = (x.Description || '').toLowerCase();
-
+                
                 let matchesReport = true;
-                let matchesSearch = true;
 
                 switch (reportType) {
+                    case 'all':
+                        matchesReport = true;
+                        break;
                     case 'daily':
                         matchesReport = isSameDay(x.Date, today);
                         break;
@@ -1034,15 +1088,11 @@
                         break;
                 }
 
-                if (searchTerm) {
-                    matchesSearch = description.includes(searchTerm);
-                }
-                
-                if(matchesReport && matchesSearch && x.Status === "Active") {
+                if(matchesReport && x.Status === "Active") {
                     filteredTotal += parseFloat(x.Amount) || 0;
                 }
 
-                return matchesReport && matchesSearch;
+                return matchesReport;
             }).sort((a, b) => new Date(b.Date) - new Date(a.Date));
 
             filteredDataForReport = filtered;
@@ -1066,7 +1116,6 @@
             trashBtn.classList.toggle('text-gray-600', view === 'active');
 
             document.getElementById('report-type').value = 'all';
-            document.getElementById('search-input').value = '';
             filterRecords();
             lucide.createIcons();
         }
@@ -1225,6 +1274,8 @@
 
              if (res.ok) {
                  if(source === 'mobile') closeFormModal();
+                 if (source === 'report-desktop') toggleReportForm(); // Hide form after successful submission on desktop
+                 
                  resetForm(formElement); // Reset the specific form that submitted
                  // Delay loading data briefly to allow Google Sheet's formula to calculate 'Amount'
                  setTimeout(loadAllData, 1500);
