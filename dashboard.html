@@ -33,6 +33,8 @@
         @media(max-width:1023px){ #fab-add-btn{ display: inline-flex !important; } #mobileFormModal .modal-content-mobile { width: 95%; max-width: 480px; margin: 10px; } }
         #main-expense-form-container { display: none; }
         @media (min-width: 1024px) { #main-expense-form-container { display: block !important; } #mobileFormModal { display: none !important; } }
+        
+        /* UPDATED AVATAR STYLES */
         .avatar-initials {
             width: 40px; height: 40px; border-radius: 50%; 
             background-color: #6366f1; color: white; 
@@ -47,7 +49,9 @@
             color: transparent !important;
             background-size: cover;
             background-position: center;
+            background-repeat: no-repeat;
         }
+
         .confirm-modal-content { animation: fadeInScale 0.3s ease-out; }
         @keyframes fadeInScale { from { opacity: 0; transform: scale(0.9) translateY(-20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         @media print {
@@ -85,12 +89,12 @@
             <div class="flex justify-between w-full md:w-auto items-center py-4">
                 <h1 class="text-xl sm:text-3xl font-bold text-indigo-700 flex items-center">
                     <i data-lucide="wallet" class="w-6 h-6 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-indigo-500"></i>
-                    គ្រប់គ្រងចំណាយ
+                    គ្រប់គ្រងចំណាយគ្រឿងទេស
                 </h1>
                 
                 <div class="dropdown md:hidden">
                     <button onclick="toggleDropdown(event)" class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-semibold hover:bg-indigo-600 transition duration-150 relative ring-2 ring-indigo-300 ring-offset-2">
-                        <div id="user-avatar-initials" class="avatar-initials w-full h-full text-sm">...</div>
+                        <div id="user-avatar-initials-mobile" class="avatar-initials w-full h-full text-sm">...</div>
                     </button>
                     <div id="profile-dropdown-menu" class="dropdown-menu">
                         <div class="p-4 border-b text-left bg-gray-50 rounded-t-xl flex items-center space-x-3">
@@ -117,14 +121,11 @@
 
             <nav class="flex-1 overflow-x-auto w-full md:w-auto custom-scrollbar md:pb-0" style="scrollbar-width: none; -ms-overflow-style: none;">
                 <ul class="flex space-x-6 whitespace-nowrap border-t md:border-t-0 pt-3 md:pt-0">
-                    <li class="pb-3 border-b-4 border-indigo-600 text-indigo-600 font-bold flex items-center">
+                    <li onclick="showView('dashboard')" id="nav-dashboard" class="nav-item pb-3 border-b-4 border-indigo-600 text-indigo-600 font-bold flex items-center cursor-pointer">
                         <i data-lucide="layout-dashboard" class="w-4 h-4 mr-1"></i> ផ្ទាំងគ្រប់គ្រង
                     </li>
-                    <li class="pb-3 border-b-4 border-transparent text-gray-600 hover:border-indigo-100 hover:text-indigo-500 transition cursor-pointer flex items-center">
+                    <li onclick="showView('report')" id="nav-report" class="nav-item pb-3 border-b-4 border-transparent text-gray-600 hover:border-indigo-100 hover:text-indigo-500 transition cursor-pointer flex items-center">
                         <i data-lucide="pie-chart" class="w-4 h-4 mr-1"></i> របាយការណ៍
-                    </li>
-                    <li class="pb-3 border-b-4 border-transparent text-gray-600 hover:border-indigo-100 hover:text-indigo-500 transition cursor-pointer flex items-center">
-                        <i data-lucide="settings" class="w-4 h-4 mr-1"></i> ការកំណត់
                     </li>
                     <li onclick="window.location.href='user.html'" id="user-management-tab" class="hidden pb-3 border-b-4 border-transparent text-gray-600 hover:border-purple-100 hover:text-purple-500 transition cursor-pointer flex items-center">
                         <i data-lucide="users" class="w-4 h-4 mr-1"></i> គ្រប់គ្រងអ្នកប្រើ
@@ -140,94 +141,113 @@
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto p-4 md:p-8">
+    <main id="main-content-container" class="max-w-7xl mx-auto p-4 md:p-8">
         
-        <section class="mb-8">
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-red-600 hover:shadow-xl transition transform hover:scale-[1.01]">
-                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="receipt" class="w-4 h-4 mr-2 text-red-600"></i> ចំណាយសរុបរួម</p>
-                    <p class="text-2xl sm:text-4xl font-extrabold text-red-700 truncate" id="total-expense-summary">-- ៛</p>
+        <div id="dashboard-view" class="view-content active">
+            <section class="mb-8">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-red-600 hover:shadow-xl transition transform hover:scale-[1.01]">
+                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="receipt" class="w-4 h-4 mr-2 text-red-600"></i> ចំណាយសរុបរួម</p>
+                        <p class="text-2xl sm:text-4xl font-extrabold text-red-700 truncate" id="total-expense-summary">-- ៛</p>
+                    </div>
+                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-red-500 hover:shadow-xl transition transform hover:scale-[1.01]">
+                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="calendar" class="w-4 h-4 mr-2 text-red-500"></i> ចំណាយប្រចាំខែ</p>
+                        <p class="text-2xl sm:text-4xl font-extrabold text-red-600 truncate" id="monthly-expense-summary">0 ៛</p>
+                    </div>
+                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-orange-500 hover:shadow-xl transition transform hover:scale-[1.01]">
+                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="utensils" class="w-4 h-4 mr-2 text-orange-500"></i> សាច់សរុប</p>
+                        <p class="text-2xl sm:text-4xl font-extrabold text-orange-600 truncate" id="meat-total-summary">-- ៛</p>
+                    </div>
+                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-green-500 hover:shadow-xl transition transform hover:scale-[1.01]">
+                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="leaf" class="w-4 h-4 mr-2 text-green-500"></i> បន្លែសរុប</p>
+                        <p class="text-2xl sm:text-4xl font-extrabold text-green-600 truncate" id="vegetable-total-summary">-- ៛</p>
+                    </div>
+                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-yellow-500 hover:shadow-xl transition transform hover:scale-[1.01] mt-4 lg:mt-0">
+                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="apple" class="w-4 h-4 mr-2 text-yellow-500"></i> ផ្លែឈើសរុប</p>
+                        <p class="text-2xl sm:text-4xl font-extrabold text-yellow-600 truncate" id="fruit-total-summary">-- ៛</p>
+                    </div>
+                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-red-300 hover:shadow-xl transition transform hover:scale-[1.01] mt-4 lg:mt-0">
+                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="calendar-check" class="w-4 h-4 mr-2 text-red-300"></i> ចំណាយថ្ងៃនេះ</p>
+                        <p class="text-2xl sm:text-4xl font-extrabold text-red-500 truncate" id="today-expense-summary">0 ៛</p>
+                    </div>
+                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-gray-400 hover:shadow-xl transition transform hover:scale-[1.01] mt-4 lg:mt-0">
+                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="hash" class="w-4 h-4 mr-2 text-gray-500"></i> ចំនួនកំណត់ត្រា</p>
+                        <p class="text-2xl sm:text-4xl font-extrabold text-gray-700" id="total-count-summary">-- កំណត់ត្រា</p>
+                    </div>
+                    <div class="lg:col-span-1 hidden lg:block mt-4 lg:mt-0"></div> 
                 </div>
-                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-red-500 hover:shadow-xl transition transform hover:scale-[1.01]">
-                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="calendar" class="w-4 h-4 mr-2 text-red-500"></i> ចំណាយប្រចាំខែ</p>
-                    <p class="text-2xl sm:text-4xl font-extrabold text-red-600 truncate" id="monthly-expense-summary">0 ៛</p>
-                </div>
-                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-orange-500 hover:shadow-xl transition transform hover:scale-[1.01]">
-                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="utensils" class="w-4 h-4 mr-2 text-orange-500"></i> សាច់សរុប</p>
-                    <p class="text-2xl sm:text-4xl font-extrabold text-orange-600 truncate" id="meat-total-summary">-- ៛</p>
-                </div>
-                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-green-500 hover:shadow-xl transition transform hover:scale-[1.01]">
-                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="leaf" class="w-4 h-4 mr-2 text-green-500"></i> បន្លែសរុប</p>
-                    <p class="text-2xl sm:text-4xl font-extrabold text-green-600 truncate" id="vegetable-total-summary">-- ៛</p>
-                </div>
-                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-yellow-500 hover:shadow-xl transition transform hover:scale-[1.01] mt-4 lg:mt-0">
-                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="apple" class="w-4 h-4 mr-2 text-yellow-500"></i> ផ្លែឈើសរុប</p>
-                    <p class="text-2xl sm:text-4xl font-extrabold text-yellow-600 truncate" id="fruit-total-summary">-- ៛</p>
-                </div>
-                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-red-300 hover:shadow-xl transition transform hover:scale-[1.01] mt-4 lg:mt-0">
-                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="calendar-check" class="w-4 h-4 mr-2 text-red-300"></i> ចំណាយថ្ងៃនេះ</p>
-                    <p class="text-2xl sm:text-4xl font-extrabold text-red-500 truncate" id="today-expense-summary">0 ៛</p>
-                </div>
-                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-gray-400 hover:shadow-xl transition transform hover:scale-[1.01] mt-4 lg:mt-0">
-                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="hash" class="w-4 h-4 mr-2 text-gray-500"></i> ចំនួនកំណត់ត្រា</p>
-                    <p class="text-2xl sm:text-4xl font-extrabold text-gray-700" id="total-count-summary">-- កំណត់ត្រា</p>
-                </div>
-                <div class="lg:col-span-1 hidden lg:block mt-4 lg:mt-0"></div> 
-            </div>
-        </section>
-
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            
-            <section id="main-expense-form-container" class="lg:col-span-1 bg-white p-6 rounded-2xl card-shadow-lg h-fit lg:sticky lg:top-24 border border-gray-100">
-                <h2 class="text-2xl font-bold mb-6 text-indigo-600 border-b pb-3" id="main-form-title">➕ បញ្ចូលកំណត់ត្រាថ្មី</h2>
-                <form id="expense-form" class="space-y-4"></form>
             </section>
-            
-            <section id="data-view-section" class="lg:col-span-3 bg-white p-4 sm:p-6 rounded-2xl card-shadow-lg border border-gray-100">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-2">
-                    <h2 class="text-xl sm:text-2xl font-bold text-gray-700 mb-2 sm:mb-0">បញ្ជីប្រតិបត្តិការចំណាយ</h2>
-                    <button onclick="switchView('trash')" id="trash-btn" class="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition flex items-center font-semibold text-sm shadow-sm">
-                        <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប
-                    </button>
-                </div>
+        
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                
+                <section id="main-expense-form-container" class="lg:col-span-1 bg-white p-6 rounded-2xl card-shadow-lg h-fit lg:sticky lg:top-24 border border-gray-100">
+                    <h2 class="text-2xl font-bold mb-6 text-indigo-600 border-b pb-3" id="main-form-title">➕ បញ្ចូលកំណត់ត្រាថ្មី</h2>
+                    <form id="expense-form" class="space-y-4"></form>
+                </section>
+                
+                <section id="data-view-section" class="lg:col-span-3 bg-white p-4 sm:p-6 rounded-2xl card-shadow-lg border border-gray-100">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-2">
+                        <h2 class="text-xl sm:text-2xl font-bold text-gray-700 mb-2 sm:mb-0">បញ្ជីប្រតិបត្តិការចំណាយ</h2>
+                        <button onclick="switchView('trash')" id="trash-btn" class="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition flex items-center font-semibold text-sm shadow-sm">
+                            <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប
+                        </button>
+                    </div>
 
-                <div class="mb-6 p-4 border rounded-xl bg-gray-50">
-                    <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-4">
-                        <div class="sm:col-span-1">
-                            <label for="filter-day" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមថ្ងៃ:</label>
-                            <select id="filter-day" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()">
-                                <option value="all">ទាំងអស់</option>
+                    <div class="mb-6 p-4 border rounded-xl bg-gray-50">
+                        <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-4">
+                            <div class="sm:col-span-1">
+                                <label for="filter-day-of-week" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមថ្ងៃ:</label>
+                                <select id="filter-day-of-week" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()"></select>
+                            </div>
+                            <div class="sm:col-span-1">
+                                <label for="filter-today" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមថ្ងៃជាក់លាក់:</label>
+                                <select id="filter-today" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()">
+                                    <option value="all">ទាំងអស់</option>
+                                    <option value="today">ថ្ងៃនេះ</option>
                                 </select>
+                            </div>
+                            <div class="sm:col-span-1">
+                                <label for="filter-month" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមខែ:</label>
+                                <select id="filter-month" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()"></select>
+                            </div>
+                            <div class="sm:col-span-1">
+                                 <label for="filter-year" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមឆ្នាំ:</label>
+                                <select id="filter-year" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()"></select>
+                            </div>
+                            <div class="sm:col-span-1">
+                                <label for="search-input" class="block text-xs font-medium text-gray-500 mb-1">ស្វែងរក (តាមពិពណ៌នា):</label>
+                                 <input type="text" id="search-input" oninput="filterRecords()" placeholder="ឧ. ទិញម្ហូប" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
                         </div>
-                        <div class="sm:col-span-1">
-                            <label for="filter-month" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមខែ:</label>
-                            <select id="filter-month" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()"></select>
-                        </div>
-                        <div class="sm:col-span-1">
-                             <label for="filter-year" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមឆ្នាំ:</label>
-                            <select id="filter-year" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()"></select>
-                        </div>
-                        <div class="sm:col-span-2">
-                            <label for="search-input" class="block text-xs font-medium text-gray-500 mb-1">ស្វែងរក (តាមពិពណ៌នា):</label>
-                             <input type="text" id="search-input" oninput="filterRecords()" placeholder="ឧ. ទិញម្ហូប សម្រាប់ពិធី" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                        
+                        <div class="flex flex-wrap justify-end gap-3 border-t pt-3 mt-3">
+                            <button onclick="exportData('pdf')" class="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-red-700 transition text-sm font-semibold shadow-md">
+                                <i data-lucide="file-text" class="w-4 h-4 mr-1"></i> ទាញយក PDF
+                            </button>
+                            <button onclick="exportData('excel')" class="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-green-700 transition text-sm font-semibold shadow-md">
+                                <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1"></i> ទាញយក Excel
+                            </button>
                         </div>
                     </div>
-                    
-                    <div class="flex flex-wrap justify-end gap-3 border-t pt-3 mt-3">
-                        <button onclick="exportData('pdf')" class="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-red-700 transition text-sm font-semibold shadow-md">
-                            <i data-lucide="file-text" class="w-4 h-4 mr-1"></i> ទាញយក PDF
-                        </button>
-                        <button onclick="exportData('excel')" class="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-green-700 transition text-sm font-semibold shadow-md">
-                            <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1"></i> ទាញយក Excel
-                        </button>
-                    </div>
-                </div>
 
-                <div id="expense-list" class="space-y-4 max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
-                    <p class="text-center text-gray-500 py-10">កំពុងទាញទិន្នន័យ...</p>
-                </div>
-            </section>
+                    <div id="expense-list" class="space-y-4 max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
+                        <p class="text-center text-gray-500 py-10">កំពុងទាញទិន្នន័យ...</p>
+                    </div>
+                </section>
+            </div>
         </div>
+
+        <div id="report-view" class="view-content hidden">
+            <div class="bg-white p-6 rounded-2xl card-shadow-lg">
+                <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center"><i data-lucide="pie-chart" class="w-6 h-6 mr-2 text-indigo-500"></i> របាយការណ៍លម្អិត & ក្រាហ្វ</h2>
+                <p class="text-gray-500 border-b pb-4 mb-4">ផ្នែកនេះត្រូវបានរៀបចំសម្រាប់បង្ហាញក្រាហ្វ (ឧ. ចំណាយតាមខែ ឬតាមប្រភេទ)។</p>
+                
+                <div class="bg-gray-100 p-6 rounded-xl border border-dashed border-gray-300">
+                    <p class="text-center text-gray-600 font-semibold">📈 ទិន្នន័យក្រាហ្វនឹងបង្ហាញនៅទីនេះ</p>
+                </div>
+            </div>
+        </div>
+
     </main>
     
     <button id="fab-add-btn" onclick="openFormModal()" class="bg-indigo-600 text-white transition hover:bg-indigo-700 ring-4 ring-indigo-300 ring-offset-2">
@@ -377,7 +397,6 @@
     </div>
 
 
-
     <script src="config.js"></script>
     <script>
         // --- GLOBAL STATE ---
@@ -394,9 +413,9 @@
             "ទាំងអស់", "មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា", 
             "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ"
         ];
-        // NEW: Day of Week Names (0=Sunday, 6=Saturday)
+        // NEW: Day of Week Names (0=Sunday, 1=Monday... 6=Saturday)
         const DAY_NAMES = [
-            "ទាំងអស់", "អាទិត្យ", "ច័ន្ទ", "អង្គារ", "ពុធ", "ព្រហស្បតិ៍", "សុក្រ", "សៅរ៍"
+            "អាទិត្យ", "ច័ន្ទ", "អង្គារ", "ពុធ", "ព្រហស្បតិ៍", "សុក្រ", "សៅរ៍"
         ];
 
         // --- NEW: AVATAR & IMAGE HANDLING FUNCTION ---
@@ -411,9 +430,6 @@
         
         /**
          * Sets the background image or initials for an avatar element.
-         * @param {HTMLElement} element The avatar div element.
-         * @param {string} email User email for initials fallback.
-         * @param {string|null} imageUrl The URL of the profile image.
          */
         function setAvatar(element, email, imageUrl = null) {
             element.classList.remove('avatar-image');
@@ -423,7 +439,6 @@
             element.style.color = 'white';
 
             if (imageUrl) {
-                // Try to load the image. If successful, use it.
                 const img = new Image();
                 img.onload = () => {
                     element.style.backgroundImage = `url(${imageUrl})`;
@@ -433,34 +448,71 @@
                     element.classList.add('avatar-image');
                 };
                 img.onerror = () => {
-                    // Fallback to initials if image loading fails
                     element.style.backgroundImage = '';
                 };
                 img.src = imageUrl;
             }
         }
 
+        // --- SPA NAVIGATION LOGIC ---
+        let currentActiveView = 'dashboard';
+        
+        function showView(viewId) {
+            const views = document.querySelectorAll('.view-content');
+            views.forEach(view => {
+                view.classList.add('hidden');
+                view.classList.remove('active');
+            });
 
-        // --- NEW: POPULATE DATE FILTERS (UPDATED to include Day of Week) ---
+            const targetView = document.getElementById(`${viewId}-view`);
+            if (targetView) {
+                targetView.classList.remove('hidden');
+                targetView.classList.add('active');
+                currentActiveView = viewId;
+            }
+            
+            // Update Navigation Tabs
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('border-indigo-600', 'text-indigo-600', 'font-bold');
+                item.classList.add('border-transparent', 'text-gray-600');
+            });
+
+            const activeTab = document.getElementById(`nav-${viewId}`);
+            if (activeTab) {
+                activeTab.classList.add('border-indigo-600', 'text-indigo-600', 'font-bold');
+                activeTab.classList.remove('border-transparent', 'text-gray-600');
+            }
+            
+            // Re-render icons after view switch
+            lucide.createIcons();
+        }
+
+        // --- POPULATE DATE FILTERS (UPDATED) ---
         function populateDateFilters() {
             const currentYear = new Date().getFullYear();
+            const todayDayIndex = new Date().getDay(); // 0=Sunday, 1=Monday...
+            
+            const daySelect = document.getElementById('filter-day-of-week');
             const monthSelect = document.getElementById('filter-month');
             const yearSelect = document.getElementById('filter-year');
-            const daySelect = document.getElementById('filter-day'); // NEW: Day filter
 
-            // 1. Day Filter (NEW)
-            daySelect.innerHTML = DAY_NAMES.map((name, index) => 
-                `<option value="${index === 0 ? 'all' : index % 7}">${name}</option>` // index % 7 ensures the day index is 0-6
-            ).join('');
-            daySelect.value = 'all';
+            // 1. Day of Week Filter
+            let dayOptions = `<option value="all">ទាំងអស់</option>`;
+            DAY_NAMES.forEach((name, index) => {
+                const isToday = index === todayDayIndex;
+                const display = isToday ? `${name} (ថ្ងៃនេះ)` : name;
+                dayOptions += `<option value="${index}">${display}</option>`;
+            });
+            daySelect.innerHTML = dayOptions;
+            daySelect.value = 'all'; 
 
-            // 2. Month Filter (UNCHANGED)
+            // 2. Month Filter
             monthSelect.innerHTML = MONTH_NAMES.map((name, index) => 
                 `<option value="${index === 0 ? 'all' : index}">${name}</option>`
             ).join('');
             monthSelect.value = 'all';
 
-            // 3. Year Filter (UNCHANGED)
+            // 3. Year Filter
             const years = ['all', currentYear + 1, currentYear, currentYear - 1, currentYear - 2]; 
             const existingYears = [...new Set(allExpenses.map(x => new Date(x.Date).getFullYear()))].filter(y => !years.includes(y)).sort((a, b) => b - a);
             
@@ -471,12 +523,11 @@
                 .join('');
             yearSelect.value = 'all';
             
-            // 4. Reset 'Today' filter (from HTML)
-            document.getElementById('filter-today').value = 'all'; 
+            // 4. Reset 'Today' filter
+            document.getElementById('filter-today').value = 'all';
         }
 
         // --- TOAST, CONFIRMATION, LOGOUT (UNCHANGED logic) ---
-        // ... (Keep existing showToast, customConfirm, resolveCustomConfirm, customLogout, logout) ...
         function showToast(message, type = 'info', duration = 4000) {
             const container = document.getElementById('toast-container');
             if (!container) return;
@@ -569,9 +620,9 @@
             document.getElementById("dropdown-email").textContent = user.Email || 'N/A';
             document.getElementById("dropdown-role").textContent = user.Role || 'User';
             // NEW: Set avatars for mobile, dropdown, and desktop
-            setAvatar(document.getElementById("user-avatar-initials"), user.Email, user.ProfileImage);
+            setAvatar(document.getElementById("user-avatar-initials-mobile"), user.Email, user.ProfileImage);
             setAvatar(document.getElementById("dropdown-avatar-initials"), user.Email, user.ProfileImage);
-            setAvatar(document.getElementById("user-avatar-initials-desktop"), user.Email, user.ProfileImage); // New desktop avatar ID
+            setAvatar(document.getElementById("user-avatar-initials-desktop"), user.Email, user.ProfileImage);
             if (user.Role === 'Owner') {
                 document.getElementById('user-management-link').classList.remove('hidden');
                 document.getElementById('user-management-link').classList.add('flex');
@@ -581,7 +632,6 @@
         }
         
         // --- PROFILE/DROPDOWN/MODALS (UPDATED with Avatar logic) ---
-        // ... (Keep existing toggleDropdown, document.addEventListener, closeDropdown) ...
         function toggleDropdown(event) {
             const menu = document.getElementById('profile-dropdown-menu');
             document.querySelectorAll('.dropdown-menu.active').forEach(m => {
@@ -608,7 +658,7 @@
         }
         function closeProfileModal() { document.getElementById('profileModal').classList.remove('active'); }
         
-        // ... (Detail Modal, Form logic, Click Handler remain the same) ...
+        // Detail Modal functions
         function openDetailModal(record) {
             activeDetailRecord = record;
             document.getElementById('detail-date').textContent = record.Date;
@@ -628,6 +678,7 @@
             activeDetailRecord = null;
         }
         
+        // Form logic
         function updateAmountSummary(formElement) {
             const meat = parseFloat(formElement.querySelector("#meat").value) || 0;
             const vegetable = parseFloat(formElement.querySelector("#vegetable").value) || 0;
@@ -735,7 +786,6 @@
         
         function handleCardClick(record) {
             const isMobile = window.innerWidth < 1024;
-            // On desktop, click opens detail modal. On mobile, it opens the edit form.
             if (isMobile) {
                 editExpense(record.ID, false); 
             } else {
@@ -838,7 +888,7 @@
         
         function filterRecords() {
             const filterToday = document.getElementById('filter-today').value;
-            const filterDay = document.getElementById('filter-day').value; // NEW: Day filter value
+            const filterDayOfWeek = document.getElementById('filter-day-of-week').value;
             const filterMonth = document.getElementById('filter-month').value;
             const filterYear = document.getElementById('filter-year').value;
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
@@ -858,28 +908,24 @@
                 const description = (x.Description || '').toLowerCase(); 
                 
                 let matchesToday = true;
-                let matchesDay = true; // NEW
+                let matchesDayOfWeek = true;
                 let matchesMonth = true;
                 let matchesYear = true;
                 let matchesSearch = true;
 
-                // Today Filter (unchanged logic)
+                // Today Filter
                 if (filterToday === 'today') {
                     matchesToday = isSameDay(x.Date, today);
-                } else {
-                    matchesToday = true; // 'all' selected or ignored
                 }
                 
-                // Day of Week Filter (NEW)
-                if (filterDay !== 'all') {
-                    // Date.getDay() returns 0 for Sunday, 1 for Monday... 6 for Saturday
-                    const dayIndex = parseInt(filterDay); 
-                    matchesDay = recordDate.getDay() === dayIndex;
+                // Day of Week Filter
+                if (filterDayOfWeek !== 'all') {
+                    const dayIndex = parseInt(filterDayOfWeek); 
+                    matchesDayOfWeek = recordDate.getDay() === dayIndex;
                 }
 
-                // Month Filter (1-indexed for select value, 0-indexed for Date object)
+                // Month Filter
                 if (filterMonth !== 'all') {
-                    // If 'today' is selected, ignore month/year filtering
                     if (filterToday === 'today') { matchesMonth = true; } 
                     else {
                         const monthIndex = parseInt(filterMonth) - 1;
@@ -889,7 +935,6 @@
 
                 // Year Filter
                 if (filterYear !== 'all') {
-                    // If 'today' is selected, ignore month/year filtering
                     if (filterToday === 'today') { matchesYear = true; }
                     else {
                         const yearValue = parseInt(filterYear);
@@ -902,14 +947,13 @@
                     matchesSearch = description.includes(searchTerm);
                 }
                 
-                return matchesToday && matchesDay && matchesMonth && matchesYear && matchesSearch;
+                return matchesToday && matchesDayOfWeek && matchesMonth && matchesYear && matchesSearch;
             }).sort((a, b) => new Date(b.Date) - new Date(a.Date)); 
 
             filteredDataForReport = filtered;
             renderExpenseList(filtered);
         }
         
-        // ... (The rest of the functions: switchView, renderExpenseList, CRUD operations, exportData remain the same) ...
         function switchView(view) {
             currentView = view;
             const trashBtn = document.getElementById('trash-btn');
@@ -922,8 +966,9 @@
             trashBtn.classList.toggle('text-white', view === 'trash');
             trashBtn.classList.toggle('text-gray-600', view === 'active');
             
+            // Reset filters on view switch
             document.getElementById('filter-today').value = 'all';
-            document.getElementById('filter-day').value = 'all'; // Reset new filter
+            document.getElementById('filter-day-of-week').value = 'all'; 
             document.getElementById('filter-month').value = 'all';
             document.getElementById('filter-year').value = 'all';
             document.getElementById('search-input').value = '';
@@ -944,6 +989,8 @@
                 return;
             }
 
+            const today = new Date();
+
             list.innerHTML = data.map(x => {
                 const isDeleted = x.Status === 'Deleted';
                 const badgeClass = isDeleted ? 'bg-gray-200 text-gray-600' : 'bg-red-100 text-red-700';
@@ -951,6 +998,11 @@
                 const icon = 'arrow-down-left'; 
                 
                 const recordJson = JSON.stringify(x).split("'").join("\\'");
+
+                // Show day of the week
+                const recordDate = new Date(x.Date);
+                const dayOfWeek = DAY_NAMES[recordDate.getDay()];
+                const dateDisplay = `${x.Date} (${dayOfWeek})`;
                 
                 const breakdown = `
                     <div class="flex flex-wrap text-xs text-gray-500 mt-2 space-x-3">
@@ -981,7 +1033,7 @@
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center space-x-2 mb-1">
                                 <span class="text-xs font-medium px-2 py-0.5 rounded-full ${badgeClass}">ចំណាយ</span>
-                                <span class="text-sm text-gray-500">${x.Date}</span>
+                                <span class="text-sm text-gray-500">${dateDisplay}</span>
                             </div>
                             <p class="text-base font-bold text-gray-800 truncate">ចំណាយគ្រឿងទេស</p>
                             <p class="text-sm text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
@@ -1006,8 +1058,7 @@
         }
 
         // --- CRUD/DATA OPERATIONS (UNCHANGED logic) ---
-        // ... (Keep existing handleFormSubmission, deleteExpense, restoreExpense, permanentDeleteExpense, updateStatus, exportData) ...
-        
+        // ... (Keep existing CRUD functions) ...
         async function handleFormSubmission(e, source) {
             e.preventDefault();
             const formElement = source === 'mobile' ? document.getElementById('mobile-expense-form') : document.getElementById('expense-form');
@@ -1211,7 +1262,7 @@
                     const pdfHeight = pdf.internal.pageSize.getHeight();
                     
                     const imgHeight = canvas.height * pdfWidth / canvas.width;
-                    let position = 25; // Adjusted start position for header
+                    let position = 25; 
                     
                     // Add Title Header
                     pdf.setFontSize(18);
@@ -1220,16 +1271,16 @@
                     pdf.text(`កាលបរិច្ឆេទបង្កើត: ${new Date().toLocaleDateString('km-KH')}`, 10, 17);
                     
                     let heightLeft = imgHeight;
-                    let imgX = 0; // Start X position of image
+                    let imgX = 0; 
 
                     while (heightLeft > 0) {
                         pdf.addImage(imgData, 'JPEG', imgX, position, pdfWidth, imgHeight, undefined, 'FAST');
-                        heightLeft -= pdfHeight - 20; // 20mm margin
+                        heightLeft -= pdfHeight - 20; 
                         position -= pdfHeight - 20;
                         
                         if (heightLeft > 0) { 
                             pdf.addPage();
-                            position = 10; // New position on new page
+                            position = 10; 
                         }
                     }
 
@@ -1253,7 +1304,6 @@
             document.getElementById("expense-list").innerHTML = '<p class="text-center text-gray-500 py-10 flex items-center justify-center"><i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-3"></i> កំពុងទាញទិន្នន័យ...</p>';
 
             try {
-                // Ensure sheetUrl and SHEET_EXPENSES are correctly defined in config.js
                 const res = await fetch(sheetUrl(SHEET_EXPENSES));
                 const data = await res.json();
                 
@@ -1272,6 +1322,9 @@
         // Execute setup and data loading
         setupForms();
         loadAllData(); 
+        
+        // Initial view setup
+        showView('dashboard');
     </script>
 </body>
 </html>
