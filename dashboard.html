@@ -87,7 +87,6 @@
         }
 
         /* Form Visibility Logic */
-        /* Dashboard does not have a form */
         #dashboard-expense-form-container {
             display: none !important;
         }
@@ -110,6 +109,32 @@
             }
         }
 
+        /* --- MOBILE SPECIFIC UX/UI --- */
+        #show-list-btn {
+            display: none;
+        }
+        .list-hidden-container {
+             display: none;
+        }
+        @media (max-width: 1023px) {
+            /* Hide list and controls by default on mobile */
+            #report-controls, #expense-list {
+                display: none !important;
+            }
+            /* Show the toggle button */
+            #show-list-btn {
+                display: block;
+            }
+            /* Show list and controls when the container is marked as showing list */
+            #report-tab.show-mobile-list #report-controls,
+            #report-tab.show-mobile-list #expense-list {
+                display: block !important;
+            }
+            /* Hide toggle button when list is shown */
+            #report-tab.show-mobile-list #show-list-btn {
+                display: none !important;
+            }
+        }
         /* Print Styles */
         @media print {
             body {
@@ -122,7 +147,7 @@
             .expense-item { page-break-inside: avoid; }
 
             /* Hide unnecessary elements for printing */
-            header, #fab-add-btn, .item-actions, #report-expense-form-container, #report-controls, #report-tabs, #add-report-btn { display: none !important; }
+            header, #fab-add-btn, .item-actions, #report-expense-form-container, #report-controls, #report-tabs, #add-report-btn, #show-list-btn { display: none !important; }
 
             /* Force the report content to show up for printing */
             #report-tab { display: block !important; }
@@ -265,9 +290,15 @@
                                 <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប
                             </button>
                         </div>
+                        
+                        <div id="show-list-btn" class="mb-4">
+                            <button onclick="toggleMobileList()" class="w-full bg-indigo-600 text-white px-4 py-3 rounded-xl font-semibold shadow-lg hover:bg-indigo-700 transition flex items-center justify-center">
+                                <i data-lucide="list-ordered" class="w-5 h-5 mr-2"></i> មើលបញ្ជីប្រតិបត្តិការ
+                            </button>
+                        </div>
 
                         <div id="report-controls" class="mb-6 p-4 border rounded-xl bg-gray-50">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div>
                                     <label for="filter-day" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមថ្ងៃ:</label>
                                     <select id="filter-day" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()">
@@ -513,23 +544,44 @@
             } else {
                  fabBtn.style.display = 'inline-flex';
             }
+            
+            const reportForm = document.getElementById('report-form');
 
             // Ensure filters are reset and data loaded when switching to Report tab
             if (tabName === 'report') {
-                const reportForm = document.getElementById('report-form');
-                if (reportForm) {
-                    resetForm(reportForm); // Reset the desktop form on tab switch
-                    // Set activeFormElement for desktop submission
-                    if (window.innerWidth >= 1024) { activeFormElement = reportForm; } 
-                }
+                if (reportForm) resetForm(reportForm); // Reset the desktop form
+                
+                // Set default active form for desktop submission
+                if (window.innerWidth >= 1024) { activeFormElement = reportForm; } 
                 
                 document.getElementById('filter-day').value = 'all';
                 document.getElementById('filter-month').value = 'all';
                 document.getElementById('filter-year').value = 'all';
                 
                 filterRecords();
+            } else {
+                // Ensure mobile form is clean
+                if (document.getElementById('mobile-expense-form')) resetForm(document.getElementById('mobile-expense-form'));
             }
 
+            lucide.createIcons();
+        }
+
+        // NEW: Toggle visibility of the list/controls container on mobile
+        function toggleMobileList() {
+            const reportTab = document.getElementById('report-tab');
+            reportTab.classList.toggle('show-mobile-list');
+            
+            // Re-run filter to ensure data is displayed if showing list
+            if(reportTab.classList.contains('show-mobile-list')) {
+                filterRecords();
+            }
+            
+            // Scroll to the top of the list controls for better UX
+            const controls = document.getElementById('report-controls');
+            if (controls && reportTab.classList.contains('show-mobile-list')) {
+                controls.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
             lucide.createIcons();
         }
 
@@ -867,9 +919,7 @@
             } else {
                 // On desktop, clicking the list item opens detail modal first (handled by handleCardClick)
                 // When clicking "Edit" in the detail modal, editDesktopForm is called.
-                // This fallback is mostly for robustness/direct calls.
-                 openDetailModal(record);
-                 // The edit button inside detailModal now calls editDesktopForm
+                openDetailModal(record);
             }
         }
 
