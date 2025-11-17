@@ -87,18 +87,15 @@
         }
 
         /* Improved Form Visibility Logic: Hide/Show based on screen size */
-        /* Dashboard form is only active on desktop */
+        /* Dashboard does not have a form on desktop anymore */
         #dashboard-expense-form-container {
-            display: none;
+            display: none !important;
         }
         /* Report form is only active on desktop */
         #report-expense-form-container {
             display: none;
         }
         @media (min-width: 1024px) {
-            #dashboard-tab #dashboard-expense-form-container {
-                display: block !important;
-            }
             #report-tab #report-expense-form-container {
                 display: block !important;
             }
@@ -123,7 +120,7 @@
             .expense-item { page-break-inside: avoid; }
 
             /* Hide unnecessary elements for printing */
-            header, #fab-add-btn, .item-actions, #dashboard-expense-form-container, #report-expense-form-container, #report-controls, #report-tabs { display: none !important; }
+            header, #fab-add-btn, .item-actions, #report-expense-form-container, #report-controls, #report-tabs { display: none !important; }
 
             /* Force the report content to show up for printing */
             #report-tab { display: block !important; }
@@ -242,91 +239,87 @@
                 </div>
             </section>
 
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                <section id="dashboard-expense-form-container" class="lg:col-span-1 bg-white p-6 rounded-2xl card-shadow h-fit lg:sticky lg:top-24 border border-gray-100">
-                    <h2 class="text-2xl font-bold mb-6 text-indigo-600 border-b pb-3" id="main-form-title">➕ បញ្ចូលកំណត់ត្រាថ្មី</h2>
-                    <form id="expense-form" class="space-y-4">
-                    </form>
-                </section>
-
-                <div class="lg:col-span-3">
-                    <div class="p-8 bg-indigo-50 border-2 border-dashed border-indigo-200 rounded-xl flex items-center justify-center">
-                        <p class="text-indigo-600 font-semibold text-lg flex items-center"><i data-lucide="lightbulb" class="w-6 h-6 mr-3"></i> ប្រើផ្នែក **"របាយការណ៍ / បញ្ជី"** ដើម្បីមើលបញ្ជីលម្អិត និងទាញយកទិន្នន័យ។</p>
-                    </div>
-                </div>
             </div>
-        </div>
 
         <div id="report-tab" class="tab-content" style="display: none;">
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+
                 <section id="report-expense-form-container" class="lg:col-span-1 bg-white p-6 rounded-2xl card-shadow h-fit lg:sticky lg:top-24 border border-gray-100">
                     <h2 class="text-2xl font-bold mb-6 text-indigo-600 border-b pb-3" id="report-form-title">➕ បញ្ចូលកំណត់ត្រាថ្មី</h2>
                     <form id="report-form" class="space-y-4">
                     </form>
                 </section>
 
-                <section id="data-view-section" class="lg:col-span-3 bg-white p-4 sm:p-6 rounded-2xl card-shadow border border-gray-100">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-2">
-                        <h2 class="text-xl sm:text-2xl font-bold text-gray-700 mb-2 sm:mb-0">បញ្ជីប្រតិបត្តិការចំណាយ</h2>
-                        <button onclick="switchView('trash')" id="trash-btn" class="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition flex items-center font-semibold text-sm shadow-sm">
-                            <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប
-                        </button>
+                <section id="data-view-section" class="lg:col-span-3">
+                    
+                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-red-500 hover:shadow-lg transition mb-6">
+                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="receipt" class="w-4 h-4 mr-2 text-red-500"></i> ចំណាយសរុបនៃរបាយការណ៍</p>
+                        <p class="text-2xl sm:text-4xl font-extrabold text-red-600 truncate" id="filtered-expense-summary">-- ៛</p>
                     </div>
 
-                    <div id="report-controls" class="mb-6 p-4 border rounded-xl bg-gray-50">
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                            <div class="sm:col-span-1">
-                                <label for="report-type" class="block text-xs font-medium text-gray-500 mb-1">របាយការណ៍សរុបតាម:</label>
-                                <select id="report-type" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()">
-                                    <option value="all">ទាំងអស់</option>
-                                    <optgroup label="តាមថ្ងៃ">
-                                        <option value="daily">ប្រចាំថ្ងៃ</option>
-                                        <option value="day_mon">ច័ន្ទ</option>
-                                        <option value="day_tue">អង្គារ</option>
-                                        <option value="day_wed">ពុធ</option>
-                                        <option value="day_thu">ព្រហស្បតិ៍</option>
-                                        <option value="day_fri">សុក្រ</option>
-                                        <option value="day_sat">សៅរ៍</option>
-                                        <option value="day_sun">អាទិត្យ</option>
-                                    </optgroup>
-                                    <optgroup label="តាមខែ">
-                                        <option value="monthly">ប្រចាំខែ</option>
-                                        <option value="month_0">មករា</option>
-                                        <option value="month_1">កុម្ភៈ</option>
-                                        <option value="month_2">មីនា</option>
-                                        <option value="month_3">មេសា</option>
-                                        <option value="month_4">ឧសភា</option>
-                                        <option value="month_5">មិថុនា</option>
-                                        <option value="month_6">កក្កដា</option>
-                                        <option value="month_7">សីហា</option>
-                                        <option value="month_8">កញ្ញា</option>
-                                        <option value="month_9">តុលា</option>
-                                        <option value="month_10">វិច្ឆិកា</option>
-                                        <option value="month_11">ធ្នូ</option>
-                                    </optgroup>
-                                    <optgroup label="តាមឆ្នាំ">
-                                        <option value="yearly">ប្រចាំឆ្នាំ</option>
+                    <div class="bg-white p-4 sm:p-6 rounded-2xl card-shadow border border-gray-100">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-2">
+                            <h2 class="text-xl sm:text-2xl font-bold text-gray-700 mb-2 sm:mb-0">បញ្ជីប្រតិបត្តិការចំណាយ</h2>
+                            <button onclick="switchView('trash')" id="trash-btn" class="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition flex items-center font-semibold text-sm shadow-sm">
+                                <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប
+                            </button>
+                        </div>
+
+                        <div id="report-controls" class="mb-6 p-4 border rounded-xl bg-gray-50">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                                <div class="sm:col-span-1">
+                                    <label for="report-type" class="block text-xs font-medium text-gray-500 mb-1">របាយការណ៍សរុបតាម:</label>
+                                    <select id="report-type" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()">
+                                        <option value="all">ទាំងអស់</option>
+                                        <optgroup label="តាមថ្ងៃ">
+                                            <option value="daily">ប្រចាំថ្ងៃ</option>
+                                            <option value="day_mon">ច័ន្ទ</option>
+                                            <option value="day_tue">អង្គារ</option>
+                                            <option value="day_wed">ពុធ</option>
+                                            <option value="day_thu">ព្រហស្បតិ៍</option>
+                                            <option value="day_fri">សុក្រ</option>
+                                            <option value="day_sat">សៅរ៍</option>
+                                            <option value="day_sun">អាទិត្យ</option>
                                         </optgroup>
-                                </select>
+                                        <optgroup label="តាមខែ">
+                                            <option value="monthly">ប្រចាំខែ</option>
+                                            <option value="month_0">មករា</option>
+                                            <option value="month_1">កុម្ភៈ</option>
+                                            <option value="month_2">មីនា</option>
+                                            <option value="month_3">មេសា</option>
+                                            <option value="month_4">ឧសភា</option>
+                                            <option value="month_5">មិថុនា</option>
+                                            <option value="month_6">កក្កដា</option>
+                                            <option value="month_7">សីហា</option>
+                                            <option value="month_8">កញ្ញា</option>
+                                            <option value="month_9">តុលា</option>
+                                            <option value="month_10">វិច្ឆិកា</option>
+                                            <option value="month_11">ធ្នូ</option>
+                                        </optgroup>
+                                        <optgroup label="តាមឆ្នាំ">
+                                            <option value="yearly">ប្រចាំឆ្នាំ</option>
+                                            </optgroup>
+                                    </select>
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label for="search-input" class="block text-xs font-medium text-gray-500 mb-1">ស្វែងរក (តាមពិពណ៌នា):</label>
+                                    <input type="text" id="search-input" oninput="filterRecords()" placeholder="ឧ. ទិញម្ហូប សម្រាប់ពិធី" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
                             </div>
-                            <div class="sm:col-span-2">
-                                <label for="search-input" class="block text-xs font-medium text-gray-500 mb-1">ស្វែងរក (តាមពិពណ៌នា):</label>
-                                <input type="text" id="search-input" oninput="filterRecords()" placeholder="ឧ. ទិញម្ហូប សម្រាប់ពិធី" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+
+                            <div class="flex flex-wrap justify-end gap-3 border-t pt-3 mt-3">
+                                <button onclick="exportData('pdf')" class="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-red-700 transition text-sm font-semibold shadow-md">
+                                    <i data-lucide="file-text" class="w-4 h-4 mr-1"></i> ទាញយក PDF
+                                </button>
+                                <button onclick="exportData('excel')" class="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-green-700 transition text-sm font-semibold shadow-md">
+                                    <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1"></i> ទាញយក Excel
+                                </button>
                             </div>
                         </div>
 
-                        <div class="flex flex-wrap justify-end gap-3 border-t pt-3 mt-3">
-                            <button onclick="exportData('pdf')" class="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-red-700 transition text-sm font-semibold shadow-md">
-                                <i data-lucide="file-text" class="w-4 h-4 mr-1"></i> ទាញយក PDF
-                            </button>
-                            <button onclick="exportData('excel')" class="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-green-700 transition text-sm font-semibold shadow-md">
-                                <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1"></i> ទាញយក Excel
-                            </button>
+                        <div id="expense-list" class="space-y-3 max-h-[65vh] overflow-y-auto pr-2 hide-scrollbar">
+                            <p class="text-center text-gray-500 py-10">កំពុងទាញទិន្នន័យ...</p>
                         </div>
-                    </div>
-
-                    <div id="expense-list" class="space-y-3 max-h-[65vh] overflow-y-auto pr-2 hide-scrollbar">
-                        <p class="text-center text-gray-500 py-10">កំពុងទាញទិន្នន័យ...</p>
                     </div>
                 </section>
             </div>
@@ -472,7 +465,7 @@
             <i data-lucide="plus" class="w-5 h-5 mr-1"></i> បន្ថែមកំណត់ត្រា
         </button>
 
-        <button type="button" id="cancel-btn" onclick="resetForm()" class="w-full bg-gray-300 text-gray-700 p-3 rounded-lg font-semibold hover:bg-gray-400 transition duration-150 hidden mt-2">
+        <button type="button" id="cancel-btn" onclick="resetForm(activeFormElement)" class="w-full bg-gray-300 text-gray-700 p-3 rounded-lg font-semibold hover:bg-gray-400 transition duration-150 hidden mt-2">
             <i data-lucide="x" class="w-5 h-5 mr-1"></i> បោះបង់ការកែប្រែ
         </button>
     </div>
@@ -511,19 +504,20 @@
             activeBtn.classList.add('text-indigo-600', 'border-indigo-600');
 
             // Handle FAB visibility on mobile
+            const fabBtn = document.getElementById('fab-add-btn');
             if (window.innerWidth < 1024) {
-                document.getElementById('fab-add-btn').style.display = 'inline-flex';
+                fabBtn.style.display = 'inline-flex';
             } else if (tabName === 'report' && window.innerWidth >= 1024) {
-                // Hide FAB on desktop report view since there's a dedicated form container
-                document.getElementById('fab-add-btn').style.display = 'none';
+                // Hide FAB on desktop report view since the form is always visible on the side
+                fabBtn.style.display = 'none';
             } else {
-                document.getElementById('fab-add-btn').style.display = 'inline-flex';
+                fabBtn.style.display = 'inline-flex';
             }
 
             lucide.createIcons();
-            // In case of switching to report tab, ensure a fresh view is loaded
+            
             if (tabName === 'report') {
-                 // Ensure the report form gets the same initial state as dashboard form
+                 // Ensure the report form gets the same initial state (ready to add new)
                  resetForm(document.getElementById('report-form'));
                  filterRecords();
             } else {
@@ -714,36 +708,42 @@
         function setupForms() {
             const formTemplate = document.getElementById('form-template').innerHTML;
 
-            // Setup Dashboard Form
+            // Setup Dashboard Form (Only visible on desktop)
             const desktopForm = document.getElementById('expense-form');
-            desktopForm.innerHTML = formTemplate;
-            desktopForm.addEventListener('submit', (e) => handleFormSubmission(e, 'desktop'));
-            desktopForm.querySelectorAll('.expense-input').forEach(input => {
-                input.addEventListener('input', () => updateAmountSummary(desktopForm));
-            });
+            if (desktopForm) {
+                desktopForm.innerHTML = formTemplate;
+                desktopForm.addEventListener('submit', (e) => handleFormSubmission(e, 'desktop'));
+                desktopForm.querySelectorAll('.expense-input').forEach(input => {
+                    input.addEventListener('input', () => updateAmountSummary(desktopForm));
+                });
+            }
 
-            // Setup Report Form (NEW)
+            // Setup Report Form (Desktop Only)
             const reportForm = document.getElementById('report-form');
-            reportForm.innerHTML = formTemplate;
-            reportForm.addEventListener('submit', (e) => handleFormSubmission(e, 'report-desktop'));
-            reportForm.querySelectorAll('.expense-input').forEach(input => {
-                input.addEventListener('input', () => updateAmountSummary(reportForm));
-            });
+            if (reportForm) {
+                reportForm.innerHTML = formTemplate;
+                reportForm.addEventListener('submit', (e) => handleFormSubmission(e, 'report-desktop'));
+                reportForm.querySelectorAll('.expense-input').forEach(input => {
+                    input.addEventListener('input', () => updateAmountSummary(reportForm));
+                });
+            }
             
             // Setup Mobile Form
             const mobileForm = document.getElementById('mobile-expense-form');
-            mobileForm.innerHTML = formTemplate;
-            mobileForm.addEventListener('submit', (e) => handleFormSubmission(e, 'mobile'));
-            mobileForm.querySelectorAll('.expense-input').forEach(input => {
-                input.addEventListener('input', () => updateAmountSummary(mobileForm));
-            });
+            if (mobileForm) {
+                mobileForm.innerHTML = formTemplate;
+                mobileForm.addEventListener('submit', (e) => handleFormSubmission(e, 'mobile'));
+                mobileForm.querySelectorAll('.expense-input').forEach(input => {
+                    input.addEventListener('input', () => updateAmountSummary(mobileForm));
+                });
+            }
         }
 
         function openFormModal() {
-             resetForm(document.getElementById('mobile-expense-form'));
+             activeFormElement = document.getElementById('mobile-expense-form');
+             resetForm(activeFormElement);
              document.getElementById('mobile-form-title').textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
              document.getElementById('mobileFormModal').classList.add('active');
-             activeFormElement = document.getElementById('mobile-expense-form');
              lucide.createIcons();
         }
 
@@ -767,7 +767,6 @@
             const cancelBtn = formElement.querySelector('#cancel-btn');
             
             // Determine which title to update
-            const dashboardTitle = document.getElementById('main-form-title');
             const reportTitle = document.getElementById('report-form-title');
             const mobileTitle = document.getElementById('mobile-form-title');
 
@@ -778,7 +777,6 @@
                 submitBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
                 cancelBtn.classList.remove('hidden');
 
-                if (dashboardTitle) dashboardTitle.textContent = "📝 កែប្រែកំណត់ត្រា";
                 if (reportTitle) reportTitle.textContent = "📝 កែប្រែកំណត់ត្រា";
                 if (mobileTitle) mobileTitle.textContent = "📝 កែប្រែកំណត់ត្រា";
                 
@@ -797,11 +795,9 @@
              submitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
              cancelBtn.classList.add('hidden');
 
-             const dashboardTitle = document.getElementById('main-form-title');
              const reportTitle = document.getElementById('report-form-title');
              const mobileTitle = document.getElementById('mobile-form-title');
 
-             if (dashboardTitle) dashboardTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
              if (reportTitle) reportTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
              if (mobileTitle) mobileTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
 
@@ -811,21 +807,20 @@
         function resetForm(formToReset = null) {
             editingID = null;
             
-            // Reset specified form or both main forms if none specified
+            // Reset specified form or both relevant forms if none specified
             if (formToReset) {
                 formToReset.reset();
                 resetFormUI(formToReset);
             } else {
-                const desktopForm = document.getElementById('expense-form');
                 const reportForm = document.getElementById('report-form');
                 const mobileForm = document.getElementById('mobile-expense-form');
                 
-                if(desktopForm) { desktopForm.reset(); resetFormUI(desktopForm); }
+                // Note: Desktop dashboard form is not managed here since it's removed
                 if(reportForm) { reportForm.reset(); resetFormUI(reportForm); }
                 if(mobileForm) { mobileForm.reset(); resetFormUI(mobileForm); }
             }
             
-            activeFormElement = null;
+            activeFormElement = formToReset; // Update activeFormElement to the reset form
             lucide.createIcons();
         }
 
@@ -852,19 +847,23 @@
             const isMobile = window.innerWidth < 1024;
 
             if (isMobile || activeTab === 'report') {
-                openFormModal();
-                activeFormElement = document.getElementById('mobile-expense-form');
+                if (isMobile) {
+                    openFormModal();
+                    activeFormElement = document.getElementById('mobile-expense-form');
+                } else {
+                    activeFormElement = document.getElementById('report-form');
+                }
             } else {
-                activeFormElement = document.getElementById('expense-form');
+                // This case should theoretically not happen since the dashboard form is removed
+                activeFormElement = document.getElementById('expense-form'); 
             }
 
             if(activeFormElement) {
                 populateForm(activeFormElement, record);
             }
 
-            if(scrollToForm && !isMobile) {
-                const targetId = activeTab === 'dashboard' ? "dashboard-expense-form-container" : "report-expense-form-container";
-                 document.getElementById(targetId).scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if(scrollToForm && !isMobile && activeTab === 'report') {
+                 document.getElementById("report-expense-form-container").scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
@@ -936,6 +935,9 @@
             document.getElementById('fruit-total-summary').textContent = formatCurrency(totalFruit);
 
             document.getElementById('total-count-summary').textContent = `${totalCount} កំណត់ត្រា`;
+            
+            // Set the filtered total to the overall total initially
+            document.getElementById('filtered-expense-summary').textContent = formatCurrency(totalExpense);
         }
 
         // NEW: Populate years dynamically for filtering
@@ -979,9 +981,11 @@
             const currentYear = today.getFullYear();
             const currentMonth = today.getMonth();
             const currentDay = today.getDay(); // 0 (Sun) to 6 (Sat)
+            let filteredTotal = 0;
+
 
             filtered = filtered.filter(x => {
-                const recordDate = new Date(x.Date);
+                const recordDate = new Date(x.Date + 'T00:00:00'); 
                 const recordYear = recordDate.getFullYear();
                 const recordMonth = recordDate.getMonth();
                 const recordDay = recordDate.getDay();
@@ -1008,7 +1012,7 @@
                     case 'day_thu': matchesReport = recordDay === 4; break;
                     case 'day_fri': matchesReport = recordDay === 5; break;
                     case 'day_sat': matchesReport = recordDay === 6; break;
-                    // Filter by specific month
+                    // Filter by specific month (for the current year)
                     case 'month_0': matchesReport = recordMonth === 0 && recordYear === currentYear; break;
                     case 'month_1': matchesReport = recordMonth === 1 && recordYear === currentYear; break;
                     case 'month_2': matchesReport = recordMonth === 2 && recordYear === currentYear; break;
@@ -1033,11 +1037,19 @@
                 if (searchTerm) {
                     matchesSearch = description.includes(searchTerm);
                 }
+                
+                if(matchesReport && matchesSearch && x.Status === "Active") {
+                    filteredTotal += parseFloat(x.Amount) || 0;
+                }
 
                 return matchesReport && matchesSearch;
             }).sort((a, b) => new Date(b.Date) - new Date(a.Date));
 
             filteredDataForReport = filtered;
+            
+            // NEW: Update the filtered total summary card
+            document.getElementById('filtered-expense-summary').textContent = formatCurrency(filteredTotal);
+            
             renderExpenseList(filtered);
         }
 
@@ -1118,7 +1130,7 @@
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center space-x-2 mb-1">
                                 <span class="text-xs font-medium px-2 py-0.5 rounded-full ${badgeClass}">ចំណាយ</span>
-                                <span class="text-sm text-gray-50">${dateDisplay}</span>
+                                <span class="text-sm text-gray-500">${dateDisplay}</span>
                             </div>
                             <p class="text-base font-bold text-gray-800 truncate">ចំណាយគ្រឿងទេស</p>
                             <p class="text-sm text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
@@ -1147,7 +1159,7 @@
         async function handleFormSubmission(e, source) {
              e.preventDefault();
              // Determine which form submitted the data
-             const formElement = source === 'mobile' ? document.getElementById('mobile-expense-form') : (source === 'report-desktop' ? document.getElementById('report-form') : document.getElementById('expense-form'));
+             const formElement = source === 'mobile' ? document.getElementById('mobile-expense-form') : document.getElementById('report-form');
 
              const date = formElement.querySelector("#date").value;
              const meat = parseFloat(formElement.querySelector("#meat").value) || 0;
