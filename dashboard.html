@@ -91,9 +91,9 @@
         #dashboard-expense-form-container {
             display: none !important;
         }
-        /* Report form is hidden by default (Desktop/Laptop) */
+        /* Report form is hidden on mobile by default, but always displayed on desktop in Report tab */
         #report-expense-form-container {
-            display: none;
+            display: none; /* Hide on mobile by default */
         }
 
         /* Desktop Layout: Report Form is visible on Desktop by default */
@@ -267,7 +267,7 @@
                         </div>
 
                         <div id="report-controls" class="mb-6 p-4 border rounded-xl bg-gray-50">
-                             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div>
                                     <label for="filter-day" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមថ្ងៃ:</label>
                                     <select id="filter-day" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()">
@@ -409,7 +409,7 @@
             </div>
 
             <div class="flex justify-end space-x-3 pt-6 border-t mt-6">
-                <button type="button" onclick="editExpense(activeDetailRecord.ID, true);" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition flex items-center shadow-md">
+                <button type="button" onclick="editDesktopForm(activeDetailRecord.ID);" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition flex items-center shadow-md">
                     <i data-lucide="pencil" class="w-5 h-5 mr-2"></i> កែប្រែ
                 </button>
                 <button type="button" onclick="closeDetailModal()" class="px-6 py-3 bg-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-400 transition">បិទ</button>
@@ -517,7 +517,11 @@
             // Ensure filters are reset and data loaded when switching to Report tab
             if (tabName === 'report') {
                 const reportForm = document.getElementById('report-form');
-                if (reportForm) resetForm(reportForm);
+                if (reportForm) {
+                    resetForm(reportForm); // Reset the desktop form on tab switch
+                    // Set activeFormElement for desktop submission
+                    if (window.innerWidth >= 1024) { activeFormElement = reportForm; } 
+                }
                 
                 document.getElementById('filter-day').value = 'all';
                 document.getElementById('filter-month').value = 'all';
@@ -711,7 +715,7 @@
         function setupForms() {
             const formTemplate = document.getElementById('form-template').innerHTML;
 
-            // Setup Report Form (Desktop Only - Hidden by default)
+            // Setup Report Form (Desktop Only)
             const reportForm = document.getElementById('report-form');
             if (reportForm) {
                 reportForm.innerHTML = formTemplate;
@@ -759,6 +763,7 @@
             const submitBtn = formElement.querySelector('#submit-btn');
             const cancelBtn = formElement.querySelector('#cancel-btn');
             
+            const reportTitle = document.getElementById('report-form-title');
             const mobileTitle = document.getElementById('mobile-form-title');
 
 
@@ -768,6 +773,7 @@
                 submitBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
                 cancelBtn.classList.remove('hidden');
 
+                if (reportTitle) reportTitle.textContent = "📝 កែប្រែកំណត់ត្រា";
                 if (mobileTitle) mobileTitle.textContent = "📝 កែប្រែកំណត់ត្រា";
                 
             } else {
@@ -785,8 +791,10 @@
              submitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
              cancelBtn.classList.add('hidden');
 
+             const reportTitle = document.getElementById('report-form-title');
              const mobileTitle = document.getElementById('mobile-form-title');
 
+             if (reportTitle) reportTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
              if (mobileTitle) mobileTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
 
              updateAmountSummary(formElement);
@@ -795,7 +803,6 @@
         function resetForm(formToReset = null) {
             editingID = null;
             
-            // Reset specified form or both relevant forms if none specified
             if (formToReset) {
                 formToReset.reset();
                 resetFormUI(formToReset);
@@ -815,13 +822,30 @@
              const isMobile = window.innerWidth < 1024;
              
              if (isMobile) {
-                 // Mobile: use modal for edit
+                 // Mobile/Tablet: Open Modal Form for editing
                  editExpense(record.ID, false);
              } else {
-                 // Desktop: use detail modal
+                 // Desktop/Laptop: Open Detail Modal
                  openDetailModal(record);
              }
         }
+        
+        // NEW: Function specifically for Desktop Edit Button (in detail modal)
+        function editDesktopForm(id) {
+            const record = allExpenses.find(x => x.ID.toString() === id.toString());
+            if (!record) return showToast("❌ មិនអាចរកកំណត់ត្រាបានទេ។", 'error');
+            
+            closeDetailModal(); // Close detail modal
+            editingID = id;
+            
+            const reportForm = document.getElementById('report-form');
+            if (reportForm) {
+                 activeFormElement = reportForm;
+                 populateForm(reportForm, record); // Populate the visible desktop form
+                 document.getElementById("report-expense-form-container").scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
 
         async function editExpense(id, scrollToForm=true) {
             const record = allExpenses.find(x => x.ID.toString() === id.toString());
@@ -839,16 +863,13 @@
                 // Use mobile modal for editing on mobile
                 openFormModal();
                 activeFormElement = document.getElementById('mobile-expense-form');
-            } else {
-                // For editing on desktop, open the detail modal again, which has the edit button
-                // The edit button in detail modal will be set to use the desktop form or directly use the mobile modal. 
-                // Since the request simplified the desktop form for display only, we will fall back to the mobile modal for editing logic.
-                 openFormModal();
-                 activeFormElement = document.getElementById('mobile-expense-form');
-            }
-
-            if(activeFormElement) {
                 populateForm(activeFormElement, record);
+            } else {
+                // On desktop, clicking the list item opens detail modal first (handled by handleCardClick)
+                // When clicking "Edit" in the detail modal, editDesktopForm is called.
+                // This fallback is mostly for robustness/direct calls.
+                 openDetailModal(record);
+                 // The edit button inside detailModal now calls editDesktopForm
             }
         }
 
@@ -996,15 +1017,12 @@
                     matchesMonth = recordMonth === currentMonth && recordYear === currentYear;
                 } else if (filterMonth.startsWith('month_')) {
                     const targetMonth = parseInt(filterMonth.split('_')[1]);
-                    // Only filter by current year if 'all' is not selected for year, or if 'yearly' is not selected
-                    if (filterYear === 'all' || filterYear === 'yearly' || filterYear.startsWith('year_')) {
-                         matchesMonth = recordMonth === targetMonth; // Let year filter handle the year part if active
-                    }
-                    if (filterYear === 'all') { // If year is 'all', filter by month in any year
+                    
+                    if (filterYear === 'all') { 
                          matchesMonth = recordMonth === targetMonth;
-                    } else if (filterYear === 'yearly') { // If year is 'yearly', filter by month in current year
+                    } else if (filterYear === 'yearly') { 
                          matchesMonth = recordMonth === targetMonth && recordYear === currentYear;
-                    } else if (filterYear.startsWith('year_')) { // If year is a specific year, filter by month in that year
+                    } else if (filterYear.startsWith('year_')) { 
                          const targetYear = parseInt(filterYear.split('_')[1]);
                          matchesMonth = recordMonth === targetMonth && recordYear === targetYear;
                     }
