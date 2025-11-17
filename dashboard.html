@@ -130,7 +130,7 @@
         /* HIDE FILTER CONTROLS ON MOBILE */
         @media (max-width: 1023px) {
             #report-controls {
-                display: none !important;
+                display: none; /* Hide by default, will be toggled by JS on mobile */
             }
         }
 
@@ -160,7 +160,7 @@
             .expense-item { page-break-inside: avoid; }
 
             /* Hide unnecessary elements for printing */
-            header, #fab-add-btn, #fab-export-btn, .item-actions, #report-expense-form-container, #report-controls, #report-tabs, #add-report-btn { display: none !important; }
+            header, #fab-add-btn, #fab-export-btn, .item-actions, #report-expense-form-container, #report-controls, #report-tabs, #add-report-btn, #toggle-filter-btn { display: none !important; }
 
             /* Force the report content to show up for printing */
             #report-tab { display: block !important; }
@@ -301,6 +301,12 @@
                             <h2 class="text-xl sm:text-2xl font-bold text-gray-700 mb-2 sm:mb-0">បញ្ជីប្រតិបត្តិការចំណាយ</h2>
                             <button onclick="switchView('trash')" id="trash-btn" class="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition flex items-center font-semibold text-sm shadow-sm">
                                 <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប
+                            </button>
+                        </div>
+                        
+                        <div id="toggle-filter-btn" class="mb-4 hidden md:hidden">
+                            <button onclick="toggleMobileFilter()" class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold shadow-md hover:bg-blue-600 transition flex items-center justify-center text-sm">
+                                <i data-lucide="filter" class="w-4 h-4 mr-2"></i> <span id="filter-btn-text">ត្រងទិន្នន័យ</span>
                             </button>
                         </div>
 
@@ -559,6 +565,25 @@
             document.getElementById('mobileExportModal').classList.remove('active');
         }
 
+        // --- NEW: Toggle Mobile Filter Function ---
+        function toggleMobileFilter() {
+            const controls = document.getElementById('report-controls');
+            // Toggle visibility of the controls section
+            if (controls.style.display === 'none' || controls.style.display === '') {
+                controls.style.display = 'block';
+                document.getElementById('filter-btn-text').textContent = 'លាក់ការត្រង';
+                document.getElementById('toggle-filter-btn').classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                document.getElementById('toggle-filter-btn').classList.add('bg-gray-500', 'hover:bg-gray-600');
+
+            } else {
+                controls.style.display = 'none';
+                document.getElementById('filter-btn-text').textContent = 'ត្រងទិន្នន័យ';
+                document.getElementById('toggle-filter-btn').classList.remove('bg-gray-500', 'hover:bg-gray-600');
+                document.getElementById('toggle-filter-btn').classList.add('bg-blue-500', 'hover:bg-blue-600');
+            }
+            lucide.createIcons();
+        }
+
         // --- NEW: TAB SWITCHING FUNCTION ---
         function setActiveTab(tabName) {
             activeTab = tabName;
@@ -599,6 +624,22 @@
                 if (reportForm) {
                     resetForm(reportForm); // Reset the desktop form
                     if (isDesktop) activeFormElement = reportForm; 
+                }
+                
+                // Reset mobile filter UI state if applicable
+                if (window.innerWidth < 1024) {
+                    const controls = document.getElementById('report-controls');
+                    if (controls) controls.style.display = 'none';
+                    const toggleBtn = document.getElementById('toggle-filter-btn');
+                    if (toggleBtn) {
+                         toggleBtn.style.display = 'block';
+                         document.getElementById('filter-btn-text').textContent = 'ត្រងទិន្នន័យ';
+                         toggleBtn.classList.remove('bg-gray-500', 'hover:bg-gray-600');
+                         toggleBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                    }
+                } else {
+                     const toggleBtn = document.getElementById('toggle-filter-btn');
+                     if (toggleBtn) toggleBtn.style.display = 'none';
                 }
                 
                 // Reset all filters
@@ -911,7 +952,7 @@
              }
         }
         
-        // NEW: Function specifically for Desktop Edit Button (in detail modal)
+        // Function specifically for Desktop Edit Button (in detail modal)
         function editDesktopForm(id) {
             const record = allExpenses.find(x => x.ID.toString() === id.toString());
             if (!record) return showToast("❌ មិនអាចរកកំណត់ត្រាបានទេ។", 'error');
@@ -1054,6 +1095,7 @@
         }
 
         function filterRecords() {
+            // Get filter values (filters are always present in the DOM, even if hidden by CSS)
             const filterDay = document.getElementById('filter-day').value;
             const filterMonth = document.getElementById('filter-month').value;
             const filterYear = document.getElementById('filter-year').value;
@@ -1157,11 +1199,6 @@
             const list = document.getElementById("expense-list");
             const isTrashView = currentView === 'trash';
             const today = new Date().toISOString().slice(0, 10);
-            
-            const reportTab = document.getElementById('report-tab');
-            const isMobile = window.innerWidth < 1024;
-            
-            // On mobile, the list is now always visible (CSS was changed)
             
             if (data.length === 0) {
                 list.innerHTML = `<p class="text-center text-gray-500 py-10 text-xl border-dashed border-2 border-gray-300 rounded-lg m-4 bg-gray-50">
@@ -1387,9 +1424,13 @@
             const dataToExport = filteredDataForReport;
             
             // Reconstruct report name from individual filters (Use current filter states, even if hidden)
-            const dayText = document.getElementById('filter-day').options[document.getElementById('filter-day').selectedIndex].text;
-            const monthText = document.getElementById('filter-month').options[document.getElementById('filter-month').selectedIndex].text;
-            const yearText = document.getElementById('filter-year').options[document.getElementById('filter-year').selectedIndex].text;
+            const filterDayElement = document.getElementById('filter-day');
+            const filterMonthElement = document.getElementById('filter-month');
+            const filterYearElement = document.getElementById('filter-year');
+            
+            const dayText = filterDayElement.options[filterDayElement.selectedIndex].text;
+            const monthText = filterMonthElement.options[filterMonthElement.selectedIndex].text;
+            const yearText = filterYearElement.options[filterYearElement.selectedIndex].text;
             const reportName = `Report_${dayText}_${monthText}_${yearText}`;
             
             if (dataToExport.length === 0) {
