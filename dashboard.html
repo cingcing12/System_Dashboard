@@ -131,7 +131,7 @@
         #dashboard-expense-form-container {
             display: none !important;
         }
-        /* Report form is hidden on mobile by default, but always displayed on desktop in Report tab */
+        /* Report form is visible on desktop, hidden on mobile */
         #report-expense-form-container {
             display: none; /* Hide on mobile by default */
         }
@@ -612,8 +612,10 @@
         let activeFormElement = null;
 
         const dayNames = ["អាទិត្យ", "ច័ន្ទ", "អង្គារ", "ពុធ", "ព្រហស្បតិ៍", "សុក្រ", "សៅរ៍"];
-
-        // Placeholder for user avatar URL (replace with actual logic if needed)
+        
+        // --- CONFIG ---
+        // IMPORTANT: Replace this with the base URL where your images are hosted.
+        const BASE_IMAGE_URL = "https://your-sheetdb-attachment-domain.com/attachments/"; 
         const DEFAULT_AVATAR_URL = "https://ui-avatars.com/api/?name=User&background=6366f1&color=fff";
         const PROFILE_ICON_URL = "data:image/svg+xml;base64," + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>');
 
@@ -803,7 +805,7 @@
         }
         function logout() { customLogout(); }
 
-        // --- INIT & AUTH (UNCHANGED) ---
+        // --- INIT & AUTH (UPDATED for Avatar) ---
         if (!user) {
             showToast("⚠️ សូមចូលប្រព័ន្ធជាមុនសិន។", 'warning');
             window.location.href = "index.html";
@@ -811,21 +813,39 @@
             document.getElementById("dropdown-email").textContent = user.Email || 'N/A';
             document.getElementById("dropdown-role").textContent = user.Role || 'User';
             
-            const avatarImg = document.getElementById('profile-avatar');
-            const userAvatarUrl = user.AvatarUrl || DEFAULT_AVATAR_URL.replace('User', user.Email.split('@')[0]);
-            
-            // Check if URL is valid, otherwise use a placeholder SVG to maintain icon styling
-            if (userAvatarUrl && userAvatarUrl !== 'N/A') {
-                avatarImg.src = userAvatarUrl;
-            } else {
-                avatarImg.src = PROFILE_ICON_URL; // Use a base64 SVG placeholder
-            }
-            
+            // NEW: Set the profile avatar
+            updateProfileAvatar();
+
             if (user.Role === 'Owner') {
                 document.getElementById('user-management-link').classList.remove('hidden');
                 document.getElementById('user-management-link').classList.add('flex');
             }
         }
+        
+        // NEW: Avatar Logic
+        function updateProfileAvatar() {
+            const avatarImg = document.getElementById('profile-avatar');
+            let avatarSource = PROFILE_ICON_URL;
+            
+            if (user && user.FaceImageFile && user.FaceImageFile !== 'N/A') {
+                // Assuming FaceImageFile holds the image name and you have a BASE_IMAGE_URL defined
+                avatarSource = BASE_IMAGE_URL + user.FaceImageFile;
+            } else if (user && user.Email) {
+                // Fallback to UI Avatars based on email name
+                const userName = user.Email.split('@')[0].toUpperCase();
+                avatarSource = DEFAULT_AVATAR_URL.replace('User', userName);
+            }
+            
+            if (avatarImg) {
+                avatarImg.src = avatarSource;
+                // Add a simple error handler in case the dynamic image fails to load
+                avatarImg.onerror = () => {
+                    avatarImg.src = PROFILE_ICON_URL; 
+                    avatarImg.style.backgroundColor = '#6366f1';
+                };
+            }
+        }
+
 
         // --- PROFILE/DROPDOWN/MODALS (UNCHANGED) ---
         function toggleDropdown(event) {
