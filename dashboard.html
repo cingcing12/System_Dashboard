@@ -131,9 +131,9 @@
         #dashboard-expense-form-container {
             display: none !important;
         }
-        /* Report form is visible on desktop, hidden on mobile */
+        /* Report form is hidden on mobile by default, but always displayed on desktop in Report tab */
         #report-expense-form-container {
-            display: none; 
+            display: none; /* Hide on mobile by default */
         }
         
         /* HIDE FILTER CONTROLS ON MOBILE */
@@ -222,6 +222,14 @@
             from { opacity: 0; transform: scale(0.9) translateY(-20px); }
             to { opacity: 1; transform: scale(1) translateY(0); }
         }
+        
+        /* NEW: Profile Avatar Styling */
+        #profile-avatar {
+             width: 100%;
+             height: 100%;
+             object-fit: cover;
+             border-radius: 50%;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -252,8 +260,8 @@
             </h1>
 
             <div class="dropdown">
-                <button onclick="toggleDropdown(event)" class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-semibold hover:bg-indigo-600 transition duration-150 relative ring-2 ring-indigo-300 ring-offset-2">
-                    <i data-lucide="user" class="w-6 h-6"></i>
+                <button onclick="toggleDropdown(event)" class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-semibold hover:bg-indigo-600 transition duration-150 relative ring-2 ring-indigo-300 ring-offset-2 overflow-hidden">
+                    <img id="profile-avatar" src="" alt="User Avatar" class="w-full h-full object-cover">
                 </button>
                 <div id="profile-dropdown-menu" class="dropdown-menu">
                     <div class="p-3 border-b text-center bg-gray-50">
@@ -605,6 +613,11 @@
 
         const dayNames = ["អាទិត្យ", "ច័ន្ទ", "អង្គារ", "ពុធ", "ព្រហស្បតិ៍", "សុក្រ", "សៅរ៍"];
 
+        // Placeholder for user avatar URL (replace with actual logic if needed)
+        const DEFAULT_AVATAR_URL = "https://ui-avatars.com/api/?name=User&background=6366f1&color=fff";
+        const PROFILE_ICON_URL = "data:image/svg+xml;base64," + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>');
+
+
         // --- NEW: Export Modal Functions ---
         function openExportModal() {
             document.getElementById('mobileExportModal').classList.add('active');
@@ -797,6 +810,17 @@
         } else {
             document.getElementById("dropdown-email").textContent = user.Email || 'N/A';
             document.getElementById("dropdown-role").textContent = user.Role || 'User';
+            
+            const avatarImg = document.getElementById('profile-avatar');
+            const userAvatarUrl = user.AvatarUrl || DEFAULT_AVATAR_URL.replace('User', user.Email.split('@')[0]);
+            
+            // Check if URL is valid, otherwise use a placeholder SVG to maintain icon styling
+            if (userAvatarUrl && userAvatarUrl !== 'N/A') {
+                avatarImg.src = userAvatarUrl;
+            } else {
+                avatarImg.src = PROFILE_ICON_URL; // Use a base64 SVG placeholder
+            }
+            
             if (user.Role === 'Owner') {
                 document.getElementById('user-management-link').classList.remove('hidden');
                 document.getElementById('user-management-link').classList.add('flex');
@@ -1270,7 +1294,7 @@
 
                 const recordJson = JSON.stringify(x).split("'").join("\\'");
 
-                // Compact Breakdown for Mobile
+                // Compact Breakdown for Mobile/Desktop
                 const breakdown = `
                     <div class="text-xs text-gray-500 mt-1 mobile-breakdown">
                         <span>សាច់: <span class="text-orange-600">${formatCurrency(x.Meat)}</span></span>
@@ -1300,7 +1324,7 @@
                 return `
                     <div onclick="handleCardClick(${recordJson})" class="expense-item bg-white p-4 rounded-xl shadow-md border-l-4 ${isDeleted ? 'border-gray-500' : 'border-red-500'} flex justify-between items-start">
                         <div class="flex-1 min-w-0">
-                            <div class="flex flex-col space-y-1 mb-1">
+                            <div class="flex items-center space-x-2 mb-1">
                                 <span class="text-xs font-medium px-2 py-0.5 rounded-full ${badgeClass} self-start">${x.Type === 'Expense' ? 'ចំណាយ' : 'ចំណូល'}</span>
                                 ${dateDisplay}
                             </div>
@@ -1314,7 +1338,7 @@
                                 ${!isDeleted ? `<i data-lucide="${icon}" class="w-5 h-5 mr-1"></i>` : ''}
                                 ${formatCurrency(parseFloat(x.Amount))}
                             </p>
-                             <div class="item-actions flex space-x-1 mt-2 flex-shrink-0">
+                            <div class="item-actions flex space-x-1 mt-2 flex-shrink-0">
                                 ${actionButtons}
                             </div>
                         </div>
