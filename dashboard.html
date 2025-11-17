@@ -130,7 +130,7 @@
         /* HIDE FILTER CONTROLS ON MOBILE */
         @media (max-width: 1023px) {
             #report-controls {
-                display: none; /* Hide by default, will be toggled by JS on mobile */
+                display: none; /* Hidden by default, toggled by JS button */
             }
         }
 
@@ -146,8 +146,32 @@
             #mobileFormModal, #mobileExportModal {
                 display: none !important;
             }
+            /* Hide mobile toggle filter button on desktop */
+            #toggle-filter-btn {
+                display: none !important;
+            }
         }
 
+        /* Mobile List Item Style Improvement */
+        @media (max-width: 640px) {
+            .expense-item .mobile-breakdown {
+                display: block;
+                margin-top: 8px;
+            }
+            .expense-item .mobile-breakdown span {
+                display: block;
+                padding-left: 0;
+                font-size: 13px; /* Slightly larger breakdown text */
+                line-height: 1.3;
+            }
+            .expense-item .mobile-breakdown .pipe-separator {
+                display: none;
+            }
+            .expense-item .mobile-amount {
+                font-size: 1.5rem; /* Larger final amount */
+                margin-top: 5px;
+            }
+        }
         /* Print Styles */
         @media print {
             body {
@@ -304,7 +328,7 @@
                             </button>
                         </div>
                         
-                        <div id="toggle-filter-btn" class="mb-4 hidden md:hidden">
+                        <div id="toggle-filter-btn" class="mb-4 md:hidden">
                             <button onclick="toggleMobileFilter()" class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold shadow-md hover:bg-blue-600 transition flex items-center justify-center text-sm">
                                 <i data-lucide="filter" class="w-4 h-4 mr-2"></i> <span id="filter-btn-text">ត្រងទិន្នន័យ</span>
                             </button>
@@ -574,6 +598,7 @@
                 document.getElementById('filter-btn-text').textContent = 'លាក់ការត្រង';
                 document.getElementById('toggle-filter-btn').classList.remove('bg-blue-500', 'hover:bg-blue-600');
                 document.getElementById('toggle-filter-btn').classList.add('bg-gray-500', 'hover:bg-gray-600');
+                controls.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
             } else {
                 controls.style.display = 'none';
@@ -1095,7 +1120,6 @@
         }
 
         function filterRecords() {
-            // Get filter values (filters are always present in the DOM, even if hidden by CSS)
             const filterDay = document.getElementById('filter-day').value;
             const filterMonth = document.getElementById('filter-month').value;
             const filterYear = document.getElementById('filter-year').value;
@@ -1223,11 +1247,11 @@
 
                 // Use the data from the sheet directly
                 const breakdown = `
-                    <div class="text-xs text-gray-500 mt-1 flex space-x-2">
+                    <div class="text-xs text-gray-500 mt-1 mobile-breakdown flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
                         <span>សាច់: <span class="text-orange-600">${formatCurrency(x.Meat)}</span></span>
-                        <span>|</span>
+                        <span class="pipe-separator hidden sm:inline">|</span>
                         <span>បន្លែ: <span class="text-green-600">${formatCurrency(x.Vegetable)}</span></span>
-                        <span>|</span>
+                        <span class="pipe-separator hidden sm:inline">|</span>
                         <span>ផ្លែឈើ: <span class="text-yellow-600">${formatCurrency(x.Fruit)}</span></span>
                     </div>
                 `;
@@ -1261,7 +1285,7 @@
                         </div>
 
                         <div class="text-right ml-4">
-                            <p class="text-xl font-extrabold ${amountTextClass} flex items-center justify-end whitespace-nowrap">
+                            <p class="text-xl sm:text-2xl font-extrabold ${amountTextClass} flex items-center justify-end whitespace-nowrap mobile-amount">
                                 ${!isDeleted ? `<i data-lucide="${icon}" class="w-5 h-5 mr-1"></i>` : ''}
                                 ${formatCurrency(parseFloat(x.Amount))}
                             </p>
