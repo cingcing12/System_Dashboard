@@ -116,6 +116,15 @@
         #mobileExportModal.active .modal-content-export {
             transform: translateY(0);
         }
+        
+        /* Filter Modal Custom Style for Mobile (Fixed & Centered) */
+        #filterModal .modal-content-filter {
+            width: 95%;
+            max-width: 450px;
+            animation: fadeInScale 0.3s ease-out;
+            border-radius: 12px;
+            padding: 24px;
+        }
 
 
         /* Form Visibility Logic */
@@ -130,7 +139,8 @@
         /* HIDE FILTER CONTROLS ON MOBILE */
         @media (max-width: 1023px) {
             #report-controls {
-                display: none; /* Hidden by default, toggled by JS button */
+                /* Display is set to 'none' by default in HTML and controlled by JS toggle */
+                display: none;
             }
         }
 
@@ -142,11 +152,10 @@
             #report-tab #data-view-section {
                 grid-column: span 3 / span 3; /* List takes 3 columns */
             }
-            /* Hide the mobile modal on desktop */
-            #mobileFormModal, #mobileExportModal {
+            /* Hide the mobile modal/toggle buttons on desktop */
+            #mobileFormModal, #mobileExportModal, #filterModal {
                 display: none !important;
             }
-            /* Hide mobile toggle filter button on desktop */
             #toggle-filter-btn {
                 display: none !important;
             }
@@ -184,7 +193,7 @@
             .expense-item { page-break-inside: avoid; }
 
             /* Hide unnecessary elements for printing */
-            header, #fab-add-btn, #fab-export-btn, .item-actions, #report-expense-form-container, #report-controls, #report-tabs, #add-report-btn, #toggle-filter-btn { display: none !important; }
+            header, #fab-add-btn, #fab-export-btn, .item-actions, #report-expense-form-container, #report-controls, #report-tabs, #add-report-btn, #toggle-filter-btn, #filterModal { display: none !important; }
 
             /* Force the report content to show up for printing */
             #report-tab { display: block !important; }
@@ -1120,6 +1129,7 @@
         }
 
         function filterRecords() {
+            // Get filter values (filters are always present in the DOM, even if hidden by CSS)
             const filterDay = document.getElementById('filter-day').value;
             const filterMonth = document.getElementById('filter-month').value;
             const filterYear = document.getElementById('filter-year').value;
