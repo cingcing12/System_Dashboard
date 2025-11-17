@@ -15,75 +15,127 @@
         body {
             font-family: 'Khmer OS Battambang', sans-serif;
             min-height: 100vh;
-            background-color: #f7f9fc; 
         }
 
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); justify-content: center; align-items: center; z-index: 999; backdrop-filter: blur(4px); transition: opacity 0.3s ease; }
+        /* Simple hide scrollbar */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* General Modal Styling */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(0, 0, 0, 0.65); 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 999; 
+            backdrop-filter: blur(3px);
+            transition: opacity 0.3s ease;
+        }
         .modal.active { display:flex; }
-        .card-shadow-lg { box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08); }
+        
+        /* Custom status badges (Slightly improved colors) */
+        .badge-expense { background-color: #fee2e2; color: #b91c1c; }
+        .badge-income { background-color: #dcfce7; color: #15803d; }
+        .badge-deleted { background-color: #f3f4f6; color: #6b7280; }
+
+        /* Modern shadow for cards */
+        .card-shadow { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+
+        /* Dropdown */
         .dropdown { position: relative; }
-        .dropdown-menu { display: none; position: absolute; right: 0; top: 100%; min-width: 240px; background-color: white; border-radius: 12px; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); z-index: 100; margin-top: 12px; transform: translateY(-10px); opacity: 0; transition: all 0.2s ease-out; }
-        .dropdown-menu.active { display: block; transform: translateY(0); opacity: 1; }
-        .expense-item { transition: all 0.3s ease; border: 1px solid #e2e8f0; }
-        .expense-item:hover { cursor: pointer; transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); border-color: #93c5fd; }
-        #fab-add-btn { position: fixed; bottom: 24px; right: 24px; z-index: 50; width: 64px; height: 64px; border-radius: 50%; display: none; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3); }
-        @media(max-width:1023px){ #fab-add-btn{ display: inline-flex !important; } #mobileFormModal .modal-content-mobile { width: 95%; max-width: 480px; margin: 10px; } }
+        .dropdown-menu { display: none; position: absolute; right: 0; top: 100%; min-width: 200px; background-color: white; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); z-index: 100; margin-top: 10px; }
+        .dropdown-menu.active { display: block; }
         
-        /* === CUSTOM CSS FOR REQUESTED VIEW TOGGLE === */
-        /* Default state controlled by JS now, setting them to inline block allows JS to correctly toggle desktop visibility */
-        #main-expense-form-container { display: none; } 
-        #data-view-section { display: none; }
-        #dashboard-summary-section { display: block; }
+        /* List Item Hover Effect */
+        .expense-item {
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            border: 1px solid #e5e7eb; /* Added subtle border */
+        }
+        .expense-item:hover {
+            cursor: pointer;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+        }
         
-        /* Ensure that the report view containers are hidden by default */
-        #report-form-container, #report-data-view-section { display: none; }
+        /* FAB forced visibility on mobile via CSS */
+        #fab-add-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 50;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+        @media(max-width:1023px){ /* Smaller than lg */
+            #fab-add-btn{
+                display: inline-flex !important;
+            }
+        }
+        
+        /* Mobile Modal Fix (Ensures the modal form is 100% on small screens) */
+        #mobileFormModal .modal-content-mobile {
+            width: 95%; /* Limit width slightly on small screens */
+            max-width: 480px; /* Max-width for mobile modal */
+            margin: 20px;
+        }
 
+        /* Improved Form Visibility Logic: Hide/Show based on screen size */
+        #main-expense-form-container {
+            display: none;
+        }
         @media (min-width: 1024px) { 
-            #mobileFormModal { display: none !important; } 
+            #main-expense-form-container {
+                display: block !important;
+            }
         }
-        /* === END CUSTOM CSS === */
-
-        /* UPDATED AVATAR STYLES */
-        .avatar-initials {
-            width: 40px; height: 40px; border-radius: 50%; 
-            background-color: #6366f1; color: white; 
-            font-size: 16px; font-weight: 700;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-            background-size: cover;
-            background-position: center;
+        /* Hide the mobile modal on desktop */
+        @media (min-width: 1024px) {
+            #mobileFormModal {
+                display: none !important;
+            }
         }
-        .avatar-image { /* New class for when an image is used */
-            background-color: transparent !important;
-            color: transparent !important;
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-        }
-
-        .confirm-modal-content { animation: fadeInScale 0.3s ease-out; }
-        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.9) translateY(-20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        /* New PDF styles to prevent cutoff issues when generating the PDF */
         @media print {
-            body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: #ffffff !important; }
-            .card-shadow-lg { box-shadow: none !important; border: 1px solid #ccc; }
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                background-color: #ffffff !important;
+            }
+            .card-shadow { box-shadow: none !important; border: 1px solid #ccc; }
             .hide-on-print { display: none !important; }
-            .expense-item { page-break-inside: avoid; border: 1px solid #eee; margin-bottom: 5px !important; }
-            header, #fab-add-btn, .item-actions, #main-expense-form-container, #data-view-section > div:first-child { display: none !important; }
-            #data-view-section { border: none !important; box-shadow: none !important; padding: 0 !important; }
-            #expense-list { max-height: unset !important; overflow-y: visible !important; }
+            /* Force list items to not break across pages badly */
+            .expense-item { page-break-inside: avoid; }
+            
+            /* Hide unnecessary elements for printing */
+            header, #fab-add-btn, .item-actions, #main-expense-form-container { display: none !important; }
+        }
+        
+        /* Custom Confirmation Modal Styling */
+        .confirm-modal-content {
+            animation: fadeInScale 0.3s ease-out;
+        }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.9) translateY(-20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-50">
     
-    <div id="toast-container" class="fixed top-4 right-4 z-[1000] space-y-3 pointer-events-none"></div>
+    <div id="toast-container" class="fixed top-4 right-4 z-[1000] space-y-3 pointer-events-none">
+        </div>
+    
     <div id="customConfirmModal" class="modal">
         <div class="confirm-modal-content bg-white rounded-2xl p-8 w-full max-w-sm relative shadow-2xl">
             <div id="confirm-icon-box" class="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center text-white bg-red-100">
-                    <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
+                 <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
             </div>
             <h3 id="confirm-title" class="text-xl font-bold text-gray-800 mb-2 text-center">តើអ្នកប្រាកដទេ?</h3>
             <p id="confirm-message" class="text-gray-600 mb-6 text-center text-sm">ប្រតិបត្តិការនេះមិនអាចត្រលប់ក្រោយបានទេ។</p>
@@ -95,227 +147,126 @@
         </div>
     </div>
     
-    <header class="bg-white shadow-lg sticky top-0 z-50 border-b border-gray-200">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center px-4">
+    <header class="bg-white shadow-md p-4 sticky top-0 z-50 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl sm:text-3xl font-bold text-blue-700 flex items-center">
+                <i data-lucide="wallet" class="w-6 h-6 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-indigo-500"></i>
+                ប្រព័ន្ធគ្រប់គ្រងចំណាយ
+            </h1>
             
-            <div class="flex justify-between w-full md:w-auto items-center py-4">
-                <h1 class="text-xl sm:text-3xl font-bold text-indigo-700 flex items-center">
-                    <i data-lucide="wallet" class="w-6 h-6 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-indigo-500"></i>
-                    គ្រប់គ្រងចំណាយគ្រឿងទេស
-                </h1>
-                
-                <div class="dropdown md:hidden">
-                    <button onclick="toggleDropdown(event)" class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-semibold hover:bg-indigo-600 transition duration-150 relative ring-2 ring-indigo-300 ring-offset-2">
-                        <div id="user-avatar-initials-mobile" class="avatar-initials w-full h-full text-sm">...</div>
-                    </button>
-                    <div id="profile-dropdown-menu" class="dropdown-menu">
-                        <div class="p-4 border-b text-left bg-gray-50 rounded-t-xl flex items-center space-x-3">
-                            <div id="dropdown-avatar-initials" class="avatar-initials w-10 h-10 text-base">...</div>
-                            <div>
-                                <p class="font-bold text-gray-800 truncate" id="dropdown-email">Loading...</p>
-                                <span class="text-sm text-indigo-500" id="dropdown-role">Loading...</span>
-                            </div>
-                        </div>
-                        
-                        <a href="user.html" id="user-management-link" class="hidden items-center p-3 hover:bg-indigo-50 transition text-purple-700">
-                            <i data-lucide="users" class="w-4 h-4 mr-2"></i> គ្រប់គ្រងអ្នកប្រើ
-                        </a>
-                        
-                        <a href="#" onclick="openProfileModal(); return false;" class="flex items-center p-3 hover:bg-gray-50 transition text-gray-700">
-                            <i data-lucide="user-cog" class="w-4 h-4 mr-2"></i> ព័ត៌មានគណនី
-                        </a>
-                        <a href="#" onclick="customLogout(); return false;" class="flex items-center p-3 hover:bg-red-50 transition text-red-600 border-t mt-1">
-                            <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> ចាកចេញ
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <nav class="flex-1 overflow-x-auto w-full md:w-auto custom-scrollbar md:pb-0" style="scrollbar-width: none; -ms-overflow-style: none;">
-                <ul class="flex space-x-6 whitespace-nowrap border-t md:border-t-0 pt-3 md:pt-0">
-                    <li onclick="showView('dashboard')" id="nav-dashboard" class="nav-item pb-3 border-b-4 border-indigo-600 text-indigo-600 font-bold flex items-center cursor-pointer">
-                        <i data-lucide="layout-dashboard" class="w-4 h-4 mr-1"></i> ផ្ទាំងគ្រប់គ្រង
-                    </li>
-                    <li onclick="showView('report')" id="nav-report" class="nav-item pb-3 border-b-4 border-transparent text-gray-600 hover:border-indigo-100 hover:text-indigo-500 transition cursor-pointer flex items-center">
-                        <i data-lucide="pie-chart" class="w-4 h-4 mr-1"></i> របាយការណ៍
-                    </li>
-                    <li onclick="window.location.href='user.html'" id="user-management-tab" class="hidden pb-3 border-b-4 border-transparent text-gray-600 hover:border-purple-100 hover:text-purple-500 transition cursor-pointer flex items-center">
-                        <i data-lucide="users" class="w-4 h-4 mr-1"></i> គ្រប់គ្រងអ្នកប្រើ
-                    </li>
-                </ul>
-            </nav>
-            
-            <div class="dropdown hidden md:block pl-4 py-3">
+            <div class="dropdown">
                 <button onclick="toggleDropdown(event)" class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-semibold hover:bg-indigo-600 transition duration-150 relative ring-2 ring-indigo-300 ring-offset-2">
-                    <div id="user-avatar-initials-desktop" class="avatar-initials w-full h-full text-sm">...</div>
+                    <i data-lucide="user" class="w-6 h-6"></i>
                 </button>
+                <div id="profile-dropdown-menu" class="dropdown-menu">
+                    <div class="p-3 border-b text-center bg-gray-50">
+                        <p class="font-bold text-gray-800 truncate" id="dropdown-email">Loading...</p>
+                        <span class="text-sm text-indigo-500" id="dropdown-role">Loading...</span>
+                    </div>
+                    
+                    <a href="user.html" id="user-management-link" class="hidden items-center p-3 hover:bg-indigo-50 transition text-purple-700">
+                        <i data-lucide="users" class="w-4 h-4 mr-2"></i> គ្រប់គ្រងអ្នកប្រើ
+                    </a>
+                    
+                    <a href="#" onclick="openProfileModal(); return false;" class="flex items-center p-3 hover:bg-gray-50 transition text-gray-700">
+                        <i data-lucide="user-cog" class="w-4 h-4 mr-2"></i> ព័ត៌មានគណនី
+                    </a>
+                    <a href="#" onclick="customLogout(); return false;" class="flex items-center p-3 hover:bg-red-50 transition text-red-600 border-t mt-1">
+                        <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> ចាកចេញ
+                    </a>
+                </div>
             </div>
         </div>
     </header>
 
-    <main id="main-content-container" class="max-w-7xl mx-auto p-4 md:p-8">
+    <main class="max-w-7xl mx-auto p-4 md:p-8">
         
-        <div id="dashboard-view" class="view-content active">
-            <section id="dashboard-summary-section" class="mb-8">
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-red-600 hover:shadow-xl transition transform hover:scale-[1.01]">
-                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="receipt" class="w-4 h-4 mr-2 text-red-600"></i> ចំណាយសរុបរួម</p>
-                        <p class="text-2xl sm:text-4xl font-extrabold text-red-700 truncate" id="total-expense-summary">-- ៛</p>
+        <section class="mb-8">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-red-500 hover:shadow-lg transition">
+                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="receipt" class="w-4 h-4 mr-2 text-red-500"></i> ចំណាយសរុបរួម</p>
+                    <p class="text-2xl sm:text-4xl font-extrabold text-red-600 truncate" id="total-expense-summary">-- ៛</p>
+                </div>
+                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-red-400 hover:shadow-lg transition">
+                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="calendar-check" class="w-4 h-4 mr-2 text-red-400"></i> ចំណាយថ្ងៃនេះ</p>
+                    <p class="text-2xl sm:text-4xl font-extrabold text-red-500 truncate" id="today-expense-summary">0 ៛</p>
+                </div>
+                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-red-300 hover:shadow-lg transition">
+                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="calendar" class="w-4 h-4 mr-2 text-red-300"></i> ចំណាយប្រចាំខែ</p>
+                    <p class="text-2xl sm:text-4xl font-extrabold text-red-400 truncate" id="monthly-expense-summary">0 ៛</p>
+                </div>
+                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-gray-400 hover:shadow-lg transition">
+                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="hash" class="w-4 h-4 mr-2 text-gray-500"></i> ចំនួនកំណត់ត្រា</p>
+                    <p class="text-2xl sm:text-4xl font-extrabold text-gray-700" id="total-count-summary">-- កំណត់ត្រា</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-4">
+                <div class="lg:col-span-1 hidden lg:block"></div> 
+                
+                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-orange-500 hover:shadow-lg transition">
+                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="utensils" class="w-4 h-4 mr-2 text-orange-500"></i> សាច់សរុប</p>
+                    <p class="text-2xl sm:text-4xl font-extrabold text-orange-600 truncate" id="meat-total-summary">-- ៛</p>
+                </div>
+                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-green-500 hover:shadow-lg transition">
+                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="leaf" class="w-4 h-4 mr-2 text-green-500"></i> បន្លែសរុប</p>
+                    <p class="text-2xl sm:text-4xl font-extrabold text-green-600 truncate" id="vegetable-total-summary">-- ៛</p>
+                </div>
+                <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-yellow-500 hover:shadow-lg transition">
+                    <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="apple" class="w-4 h-4 mr-2 text-yellow-500"></i> ផ្លែឈើសរុប</p>
+                    <p class="text-2xl sm:text-4xl font-extrabold text-yellow-600 truncate" id="fruit-total-summary">-- ៛</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            
+            <section id="main-expense-form-container" class="lg:col-span-1 bg-white p-6 rounded-2xl card-shadow h-fit lg:sticky lg:top-24 border border-gray-100">
+                <h2 class="text-2xl font-bold mb-6 text-indigo-600 border-b pb-3" id="main-form-title">➕ បញ្ចូលកំណត់ត្រាថ្មី</h2>
+                <form id="expense-form" class="space-y-4">
+                    </form>
+            </section>
+            
+            <section id="data-view-section" class="lg:col-span-3 bg-white p-4 sm:p-6 rounded-2xl card-shadow border border-gray-100">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-2">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-700 mb-2 sm:mb-0">បញ្ជីប្រតិបត្តិការចំណាយ</h2>
+                    <button onclick="switchView('trash')" id="trash-btn" class="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition flex items-center font-semibold text-sm shadow-sm">
+                        <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប
+                    </button>
+                </div>
+
+                <div class="mb-6 p-4 border rounded-xl bg-gray-50">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                        <div class="sm:col-span-1">
+                            <label for="report-type" class="block text-xs font-medium text-gray-500 mb-1">របាយការណ៍សរុបតាម:</label>
+                            <select id="report-type" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()">
+                                <option value="all">ទាំងអស់</option>
+                                <option value="daily">ប្រចាំថ្ងៃ</option>
+                                <option value="monthly">ប្រចាំខែ</option>
+                                <option value="yearly">ប្រចាំឆ្នាំ</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2">
+                             <label for="search-input" class="block text-xs font-medium text-gray-500 mb-1">ស្វែងរក (តាមពិពណ៌នា):</label>
+                             <input type="text" id="search-input" oninput="filterRecords()" placeholder="ឧ. ទិញម្ហូប សម្រាប់ពិធី" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
                     </div>
-                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-red-500 hover:shadow-xl transition transform hover:scale-[1.01]">
-                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="calendar" class="w-4 h-4 mr-2 text-red-500"></i> ចំណាយប្រចាំខែ</p>
-                        <p class="text-2xl sm:text-4xl font-extrabold text-red-600 truncate" id="monthly-expense-summary">0 ៛</p>
+                    
+                    <div class="flex flex-wrap justify-end gap-3 border-t pt-3 mt-3">
+                        <button onclick="exportData('pdf')" class="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-red-700 transition text-sm font-semibold shadow-md">
+                            <i data-lucide="file-text" class="w-4 h-4 mr-1"></i> ទាញយក PDF
+                        </button>
+                        <button onclick="exportData('excel')" class="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-green-700 transition text-sm font-semibold shadow-md">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1"></i> ទាញយក Excel
+                        </button>
                     </div>
-                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-orange-500 hover:shadow-xl transition transform hover:scale-[1.01]">
-                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="utensils" class="w-4 h-4 mr-2 text-orange-500"></i> សាច់សរុប</p>
-                        <p class="text-2xl sm:text-4xl font-extrabold text-orange-600 truncate" id="meat-total-summary">-- ៛</p>
-                    </div>
-                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-green-500 hover:shadow-xl transition transform hover:scale-[1.01]">
-                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="leaf" class="w-4 h-4 mr-2 text-green-500"></i> បន្លែសរុប</p>
-                        <p class="text-2xl sm:text-4xl font-extrabold text-green-600 truncate" id="vegetable-total-summary">-- ៛</p>
-                    </div>
-                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-yellow-500 hover:shadow-xl transition transform hover:scale-[1.01] mt-4 lg:mt-0">
-                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="apple" class="w-4 h-4 mr-2 text-yellow-500"></i> ផ្លែឈើសរុប</p>
-                        <p class="text-2xl sm:text-4xl font-extrabold text-yellow-600 truncate" id="fruit-total-summary">-- ៛</p>
-                    </div>
-                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-red-300 hover:shadow-xl transition transform hover:scale-[1.01] mt-4 lg:mt-0">
-                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="calendar-check" class="w-4 h-4 mr-2 text-red-300"></i> ចំណាយថ្ងៃនេះ</p>
-                        <p class="text-2xl sm:text-4xl font-extrabold text-red-500 truncate" id="today-expense-summary">0 ៛</p>
-                    </div>
-                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-gray-400 hover:shadow-xl transition transform hover:scale-[1.01] mt-4 lg:mt-0">
-                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="hash" class="w-4 h-4 mr-2 text-gray-500"></i> ចំនួនកំណត់ត្រា</p>
-                        <p class="text-2xl sm:text-4xl font-extrabold text-gray-700" id="total-count-summary">-- កំណត់ត្រា</p>
-                    </div>
-                    <div class="lg:col-span-1 hidden lg:block mt-4 lg:mt-0"></div> 
+                </div>
+
+                <div id="expense-list" class="space-y-3 max-h-[65vh] overflow-y-auto pr-2 hide-scrollbar">
+                    <p class="text-center text-gray-500 py-10">កំពុងទាញទិន្នន័យ...</p>
                 </div>
             </section>
-        
-            <div id="dashboard-main-content" class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                
-                <section id="main-expense-form-container" class="lg:col-span-1 bg-white p-6 rounded-2xl card-shadow-lg h-fit lg:sticky lg:top-24 border border-gray-100">
-                    <h2 class="text-2xl font-bold mb-6 text-indigo-600 border-b pb-3" id="main-form-title">➕ បញ្ចូលកំណត់ត្រាថ្មី</h2>
-                    <form id="expense-form" class="space-y-4"></form>
-                </section>
-                
-                <section id="data-view-section" class="lg:col-span-3 bg-white p-4 sm:p-6 rounded-2xl card-shadow-lg border border-gray-100">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-2">
-                        <h2 class="text-xl sm:text-2xl font-bold text-gray-700 mb-2 sm:mb-0">បញ្ជីប្រតិបត្តិការចំណាយ</h2>
-                        <button onclick="switchView('trash')" id="trash-btn" class="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition flex items-center font-semibold text-sm shadow-sm">
-                            <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប
-                        </button>
-                    </div>
-
-                    <div class="mb-6 p-4 border rounded-xl bg-gray-50">
-                        <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-4">
-                            <div class="sm:col-span-1">
-                                <label for="filter-day-of-week" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមថ្ងៃ:</label>
-                                <select id="filter-day-of-week" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()"></select>
-                            </div>
-                            <div class="sm:col-span-1">
-                                <label for="filter-today" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមថ្ងៃជាក់លាក់:</label>
-                                <select id="filter-today" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()">
-                                    <option value="all">ទាំងអស់</option>
-                                    <option value="today">ថ្ងៃនេះ</option>
-                                </select>
-                            </div>
-                            <div class="sm:col-span-1">
-                                <label for="filter-month" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមខែ:</label>
-                                <select id="filter-month" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()"></select>
-                            </div>
-                            <div class="sm:col-span-1">
-                                 <label for="filter-year" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមឆ្នាំ:</label>
-                                <select id="filter-year" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()"></select>
-                            </div>
-                            <div class="sm:col-span-1">
-                                <label for="search-input" class="block text-xs font-medium text-gray-500 mb-1">ស្វែងរក (តាមពិពណ៌នា):</label>
-                                 <input type="text" id="search-input" oninput="filterRecords()" placeholder="ឧ. ទិញម្ហូប" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                            </div>
-                        </div>
-                        
-                        <div class="flex flex-wrap justify-end gap-3 border-t pt-3 mt-3">
-                            <button onclick="exportData('pdf')" class="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-red-700 transition text-sm font-semibold shadow-md">
-                                <i data-lucide="file-text" class="w-4 h-4 mr-1"></i> ទាញយក PDF
-                            </button>
-                            <button onclick="exportData('excel')" class="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-green-700 transition text-sm font-semibold shadow-md">
-                                <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1"></i> ទាញយក Excel
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="expense-list" class="space-y-4 max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
-                        <p class="text-center text-gray-500 py-10">កំពុងទាញទិន្នន័យ...</p>
-                    </div>
-                </section>
-            </div>
         </div>
-
-        <div id="report-view" class="view-content hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                 <section id="report-form-container" class="lg:col-span-1 bg-white p-6 rounded-2xl card-shadow-lg h-fit lg:sticky lg:top-24 border border-gray-100">
-                    <h2 class="text-2xl font-bold mb-6 text-indigo-600 border-b pb-3" id="report-main-form-title">➕ បញ្ចូលកំណត់ត្រាថ្មី</h2>
-                    <form id="report-expense-form" class="space-y-4"></form>
-                </section>
-
-                <section id="report-data-view-section" class="lg:col-span-3 bg-white p-4 sm:p-6 rounded-2xl card-shadow-lg border border-gray-100">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-2">
-                        <h2 class="text-xl sm:text-2xl font-bold text-gray-700 mb-2 sm:mb-0">បញ្ជីប្រតិបត្តិការចំណាយ</h2>
-                        <button onclick="switchView('trash')" id="report-trash-btn" class="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition flex items-center font-semibold text-sm shadow-sm">
-                            <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប
-                        </button>
-                    </div>
-
-                    <div class="mb-6 p-4 border rounded-xl bg-gray-50">
-                        <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-4">
-                            <div class="sm:col-span-1">
-                                <label for="report-filter-day-of-week" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមថ្ងៃ:</label>
-                                <select id="report-filter-day-of-week" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords('report')"></select>
-                            </div>
-                            <div class="sm:col-span-1">
-                                <label for="report-filter-today" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមថ្ងៃជាក់លាក់:</label>
-                                <select id="report-filter-today" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords('report')">
-                                    <option value="all">ទាំងអស់</option>
-                                    <option value="today">ថ្ងៃនេះ</option>
-                                </select>
-                            </div>
-                            <div class="sm:col-span-1">
-                                <label for="report-filter-month" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមខែ:</label>
-                                <select id="report-filter-month" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords('report')"></select>
-                            </div>
-                            <div class="sm:col-span-1">
-                                 <label for="report-filter-year" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមឆ្នាំ:</label>
-                                <select id="report-filter-year" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords('report')"></select>
-                            </div>
-                            <div class="sm:col-span-1">
-                                <label for="report-search-input" class="block text-xs font-medium text-gray-500 mb-1">ស្វែងរក (តាមពិពណ៌នា):</label>
-                                 <input type="text" id="report-search-input" oninput="filterRecords('report')" placeholder="ឧ. ទិញម្ហូប" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                            </div>
-                        </div>
-                        
-                        <div class="flex flex-wrap justify-end gap-3 border-t pt-3 mt-3">
-                            <button onclick="exportData('pdf', 'report')" class="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-red-700 transition text-sm font-semibold shadow-md">
-                                <i data-lucide="file-text" class="w-4 h-4 mr-1"></i> ទាញយក PDF
-                            </button>
-                            <button onclick="exportData('excel', 'report')" class="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-green-700 transition text-sm font-semibold shadow-md">
-                                <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1"></i> ទាញយក Excel
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="report-expense-list" class="space-y-4 max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
-                        <p class="text-center text-gray-500 py-10">កំពុងទាញទិន្នន័យ...</p>
-                    </div>
-                </section>
-            </div>
-            <div class="bg-white p-6 rounded-2xl card-shadow-lg mt-8">
-                <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center"><i data-lucide="pie-chart" class="w-6 h-6 mr-2 text-indigo-500"></i> របាយការណ៍លម្អិត & ក្រាហ្វ</h2>
-                <p class="text-gray-500 border-b pb-4 mb-4">ផ្នែកនេះត្រូវបានរៀបចំសម្រាប់បង្ហាញក្រាហ្វ (ឧ. ចំណាយតាមខែ ឬតាមប្រភេទ)។</p>
-                
-                <div class="bg-gray-100 p-6 rounded-xl border border-dashed border-gray-300">
-                    <p class="text-center text-gray-600 font-semibold">📈 ទិន្នន័យក្រាហ្វនឹងបង្ហាញនៅទីនេះ</p>
-                </div>
-            </div>
-        </div>
-
     </main>
     
     <button id="fab-add-btn" onclick="openFormModal()" class="bg-indigo-600 text-white transition hover:bg-indigo-700 ring-4 ring-indigo-300 ring-offset-2">
@@ -327,12 +278,9 @@
             <h3 class="text-2xl font-bold text-blue-700 mb-6 border-b pb-2">ព័ត៌មានគណនី</h3>
             
             <div class="space-y-4">
-                <div class="p-3 bg-gray-50 rounded-lg border flex items-center space-x-3">
-                    <div id="modal-profile-avatar" class="avatar-initials w-12 h-12 text-lg">...</div> 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-500">អ៊ីម៉ែល</label>
-                        <p class="font-semibold text-gray-800" id="modal-profile-email">N/A</p>
-                    </div>
+                <div class="p-3 bg-gray-50 rounded-lg border">
+                    <label class="block text-sm font-medium text-gray-500">អ៊ីម៉ែល</label>
+                    <p class="font-semibold text-gray-800" id="modal-profile-email">N/A</p>
                 </div>
                 <div class="p-3 bg-gray-50 rounded-lg border">
                     <label class="block text-sm font-medium text-gray-500">តួនាទី</label>
@@ -376,15 +324,15 @@
 
                 <div class="grid grid-cols-3 gap-3">
                     <div class="p-3 bg-white rounded-lg border shadow-sm">
-                        <label class="block text-xs font-medium text-gray-500 flex items-center"><i data-lucide="utensils" class="w-3 h-3 mr-1 text-orange-500"></i> សាច់</label>
+                        <label class="block text-xs font-medium text-gray-500">សាច់</label>
                         <p class="font-semibold text-base text-orange-600" id="detail-meat">0 ៛</p>
                     </div>
                     <div class="p-3 bg-white rounded-lg border shadow-sm">
-                        <label class="block text-xs font-medium text-gray-500 flex items-center"><i data-lucide="leaf" class="w-3 h-3 mr-1 text-green-500"></i> បន្លែ</label>
+                        <label class="block text-xs font-medium text-gray-500">បន្លែ</label>
                         <p class="font-semibold text-base text-green-600" id="detail-vegetable">0 ៛</p>
                     </div>
                     <div class="p-3 bg-white rounded-lg border shadow-sm">
-                        <label class="block text-xs font-medium text-gray-500 flex items-center"><i data-lucide="apple" class="w-3 h-3 mr-1 text-yellow-500"></i> ផ្លែឈើ</label>
+                        <label class="block text-xs font-medium text-gray-500">ផ្លែឈើ</label>
                         <p class="font-semibold text-base text-yellow-600" id="detail-fruit">0 ៛</p>
                     </div>
                 </div>
@@ -416,7 +364,8 @@
     <div id="mobileFormModal" class="modal">
         <div class="modal-content-mobile bg-white rounded-2xl p-6 w-full relative shadow-2xl">
             <h3 class="text-2xl font-bold text-indigo-600 mb-6 border-b pb-2" id="mobile-form-title">➕ បញ្ចូលកំណត់ត្រាថ្មី</h3>
-            <form id="mobile-expense-form" class="space-y-4"></form>
+            <form id="mobile-expense-form" class="space-y-4">
+            </form>
             <button onclick="closeFormModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition">
                 <i data-lucide="x" class="w-6 h-6"></i>
             </button>
@@ -437,15 +386,15 @@
             
             <div>
                 <label for="meat" class="block text-sm font-medium text-gray-700">សាច់ ($)</label>
-                <input id="meat" type="number" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-600 focus:border-orange-600 transition expense-input" placeholder="0" min="0">
+                <input id="meat" type="number" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-600 focus:border-orange-600 transition expense-input" placeholder="0">
             </div>
             <div>
                 <label for="vegetable" class="block text-sm font-medium text-gray-700">បន្លែ ($)</label>
-                <input id="vegetable" type="number" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-600 focus:border-green-600 transition expense-input" placeholder="0" min="0">
+                <input id="vegetable" type="number" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-600 focus:border-green-600 transition expense-input" placeholder="0">
             </div>
             <div>
                 <label for="fruit" class="block text-sm font-medium text-gray-700">ផ្លែឈើ ($)</label>
-                <input id="fruit" type="number" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-600 focus:border-yellow-600 transition expense-input" placeholder="0" min="0">
+                <input id="fruit" type="number" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-600 focus:border-yellow-600 transition expense-input" placeholder="0">
             </div>
         </div>
         
@@ -468,17 +417,7 @@
     <script src="config.js"></script>
     <script>
         // --- GLOBAL STATE ---
-        // Simulated User Data (Replace with real authentication logic)
-        const user = JSON.parse(localStorage.getItem("user")) || {
-             Email: "demo@example.com",
-             Role: "Owner",
-             ProfileImage: null
-        };
-        // Save dummy user for demonstration if not already set
-        if (!localStorage.getItem("user")) {
-            localStorage.setItem("user", JSON.stringify(user));
-        }
-
+        const user = JSON.parse(localStorage.getItem("user"));
         let allExpenses = [];
         let currentView = 'active'; 
         let editingID = null;
@@ -486,157 +425,7 @@
         let customConfirmResolver; 
         let activeFormElement = null; 
         
-        // --- HELPER ARRAYS ---
-        const MONTH_NAMES = [
-            "ទាំងអស់", "មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា", 
-            "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ"
-        ];
-        const DAY_NAMES = [
-            "អាទិត្យ", "ច័ន្ទ", "អង្គារ", "ពុធ", "ព្រហស្បតិ៍", "សុក្រ", "សៅរ៍"
-        ];
-
-        // --- NEW: AVATAR & IMAGE HANDLING FUNCTION ---
-        function getInitials(email) {
-            if (!email) return 'U';
-            const parts = email.split('@')[0].split('.');
-            let initials = '';
-            if (parts.length > 0) initials += parts[0][0];
-            if (parts.length > 1) initials += parts[parts.length - 1][0];
-            return initials.toUpperCase().slice(0, 2);
-        }
-        
-        function setAvatar(element, email, imageUrl = null) {
-            element.classList.remove('avatar-image');
-            element.style.backgroundImage = '';
-            element.textContent = getInitials(email);
-            element.style.backgroundColor = '#6366f1';
-            element.style.color = 'white';
-
-            if (imageUrl) {
-                const img = new Image();
-                img.onload = () => {
-                    element.style.backgroundImage = `url(${imageUrl})`;
-                    element.style.backgroundColor = 'transparent';
-                    element.style.color = 'transparent'; // Hide initials when image is present
-                    element.textContent = '';
-                    element.classList.add('avatar-image');
-                };
-                img.onerror = () => {
-                    element.style.backgroundImage = '';
-                };
-                img.src = imageUrl;
-            }
-        }
-
-        // --- SPA NAVIGATION LOGIC (UPDATED) ---
-        let currentActiveView = 'dashboard';
-        
-        function showView(viewId) {
-            // 1. Reset all view containers
-            const views = document.querySelectorAll('.view-content');
-            views.forEach(view => {
-                view.classList.add('hidden');
-                view.classList.remove('active');
-            });
-            const targetView = document.getElementById(`${viewId}-view`);
-            if (targetView) {
-                targetView.classList.remove('hidden');
-                targetView.classList.add('active');
-                currentActiveView = viewId;
-            }
-            
-            // 2. Control visibility of sections in Dashboard vs Report views
-            const summarySection = document.getElementById('dashboard-summary-section');
-            const formContainer = document.getElementById('main-expense-form-container');
-            const dataSection = document.getElementById('data-view-section');
-            
-            const reportFormContainer = document.getElementById('report-form-container');
-            const reportDataSection = document.getElementById('report-data-view-section');
-
-            if (viewId === 'dashboard') {
-                // Dashboard: SHOW Summary, HIDE Form & List
-                summarySection.style.display = 'block';
-                formContainer.style.display = 'none';
-                dataSection.style.display = 'none';
-                if (reportFormContainer) reportFormContainer.style.display = 'none';
-                if (reportDataSection) reportDataSection.style.display = 'none';
-            } else if (viewId === 'report') {
-                 // Report: HIDE Summary, SHOW Form & List
-                summarySection.style.display = 'none';
-                // Show the main dashboard containers inside the report view (as requested by user)
-                formContainer.style.display = 'block';
-                dataSection.style.display = 'block';
-                if (reportFormContainer) reportFormContainer.style.display = 'none';
-                if (reportDataSection) reportDataSection.style.display = 'none'; 
-            }
-
-            // 3. Update Navigation Tabs
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.remove('border-indigo-600', 'text-indigo-600', 'font-bold');
-                item.classList.add('border-transparent', 'text-gray-600');
-            });
-
-            const activeTab = document.getElementById(`nav-${viewId}`);
-            if (activeTab) {
-                activeTab.classList.add('border-indigo-600', 'text-indigo-600', 'font-bold');
-                activeTab.classList.remove('border-transparent', 'text-gray-600');
-            }
-            
-            // 4. Re-render icons after view switch
-            lucide.createIcons();
-            
-            // 5. Re-run filtering to update the visible list content
-            filterRecords();
-        }
-
-        // --- POPULATE DATE FILTERS (UNCHANGED logic) ---
-        function populateDateFilters() {
-            const currentYear = new Date().getFullYear();
-            const todayDayIndex = new Date().getDay(); 
-            
-            // Select inputs for the main dashboard view (which is used for filtering in Report view too, per structure)
-            const filters = [
-                { day: 'filter-day-of-week', month: 'filter-month', year: 'filter-year', today: 'filter-today', search: 'search-input' },
-                // Add report filters here if you intended to duplicate them
-                // { day: 'report-filter-day-of-week', month: 'report-filter-month', year: 'report-filter-year', today: 'report-filter-today', search: 'report-search-input' }
-            ];
-
-            const yearOptions = ['all', currentYear + 1, currentYear, currentYear - 1, currentYear - 2].map(y => `<option value="${y}">${y}</option>`).join('');
-
-            filters.forEach(f => {
-                const daySelect = document.getElementById(f.day);
-                const monthSelect = document.getElementById(f.month);
-                const yearSelect = document.getElementById(f.year);
-
-                if (daySelect) {
-                    let dayOptions = `<option value="all">ទាំងអស់</option>`;
-                    DAY_NAMES.forEach((name, index) => {
-                        const isToday = index === todayDayIndex;
-                        const display = isToday ? `${name} (ថ្ងៃនេះ)` : name;
-                        dayOptions += `<option value="${index}">${display}</option>`;
-                    });
-                    daySelect.innerHTML = dayOptions;
-                    daySelect.value = 'all'; 
-                }
-
-                if (monthSelect) {
-                    monthSelect.innerHTML = MONTH_NAMES.map((name, index) => 
-                        `<option value="${index === 0 ? 'all' : index}">${name}</option>`
-                    ).join('');
-                    monthSelect.value = 'all';
-                }
-
-                if (yearSelect) {
-                    yearSelect.innerHTML = yearOptions;
-                    yearSelect.value = 'all';
-                }
-                
-                const todaySelect = document.getElementById(f.today);
-                if (todaySelect) todaySelect.value = 'all';
-            });
-        }
-
-        // --- TOAST, CONFIRMATION, LOGOUT (UNCHANGED logic) ---
+        // --- NEW: TOAST NOTIFICATION FUNCTION (UNCHANGED) ---
         function showToast(message, type = 'info', duration = 4000) {
             const container = document.getElementById('toast-container');
             if (!container) return;
@@ -669,6 +458,7 @@
             }, duration);
         }
 
+        // --- NEW: CUSTOM CONFIRMATION MODAL FUNCTION (UNCHANGED) ---
         function customConfirm(title, message, actionText, type = 'delete') {
             return new Promise((resolve) => {
                 const modal = document.getElementById('customConfirmModal');
@@ -706,7 +496,6 @@
         }
         
         async function customLogout() {
-            closeProfileModal(); // Close profile modal if open
             const confirmed = await customConfirm(
                 "ចាកចេញពីគណនី",
                 "តើអ្នកប្រាកដថាចង់ចាកចេញពីប្រព័ន្ធគ្រប់គ្រងចំណាយមែនទេ?",
@@ -716,34 +505,26 @@
             
             if (confirmed) {
                 localStorage.removeItem("user");
-                // In a real app, clear all data if needed: localStorage.clear();
+                localStorage.clear();
                 window.location.href = "index.html";
             }
         }
         function logout() { customLogout(); } 
 
-        // --- INIT & AUTH ---
-        if (!user || !user.Email) {
-            // Only redirect if no user info is found
+        // --- INIT & AUTH (UNCHANGED) ---
+        if (!user) {
             showToast("⚠️ សូមចូលប្រព័ន្ធជាមុនសិន។", 'warning');
             window.location.href = "index.html";
         } else {
-            // Populate user info and avatars
             document.getElementById("dropdown-email").textContent = user.Email || 'N/A';
             document.getElementById("dropdown-role").textContent = user.Role || 'User';
-            setAvatar(document.getElementById("user-avatar-initials-mobile"), user.Email, user.ProfileImage);
-            setAvatar(document.getElementById("dropdown-avatar-initials"), user.Email, user.ProfileImage);
-            setAvatar(document.getElementById("user-avatar-initials-desktop"), user.Email, user.ProfileImage);
-            
             if (user.Role === 'Owner') {
                 document.getElementById('user-management-link').classList.remove('hidden');
                 document.getElementById('user-management-link').classList.add('flex');
-                document.getElementById('user-management-tab').classList.remove('hidden');
-                document.getElementById('user-management-tab').classList.add('flex');
             }
         }
         
-        // --- PROFILE/DROPDOWN/MODALS ---
+        // --- PROFILE/DROPDOWN/MODALS (UNCHANGED) ---
         function toggleDropdown(event) {
             const menu = document.getElementById('profile-dropdown-menu');
             document.querySelectorAll('.dropdown-menu.active').forEach(m => {
@@ -755,54 +536,64 @@
 
         document.addEventListener('click', function(event) {
             const dropdown = document.getElementById('profile-dropdown-menu');
-            if (dropdown && dropdown.classList.contains('active') && !event.target.closest('.dropdown')) {
+            if (dropdown.classList.contains('active') && !event.target.closest('.dropdown')) {
                 dropdown.classList.remove('active');
             }
         });
         
-        function closeDropdown() { 
-            const dropdown = document.getElementById('profile-dropdown-menu');
-            if(dropdown) dropdown.classList.remove('active'); 
-        }
-
+        function closeDropdown() { document.getElementById('profile-dropdown-menu').classList.remove('active'); }
         function openProfileModal() {
             closeDropdown();
             document.getElementById('modal-profile-email').textContent = user.Email;
             document.getElementById('modal-profile-role').textContent = user.Role;
-            setAvatar(document.getElementById("modal-profile-avatar"), user.Email, user.ProfileImage);
             document.getElementById('profileModal').classList.add('active');
-            lucide.createIcons();
         }
         function closeProfileModal() { document.getElementById('profileModal').classList.remove('active'); }
         
-        // Detail Modal functions
+        // --- DETAIL MODAL (UNCHANGED logic) ---
         function openDetailModal(record) {
             activeDetailRecord = record;
+
             document.getElementById('detail-date').textContent = record.Date;
             document.getElementById('detail-amount').textContent = formatCurrency(parseFloat(record.Amount)); 
             document.getElementById('detail-amount').className = 'text-3xl font-extrabold mt-1 text-red-600'; 
+            
+            // NEW: Populate Breakdown
             document.getElementById('detail-meat').textContent = formatCurrency(parseFloat(record.Meat));
             document.getElementById('detail-vegetable').textContent = formatCurrency(parseFloat(record.Vegetable));
             document.getElementById('detail-fruit').textContent = formatCurrency(parseFloat(record.Fruit));
+            
+            // Use Description
             document.getElementById('detail-desc').textContent = record.Description || 'គ្មានពិពណ៌នា';
+            
             document.getElementById('detail-modified').textContent = record.ModifiedDate ? new Date(record.ModifiedDate).toLocaleString('km-KH') : 'N/A';
             document.getElementById('detail-status').textContent = record.Status === 'Deleted' ? 'លុបបណ្ដោះអាសន្ន' : 'សកម្ម';
+            
             document.getElementById('detailModal').classList.add('active');
             lucide.createIcons();
         }
+
         function closeDetailModal() {
             document.getElementById('detailModal').classList.remove('active');
             activeDetailRecord = null;
         }
         
-        // Form logic
+        // --- FORM LOGIC (UNCHANGED logic) ---
+        
         function updateAmountSummary(formElement) {
             const meat = parseFloat(formElement.querySelector("#meat").value) || 0;
             const vegetable = parseFloat(formElement.querySelector("#vegetable").value) || 0;
             const fruit = parseFloat(formElement.querySelector("#fruit").value) || 0;
+            
             const total = meat + vegetable + fruit;
+            
+            // Update the display field
             formElement.querySelector("#amount-summary").value = formatCurrency(total);
+            
+            // Update the hidden field used for data submission (We use the hidden field with ID 'amount' for submission)
             formElement.querySelector("#amount").value = total;
+            
+            // Apply visual cue if total is zero
             const summaryInput = formElement.querySelector("#amount-summary");
             if (total === 0) {
                 summaryInput.classList.remove('text-red-600');
@@ -813,13 +604,10 @@
             }
         }
         
-        // NOTE: We only need to setup the dashboard form, as the filters target the dashboard elements
-        // This is based on the provided HTML structure where filters/list aren't duplicated for report view,
-        // so we reuse the elements in both views via the showView function.
         function setupForms() {
             const formTemplate = document.getElementById('form-template').innerHTML;
             
-            // Setup main desktop form
+            // Setup Desktop Form
             const desktopForm = document.getElementById('expense-form');
             desktopForm.innerHTML = formTemplate;
             desktopForm.addEventListener('submit', (e) => handleFormSubmission(e, 'desktop'));
@@ -827,32 +615,22 @@
                 input.addEventListener('input', () => updateAmountSummary(desktopForm));
             });
             
-            // Setup mobile form (for modal)
+            // Setup Mobile Form
             const mobileForm = document.getElementById('mobile-expense-form');
             mobileForm.innerHTML = formTemplate;
             mobileForm.addEventListener('submit', (e) => handleFormSubmission(e, 'mobile'));
             mobileForm.querySelectorAll('.expense-input').forEach(input => {
                 input.addEventListener('input', () => updateAmountSummary(mobileForm));
             });
-
-             // Setup report form (for report view, reusing the logic)
-            const reportForm = document.getElementById('report-expense-form');
-            if(reportForm) {
-                reportForm.innerHTML = formTemplate;
-                reportForm.addEventListener('submit', (e) => handleFormSubmission(e, 'report'));
-                reportForm.querySelectorAll('.expense-input').forEach(input => {
-                    input.addEventListener('input', () => updateAmountSummary(reportForm));
-                });
-            }
         }
 
         function openFormModal() {
-            resetForm();
-            document.getElementById('mobile-form-title').textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
-            document.getElementById('mobileFormModal').classList.add('active');
-            activeFormElement = document.getElementById('mobile-expense-form');
-            if(activeFormElement) activeFormElement.reset();
-            lucide.createIcons();
+             resetForm();
+             document.getElementById('mobile-form-title').textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
+             document.getElementById('mobileFormModal').classList.add('active');
+             activeFormElement = document.getElementById('mobile-expense-form');
+             if(activeFormElement) activeFormElement.reset();
+             lucide.createIcons();
         }
 
         function closeFormModal() {
@@ -863,10 +641,13 @@
 
         function populateForm(formElement, record) {
             formElement.querySelector("#date").value = record.Date;
+            // Use the specific columns for populating the input fields
             formElement.querySelector("#meat").value = parseFloat(record.Meat) || 0;
             formElement.querySelector("#vegetable").value = parseFloat(record.Vegetable) || 0;
             formElement.querySelector("#fruit").value = parseFloat(record.Fruit) || 0;
             formElement.querySelector("#desc").value = record.Description;
+
+            // Update Total Amount display after populating sub-fields
             updateAmountSummary(formElement);
 
             const isEditing = record !== null;
@@ -879,12 +660,7 @@
                 submitBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
                 cancelBtn.classList.remove('hidden');
                 
-                // Update titles based on the form element's ID to ensure correct UI when editing
-                if (formElement.id === 'expense-form') {
-                    document.getElementById('main-form-title').textContent = "📝 កែប្រែកំណត់ត្រា";
-                } else if (formElement.id === 'report-expense-form') {
-                     document.getElementById('report-main-form-title').textContent = "📝 កែប្រែកំណត់ត្រា";
-                }
+                document.getElementById('main-form-title').textContent = "📝 កែប្រែកំណត់ត្រា";
                 const mobileTitle = document.getElementById('mobile-form-title');
                 if(mobileTitle) mobileTitle.textContent = "📝 កែប្រែកំណត់ត្រា";
             } else {
@@ -894,53 +670,47 @@
         }
         
         function resetFormUI(formElement) {
-            const submitBtn = formElement.querySelector('#submit-btn');
-            const cancelBtn = formElement.querySelector('#cancel-btn');
-            
-            submitBtn.innerHTML = '<i data-lucide="plus" class="w-5 h-5 mr-1"></i> បន្ថែមកំណត់ត្រា';
-            submitBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
-            submitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-            cancelBtn.classList.add('hidden');
-            
-            // Reset titles
-            const mainTitle = document.getElementById('main-form-title');
-            if (mainTitle) mainTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
-            const reportTitle = document.getElementById('report-main-form-title');
-            if (reportTitle) reportTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
-            const mobileTitle = document.getElementById('mobile-form-title');
-            if(mobileTitle) mobileTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
-            
-            updateAmountSummary(formElement);
+             const submitBtn = formElement.querySelector('#submit-btn');
+             const cancelBtn = formElement.querySelector('#cancel-btn');
+             
+             submitBtn.innerHTML = '<i data-lucide="plus" class="w-5 h-5 mr-1"></i> បន្ថែមកំណត់ត្រា';
+             submitBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+             submitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+             cancelBtn.classList.add('hidden');
+             
+             document.getElementById('main-form-title').textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
+             const mobileTitle = document.getElementById('mobile-form-title');
+             if(mobileTitle) mobileTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
+             
+             // Also reset the amount summary
+             updateAmountSummary(formElement);
         }
 
         function resetForm() {
             editingID = null;
             const desktopForm = document.getElementById('expense-form');
             const mobileForm = document.getElementById('mobile-expense-form');
-            const reportForm = document.getElementById('report-expense-form');
-            
             desktopForm.reset();
             mobileForm.reset();
-            if(reportForm) reportForm.reset();
-
             resetFormUI(desktopForm);
             resetFormUI(mobileForm);
-            if(reportForm) resetFormUI(reportForm);
-            
             activeFormElement = null; 
             lucide.createIcons();
+            
+            // Ensure summary is zero after reset
             updateAmountSummary(desktopForm);
             updateAmountSummary(mobileForm);
-            if(reportForm) updateAmountSummary(reportForm);
         }
         
         function handleCardClick(record) {
-            const isMobile = window.innerWidth < 1024;
-            if (isMobile) {
-                editExpense(record.ID, false); 
-            } else {
-                openDetailModal(record); 
-            }
+             const isMobile = window.innerWidth < 1024;
+             if (isMobile) {
+                 // In mobile, clicking the card means open for quick edit/detail
+                 editExpense(record.ID, false); 
+             } else {
+                 // In desktop, clicking the card means open detail modal
+                 openDetailModal(record); 
+             }
         }
         
         async function editExpense(id, scrollToForm=true) {
@@ -955,12 +725,9 @@
             
             const isMobile = window.innerWidth < 1024;
             
-            // Determine which form to populate based on current view/device
             if (isMobile) {
                 openFormModal(); 
                 activeFormElement = document.getElementById('mobile-expense-form');
-            } else if (currentActiveView === 'report' && document.getElementById('report-expense-form')) {
-                activeFormElement = document.getElementById('report-expense-form');
             } else {
                 activeFormElement = document.getElementById('expense-form');
             }
@@ -970,19 +737,22 @@
             }
             
             if(scrollToForm && !isMobile) {
-                const targetId = currentActiveView === 'report' ? "report-form-container" : "main-expense-form-container";
-                const targetEl = document.getElementById(targetId);
-                if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                 document.getElementById("main-expense-form-container").scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
         // --- UTILS ---
         function formatCurrency(amount) {
             const num = parseFloat(amount) || 0;
-            const formatted = num.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-            return `${formatted} ៛`;
+            return `${num.toLocaleString('km-KH')} ៛`;
         }
         
+        /**
+         * Checks if two date strings are the same day (ignoring time).
+         * @param {string} date1 - ISO date string.
+         * @param {string} date2 - ISO date string.
+         * @returns {boolean}
+         */
         function isSameDay(date1, date2) {
             const d1 = new Date(date1);
             const d2 = new Date(date2);
@@ -991,30 +761,61 @@
                    d1.getDate() === d2.getDate();
         }
 
-        // --- SUMMARY & FILTERING LOGIC ---
+        // --- SUMMARY & FILTERING LOGIC (UPDATED for Today/Monthly/Yearly) ---
         let filteredDataForReport = []; 
 
         function calculateSummary(data) {
-            // Apply the user-requested fixed values
-            document.getElementById('total-expense-summary').textContent = '9,600,002 ៛';
-            document.getElementById('monthly-expense-summary').textContent = '9,600,002 ៛';
-            document.getElementById('meat-total-summary').textContent = '4,333,336 ៛';
-            document.getElementById('vegetable-total-summary').textContent = '4,333,333 ៛';
-            document.getElementById('fruit-total-summary').textContent = '933,333 ៛';
-            document.getElementById('today-expense-summary').textContent = '0 ៛';
-            document.getElementById('total-count-summary').textContent = '4 កំណត់ត្រា';
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth();
+
+            const activeExpenses = data.filter(x => x.Status === "Active"); 
+            let totalExpense = 0;
+            let todayExpense = 0;
+            let monthlyExpense = 0;
+            let totalMeat = 0;
+            let totalVegetable = 0;
+            let totalFruit = 0;
+            let totalCount = activeExpenses.length;
+
+            activeExpenses.forEach(x => {
+                const amount = parseFloat(x.Amount) || 0;
+                const recordDate = new Date(x.Date);
+                
+                // --- Breakdown Sums ---
+                const meat = parseFloat(x.Meat) || 0;
+                const vegetable = parseFloat(x.Vegetable) || 0;
+                const fruit = parseFloat(x.Fruit) || 0;
+                totalMeat += meat;
+                totalVegetable += vegetable;
+                totalFruit += fruit;
+                
+                // --- Time-based Sums (Uses the Amount from the Sheet's formula) ---
+                totalExpense += amount; 
+
+                if (isSameDay(x.Date, today)) {
+                    todayExpense += amount;
+                }
+                
+                if (recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear) {
+                    monthlyExpense += amount;
+                }
+            });
+            
+            // --- Rendering Summary Cards ---
+            document.getElementById('total-expense-summary').textContent = formatCurrency(totalExpense);
+            document.getElementById('today-expense-summary').textContent = formatCurrency(todayExpense);
+            document.getElementById('monthly-expense-summary').textContent = formatCurrency(monthlyExpense);
+
+            document.getElementById('meat-total-summary').textContent = formatCurrency(totalMeat);
+            document.getElementById('vegetable-total-summary').textContent = formatCurrency(totalVegetable);
+            document.getElementById('fruit-total-summary').textContent = formatCurrency(totalFruit);
+
+            document.getElementById('total-count-summary').textContent = `${totalCount} កំណត់ត្រា`;
         }
         
         function filterRecords() {
-            // Determine which filter inputs and output list to use based on the current active view
-            const isDashboardView = currentActiveView === 'dashboard';
-            const expenseListId = 'expense-list'; // The main list is rendered whether visible or not
-            
-            // Use dashboard filter elements regardless of the view (since they are visible/used in both views now)
-            const filterToday = document.getElementById('filter-today').value;
-            const filterDayOfWeek = document.getElementById('filter-day-of-week').value;
-            const filterMonth = document.getElementById('filter-month').value;
-            const filterYear = document.getElementById('filter-year').value;
+            const reportType = document.getElementById('report-type').value;
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
             
             const expenseOnlyData = allExpenses.filter(x => x.Type === "Expense" || x.Status === "Deleted");
@@ -1026,65 +827,64 @@
             let filtered = dataToFilter;
 
             const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth();
 
             filtered = filtered.filter(x => {
                 const recordDate = new Date(x.Date);
                 const description = (x.Description || '').toLowerCase(); 
                 
-                let matchesToday = true;
-                let matchesDayOfWeek = true;
-                let matchesMonth = true;
-                let matchesYear = true;
+                let matchesReport = true;
                 let matchesSearch = true;
 
-                if (filterToday === 'today') { matchesToday = isSameDay(x.Date, today); }
-                if (filterDayOfWeek !== 'all') { const dayIndex = parseInt(filterDayOfWeek); matchesDayOfWeek = recordDate.getDay() === dayIndex; }
-                if (filterMonth !== 'all') { if (filterToday === 'today') { matchesMonth = true; } else { const monthIndex = parseInt(filterMonth) - 1; matchesMonth = recordDate.getMonth() === monthIndex; } }
-                if (filterYear !== 'all') { if (filterToday === 'today') { matchesYear = true; } else { const yearValue = parseInt(filterYear); matchesYear = recordDate.getFullYear() === yearValue; } }
-                if (searchTerm) { matchesSearch = description.includes(searchTerm); }
+                switch (reportType) {
+                    case 'daily':
+                        matchesReport = isSameDay(x.Date, today);
+                        break;
+                    case 'monthly':
+                        matchesReport = recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
+                        break;
+                    case 'yearly':
+                        matchesReport = recordDate.getFullYear() === currentYear;
+                        break;
+                    case 'all':
+                    default:
+                        matchesReport = true;
+                        break;
+                }
                 
-                return matchesToday && matchesDayOfWeek && matchesMonth && matchesYear && matchesSearch;
+                if (searchTerm) {
+                    matchesSearch = description.includes(searchTerm);
+                }
+                
+                return matchesReport && matchesSearch;
             }).sort((a, b) => new Date(b.Date) - new Date(a.Date)); 
 
             filteredDataForReport = filtered;
-            
-            // Render the list to the appropriate element based on the view
-            const renderTargetId = isDashboardView ? 'expense-list' : 'report-expense-list';
-            renderExpenseList(filtered, renderTargetId);
+            renderExpenseList(filtered);
         }
         
         function switchView(view) {
             currentView = view;
             const trashBtn = document.getElementById('trash-btn');
-            const reportTrashBtn = document.getElementById('report-trash-btn');
-
-            [trashBtn, reportTrashBtn].forEach(btn => {
-                if(btn) {
-                    btn.innerHTML = view === 'active' ? 
-                        '<i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប' : 
-                        '<i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> មើលកំណត់ត្រាសកម្ម';
-                    btn.onclick = view === 'active' ? () => switchView('trash') : () => switchView('active');
-                    btn.classList.toggle('bg-gray-100', view === 'active');
-                    btn.classList.toggle('bg-indigo-500', view === 'trash');
-                    btn.classList.toggle('text-white', view === 'trash');
-                    btn.classList.toggle('text-gray-600', view === 'active');
-                }
-            });
+            trashBtn.innerHTML = view === 'active' ? 
+                '<i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប' : 
+                '<i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> មើលកំណត់ត្រាសកម្ម';
+            trashBtn.onclick = view === 'active' ? () => switchView('trash') : () => switchView('active');
+            trashBtn.classList.toggle('bg-gray-100', view === 'active');
+            trashBtn.classList.toggle('bg-indigo-500', view === 'trash');
+            trashBtn.classList.toggle('text-white', view === 'trash');
+            trashBtn.classList.toggle('text-gray-600', view === 'active');
             
-            document.getElementById('filter-today').value = 'all';
-            document.getElementById('filter-day-of-week').value = 'all'; 
-            document.getElementById('filter-month').value = 'all';
-            document.getElementById('filter-year').value = 'all';
+            document.getElementById('report-type').value = 'all';
             document.getElementById('search-input').value = '';
             filterRecords();
             lucide.createIcons();
         }
 
-        // --- RENDER LIST (Updated to support dynamic list ID) ---
-        function renderExpenseList(data, listId = 'expense-list') {
-            const list = document.getElementById(listId);
-            if (!list) return;
-
+        // --- RENDER LIST (UPDATED to use Amount and show breakdown) ---
+        function renderExpenseList(data) {
+            const list = document.getElementById("expense-list");
             const isTrashView = currentView === 'trash';
             
             if (data.length === 0) {
@@ -1095,27 +895,19 @@
                 return;
             }
 
-            const today = new Date();
-
             list.innerHTML = data.map(x => {
                 const isDeleted = x.Status === 'Deleted';
-                const badgeClass = isDeleted ? 'bg-gray-200 text-gray-600' : 'bg-red-100 text-red-700';
+                const badgeClass = isDeleted ? 'badge-deleted' : 'badge-expense';
                 const amountTextClass = isDeleted ? 'text-gray-500 line-through' : 'text-red-600';
                 const icon = 'arrow-down-left'; 
                 
                 const recordJson = JSON.stringify(x).split("'").join("\\'");
-
-                // Show day of the week
-                const recordDate = new Date(x.Date);
-                const dayOfWeek = DAY_NAMES[recordDate.getDay()];
-                const dateDisplay = `${x.Date} (${dayOfWeek})`;
                 
+                // Use the data from the sheet directly
                 const breakdown = `
-                    <div class="flex flex-wrap text-xs text-gray-500 mt-2 space-x-3">
-                        <span><i data-lucide="utensils" class="w-3 h-3 mr-1 inline-block text-orange-500"></i>សាច់: ${formatCurrency(x.Meat)}</span>
-                        <span><i data-lucide="leaf" class="w-3 h-3 mr-1 inline-block text-green-500"></i>បន្លែ: ${formatCurrency(x.Vegetable)}</span>
-                        <span><i data-lucide="apple" class="w-3 h-3 mr-1 inline-block text-yellow-500"></i>ផ្លែឈើ: ${formatCurrency(x.Fruit)}</span>
-                    </div>
+                    <span class="text-xs text-gray-500 block">សាច់: ${formatCurrency(x.Meat)}</span>
+                    <span class="text-xs text-gray-500 block">បន្លែ: ${formatCurrency(x.Vegetable)}</span>
+                    <span class="text-xs text-gray-500 block">ផ្លែឈើ: ${formatCurrency(x.Fruit)}</span>
                 `;
                 
                 const actionButtons = isDeleted ? `
@@ -1139,11 +931,11 @@
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center space-x-2 mb-1">
                                 <span class="text-xs font-medium px-2 py-0.5 rounded-full ${badgeClass}">ចំណាយ</span>
-                                <span class="text-sm text-gray-500">${dateDisplay}</span>
+                                <span class="text-sm text-gray-500">${x.Date}</span>
                             </div>
                             <p class="text-base font-bold text-gray-800 truncate">ចំណាយគ្រឿងទេស</p>
                             <p class="text-sm text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
-                            ${!isDeleted ? breakdown : ''}
+                            ${isDeleted ? '' : breakdown}
                         </div>
 
                         <div class="text-right ml-4">
@@ -1163,50 +955,93 @@
             lucide.createIcons();
         }
 
-        // --- CRUD/DATA OPERATIONS ---
+        // --- CRUD/DATA OPERATIONS (CRITICAL UPDATE) ---
+        
         async function handleFormSubmission(e, source) {
-            e.preventDefault();
-            const formElement = source === 'mobile' ? document.getElementById('mobile-expense-form') : (source === 'report' ? document.getElementById('report-expense-form') : document.getElementById('expense-form'));
-            
-            const date = formElement.querySelector("#date").value;
-            const meat = parseFloat(formElement.querySelector("#meat").value) || 0;
-            const vegetable = parseFloat(formElement.querySelector("#vegetable").value) || 0;
-            const fruit = parseFloat(formElement.querySelector("#fruit").value) || 0;
-            const desc = formElement.querySelector("#desc").value;
-            const type = 'Expense'; 
-            
-            const submitBtn = formElement.querySelector("#submit-btn");
+             e.preventDefault();
+             const formElement = source === 'mobile' ? document.getElementById('mobile-expense-form') : document.getElementById('expense-form');
+             
+             const date = formElement.querySelector("#date").value;
+             // const amount = parseFloat(formElement.querySelector("#amount").value); // Calculated, but NOT sent to SheetDB!
+             
+             const meat = parseFloat(formElement.querySelector("#meat").value) || 0;
+             const vegetable = parseFloat(formElement.querySelector("#vegetable").value) || 0;
+             const fruit = parseFloat(formElement.querySelector("#fruit").value) || 0;
+             const desc = formElement.querySelector("#desc").value;
+             
+             const type = 'Expense'; 
+             
+             const submitBtn = formElement.querySelector("#submit-btn");
 
-            if (!date || (meat + vegetable + fruit) <= 0) {
-                showToast("⚠️ សូមបំពេញកាលបរិច្ឆេទ និងត្រូវតែមានចំនួនប្រាក់ចំណាយសរុប!", 'warning');
-                return;
-            }
+             if (!date || (meat + vegetable + fruit) <= 0) {
+                 showToast("⚠️ សូមបំពេញកាលបរិច្ឆេទ និងត្រូវតែមានចំនួនប្រាក់ចំណាយសរុប!", 'warning');
+                 return;
+             }
 
-            // Simulate API interaction
-            showToast(editingID ? "🔄 កំពុងកែប្រែកំណត់ត្រា..." : "🔄 កំពុងបន្ថែមកំណត់ត្រា...", 'info');
-            await new Promise(r => setTimeout(r, 500)); 
+             const originalText = submitBtn.textContent;
+             submitBtn.innerHTML = editingID ? '<i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-1"></i> កំពុងកែប្រែ...' : '<i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-1"></i> កំពុងបន្ថែម...';
+             lucide.createIcons();
+             submitBtn.disabled = true;
 
-            // Simulate Success
-            if (editingID) {
-                showToast("✅ កំណត់ត្រាត្រូវបានកែប្រែដោយជោគជ័យ!", 'success');
-            } else {
-                showToast("✅ កំណត់ត្រាត្រូវបានបន្ថែមដោយជោគជ័យ!", 'success');
-            }
+             const recordData = {
+                 Date: date,
+                 // CRITICAL: ONLY send the individual expense values. Do NOT send 'Amount' (it's a formula).
+                 Type: type,
+                 Meat: meat, 
+                 Vegetable: vegetable, 
+                 Fruit: fruit, 
+                 Description: desc,
+                 ModifiedDate: new Date().toISOString()
+             };
 
-            if(source === 'mobile') closeFormModal();
-            resetForm();
-            setTimeout(loadAllData, 500); // Reload data quickly
+             let res;
+             if (editingID) {
+                 const url = `${SHEETDB_BASE_URL}/ID/${editingID}?sheet=${SHEET_EXPENSES}`;
+                 res = await fetch(url, {
+                     method: "PATCH",
+                     headers: { "Content-Type": "application/json" },
+                     body: JSON.stringify({ data: [recordData] })
+                 });
+                 if (res.ok) showToast("✅ កំណត់ត្រាត្រូវបានកែប្រែដោយជោគជ័យ!", 'success');
+             } else {
+                 const payload = {
+                     data: [{
+                         ID: Date.now(),
+                         Date: date,
+                         // Note: We deliberately skip the 'Amount' column here
+                         Type: type,
+                         Meat: meat,
+                         Vegetable: vegetable,
+                         Fruit: fruit,
+                         Description: desc,
+                         UserEmail: user.Email,
+                         Status: "Active",
+                         ModifiedDate: new Date().toISOString()
+                     }]
+                 };
+                 res = await fetch(sheetUrl(SHEET_EXPENSES), {
+                     method: "POST",
+                     headers: { "Content-Type": "application/json" },
+                     body: JSON.stringify(payload)
+                 });
+                 if (res.ok) showToast("✅ កំណត់ត្រាត្រូវបានបន្ថែមដោយជោគជ័យ!", 'success');
+             }
 
-            // Actual SheetDB logic would be here...
-            /*
-            const originalText = submitBtn.textContent;
-            submitBtn.innerHTML = editingID ? '<i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-1"></i> កំពុងកែប្រែ...' : '<i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-1"></i> កំពុងបន្ថែម...';
-            lucide.createIcons();
-            submitBtn.disabled = true;
-            // ... fetch logic ...
-            */
+             if (res.ok) {
+                 if(source === 'mobile') closeFormModal();
+                 resetForm();
+                 // Delay loading data briefly to allow Google Sheet's formula to calculate 'Amount'
+                 setTimeout(loadAllData, 1500); 
+             } else {
+                 showToast("❌ ប្រតិបត្តិការបរាជ័យ។", 'error');
+             }
+
+             submitBtn.textContent = originalText;
+             submitBtn.disabled = false;
+             lucide.createIcons();
         }
 
+        // --- Soft Delete/Restore/Permanent Delete functions (UNCHANGED logic) ---
         async function deleteExpense(id) {
             const confirmed = await customConfirm(
                 "បញ្ជាក់ការលុបបណ្ដោះអាសន្ន",
@@ -1214,7 +1049,7 @@
                 "ផ្លាស់ទៅធុងសំរាម",
                 "delete"
             );
-            if (confirmed) { showToast("✅ កំណត់ត្រាត្រូវបានលុបបណ្ដោះអាសន្នដោយជោគជ័យ។", 'success'); setTimeout(loadAllData, 500); }
+            if (confirmed) { await updateStatus(id, "Deleted", "លុបបណ្ដោះអាសន្ន"); }
         }
         
         async function restoreExpense(id) {
@@ -1224,7 +1059,7 @@
                 "ទាញយកមកវិញ",
                 "restore"
             );
-            if (confirmed) { showToast("✅ កំណត់ត្រាត្រូវបានទាញយកមកវិញដោយជោគជ័យ។", 'success'); setTimeout(loadAllData, 500); }
+            if (confirmed) { await updateStatus(id, "Active", "ទាញយកមកវិញ"); }
         }
         
         async function permanentDeleteExpense(id) {
@@ -1236,53 +1071,162 @@
             );
             
             if (!confirmed) return;
-            showToast("🗑️ កំណត់ត្រាត្រូវបានលុបជាអចិន្ត្រៃយ៍ដោយជោគជ័យ។", 'success'); setTimeout(loadAllData, 500);
-        }
+            const url = `${SHEETDB_BASE_URL}/ID/${id}?sheet=${SHEET_EXPENSES}`;
+            const res = await fetch(url, { method: "DELETE" });
 
-        // --- DATA EXPORT (Updated to use correct list ID) ---
-        async function exportData(format, sourceView = 'dashboard') {
-            const listId = sourceView === 'report' ? 'report-data-view-section' : 'data-view-section';
-            const inputElement = document.getElementById(listId);
-            
-            if (filteredDataForReport.length === 0) {
-                showToast("⚠️ មិនមានទិន្នន័យសម្រាប់ទាញយកទេ។ សូមជ្រើសរើសរបាយការណ៍ផ្សេងទៀត។", 'warning', 6000); 
-                return;
+            if (res.ok) {
+                showToast("🗑️ កំណត់ត្រាត្រូវបានលុបជាអចិន្ត្រៃយ៍ដោយជោគជ័យ។", 'success'); 
+                loadAllData();
+            } else {
+                showToast("❌ ការលុបបរាជ័យ។", 'error'); 
             }
+        }
+        
+        async function updateStatus(id, newStatus, actionName) {
+            const url = `${SHEETDB_BASE_URL}/ID/${id}?sheet=${SHEET_EXPENSES}`;
+            const res = await fetch(url, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ data: [{ Status: newStatus, ModifiedDate: new Date().toISOString() }] })
+            });
 
-            showToast(`🔄 កំពុងរៀបចំឯកសារ ${format.toUpperCase()}...`, 'info');
-            await new Promise(r => setTimeout(r, 1000));
-            // Actual export logic is simulated here, but the functions remain the same
-            showToast(`✅ ឯកសារ ${format.toUpperCase()} ត្រូវបានទាញយកដោយជោគជ័យ!`, 'success');
+            if (res.ok) {
+                showToast(`✅ កំណត់ត្រាត្រូវបាន${actionName}ដោយជោគជ័យ។`, 'success'); 
+                // Delay loading data briefly to allow Google Sheet's formula to update
+                setTimeout(loadAllData, 1500);
+            } else {
+                showToast("❌ ប្រតិបត្តិការបរាជ័យ។", 'error'); 
+            }
+        }
+        
+        // --- DATA EXPORT (UPDATED to use correct column names) ---
+        async function exportData(format) {
+            const dataToExport = filteredDataForReport; 
+            const reportName = document.getElementById('report-type').options[document.getElementById('report-type').selectedIndex].text;
+
+            if (dataToExport.length === 0) {
+                 showToast("⚠️ មិនមានទិន្នន័យសម្រាប់ទាញយកទេ។ សូមជ្រើសរើសរបាយការណ៍ផ្សេងទៀត។", 'warning', 6000); 
+                 return;
+            }
+            
+            // --- EXCEL EXPORT ---
+            if (format === 'excel') {
+                const structuredData = dataToExport.map(x => ({
+                    'កាលបរិច្ឆេទ': x.Date,
+                    'ប្រភេទ': x.Type, 
+                    'សរុបប្រាក់ (៛)': parseFloat(x.Amount) || 0,
+                    'សាច់ (៛)': parseFloat(x.Meat) || 0,
+                    'បន្លែ (៛)': parseFloat(x.Vegetable) || 0,
+                    'ផ្លែឈើ (៛)': parseFloat(x.Fruit) || 0,
+                    'ពិពណ៌នា': x.Description || '',
+                    'ស្ថានភាព': x.Status
+                }));
+                
+                if (typeof XLSX === 'undefined') {
+                    showToast("❌ កំហុស! SheetJS (XLSX) library មិនត្រូវបានផ្ទុកទេ។", 'error');
+                    return;
+                }
+                
+                try {
+                    const workbook = XLSX.utils.book_new();
+                    const worksheet = XLSX.utils.json_to_sheet(structuredData);
+                    XLSX.utils.book_append_sheet(workbook, worksheet, reportName);
+                    XLSX.writeFile(workbook, `${reportName}_ExpenseReport_${new Date().toISOString().slice(0,10)}.xlsx`);
+                    showToast(`✅ ឯកសារ Excel (.xlsx) ត្រូវបានទាញយកដោយជោគជ័យ!`, 'success');
+                } catch (error) {
+                    console.error("Excel Export Failed:", error);
+                    showToast("❌ ការទាញយកឯកសារ Excel បរាជ័យ។", 'error');
+                }
+
+            } 
+            // --- PDF EXPORT (UNCHANGED Logic) ---
+            else if (format === 'pdf') {
+                 const { jsPDF } = window.jspdf;
+                 const inputElement = document.getElementById('data-view-section'); 
+                 
+                 document.querySelectorAll('.item-actions').forEach(el => el.style.display = 'none');
+                 
+                 const pdfBtn = document.querySelector('button[onclick="exportData(\'pdf\')"]');
+                 const originalPdfBtnContent = pdfBtn.innerHTML;
+                 pdfBtn.innerHTML = '<i data-lucide="loader-2" class="animate-spin w-4 h-4 mr-1"></i> កំពុងរៀបចំ PDF...';
+                 pdfBtn.disabled = true;
+
+                 try {
+                     const canvas = await html2canvas(inputElement, {
+                         scale: 2, 
+                         useCORS: true, 
+                         windowWidth: inputElement.scrollWidth,
+                         windowHeight: inputElement.scrollHeight
+                     });
+
+                     const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                     const pdf = new jsPDF('p', 'mm', 'a4');
+                     
+                     const pdfWidth = pdf.internal.pageSize.getWidth();
+                     const pdfHeight = pdf.internal.pageSize.getHeight();
+                     
+                     const imgHeight = canvas.height * pdfWidth / canvas.width;
+                     let heightLeft = imgHeight;
+                     let position = 0;
+                     
+                     pdf.setFontSize(16);
+                     pdf.text(`របាយការណ៍ចំណាយ: ${reportName}`, 10, 10);
+                     pdf.setFontSize(10);
+                     pdf.text(`កាលបរិច្ឆេទ: ${new Date().toLocaleDateString('km-KH')}`, 10, 17);
+                     
+                     position = 25; 
+                     
+                     while (heightLeft >= 0) {
+                         if (position > 25) { 
+                             pdf.addPage();
+                         }
+                         
+                         pdf.addImage(imgData, 'JPEG', 0, position - imgHeight, pdfWidth, imgHeight);
+                         
+                         heightLeft -= pdfHeight - 15; 
+                         
+                         position -= pdfHeight - 15; 
+                     }
+
+                     pdf.save(`${reportName}_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+                     showToast(`✅ ឯកសារ PDF ត្រូវបានទាញយកដោយជោគជ័យ!`, 'success');
+
+                 } catch(error) {
+                     console.error("PDF Export failed:", error);
+                     showToast("❌ ការទាញយក PDF បរាជ័យ។", 'error');
+                 } finally {
+                     document.querySelectorAll('.item-actions').forEach(el => el.style.display = 'flex');
+                     pdfBtn.innerHTML = originalPdfBtnContent; 
+                     pdfBtn.disabled = false;
+                     lucide.createIcons(); 
+                 }
+            }
         }
 
         // --- Initialization ---
         async function loadAllData() {
             document.getElementById("expense-list").innerHTML = '<p class="text-center text-gray-500 py-10 flex items-center justify-center"><i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-3"></i> កំពុងទាញទិន្នន័យ...</p>';
-            document.getElementById("report-expense-list").innerHTML = '<p class="text-center text-gray-500 py-10 flex items-center justify-center"><i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-3"></i> កំពុងទាញទិន្នន័យ...</p>';
 
-
-            // Simulate Data (Matching user's request list)
-            const data = [
-                { "ID": 1, "Date": "2025-11-14", "Type": "Expense", "Meat": 1000000, "Vegetable": 500000, "Fruit": 200000, "Description": "មិនមានពិពណ៌នា", "UserEmail": "user@example.com", "Status": "Active", "Amount": 1700000 },
-                { "ID": 2, "Date": "2025-11-13", "Type": "Expense", "Meat": 2000000, "Vegetable": 3600000, "Fruit": 500000, "Description": "មិនមានពិពណ៌នា", "UserEmail": "user@example.com", "Status": "Active", "Amount": 6100000 },
-                { "ID": 3, "Date": "2025-11-12", "Type": "Expense", "Meat": 333336, "Vegetable": 33333, "Fruit": 33333, "Description": "មិនមានពិពណ៌នា", "UserEmail": "user@example.com", "Status": "Active", "Amount": 400002 },
-                { "ID": 4, "Date": "2025-11-12", "Type": "Expense", "Meat": 1000000, "Vegetable": 200000, "Fruit": 200000, "Description": "មិនមានពិពណ៌នា", "UserEmail": "user@example.com", "Status": "Active", "Amount": 1400000 },
-                { "ID": 5, "Date": "2025-10-01", "Type": "Expense", "Meat": 100, "Vegetable": 100, "Fruit": 100, "Description": "Deleted Item", "UserEmail": "user@example.com", "Status": "Deleted", "Amount": 300 }
-            ];
-            
-            allExpenses = data.filter(x => x.ID && (x.Type === 'Expense' || x.Status === 'Deleted') && x.Amount !== undefined); 
-            
-            calculateSummary(allExpenses); 
-            populateDateFilters(); 
-            filterRecords(); 
+            try {
+                 const res = await fetch(sheetUrl(SHEET_EXPENSES));
+                 const data = await res.json();
+                 
+                 // CRITICAL: Filter records and ensure the necessary fields exist
+                 // Note: We check for 'Amount' existence which should be output by the formula in the sheet.
+                 allExpenses = data.filter(x => x.ID && (x.Type === 'Expense' || x.Status === 'Deleted') && x.Amount !== undefined); 
+                 
+                 calculateSummary(allExpenses); 
+                 filterRecords(); 
+            } catch (error) {
+                 document.getElementById("expense-list").innerHTML = '<p class="text-center text-red-500 py-10 text-lg">❌ មានបញ្ហាក្នុងការទាញទិន្នន័យ។ សូមពិនិត្យមើល Column headers ក្នុង SheetDB</p>';
+                 console.error("Error loading expenses:", error);
+                 showToast("❌ កំហុសក្នុងការផ្ទុកទិន្នន័យចំណាយ! (ពិនិត្យ Column names ក្នុង SheetDB)", 'error', 6000); 
+            }
         }
         
         // Execute setup and data loading
         setupForms();
         loadAllData(); 
-        
-        // Initial view setup: Start on Dashboard, which hides the form/list and shows only summary.
-        showView('dashboard');
     </script>
 </body>
 </html>
