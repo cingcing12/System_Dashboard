@@ -86,28 +86,31 @@
             margin: 20px;
         }
 
-        /* Improved Form Visibility Logic: Removed desktop form container from Report Tab */
+        /* Form Visibility Logic */
+        /* Dashboard does not have a form */
         #dashboard-expense-form-container {
             display: none !important;
         }
+        /* Report form is hidden by default (Desktop/Laptop) */
         #report-expense-form-container {
-            display: none !important; /* Always hide desktop report form */
-        }
-        
-        /* Report view list always takes full width on desktop */
-        @media (min-width: 1024px) {
-            #report-tab #data-view-section {
-                grid-column: span 4 / span 4;
-            }
+            display: none;
         }
 
-        /* Hide the mobile modal on desktop */
+        /* Desktop Layout: Report Form is visible on Desktop by default */
         @media (min-width: 1024px) {
+            #report-tab #report-expense-form-container {
+                display: block; /* Show the form container on Desktop/Report tab */
+            }
+            #report-tab #data-view-section {
+                grid-column: span 3 / span 3; /* List takes 3 columns */
+            }
+            /* Hide the mobile modal on desktop */
             #mobileFormModal {
                 display: none !important;
             }
         }
-        /* New PDF styles to prevent cutoff issues when generating the PDF */
+
+        /* Print Styles */
         @media print {
             body {
                 -webkit-print-color-adjust: exact !important;
@@ -116,7 +119,6 @@
             }
             .card-shadow { box-shadow: none !important; border: 1px solid #ccc; }
             .hide-on-print { display: none !important; }
-            /* Force list items to not break across pages badly */
             .expense-item { page-break-inside: avoid; }
 
             /* Hide unnecessary elements for printing */
@@ -178,7 +180,7 @@
                     </a>
 
                     <a href="#" onclick="openProfileModal(); return false;" class="flex items-center p-3 hover:bg-gray-50 transition text-gray-700">
-                        <i data-lucide="user-cog" class="w-4 h-4 mr-2"></i> ព័ត៌មានគណនី
+                        <i data-lucide="user-cog" class="w-4 h-4 mr-2"></i> ព័ត្វមានគណនី
                     </a>
                     <a href="#" onclick="customLogout(); return false;" class="flex items-center p-3 hover:bg-red-50 transition text-red-600 border-t mt-1">
                         <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> ចាកចេញ
@@ -243,10 +245,13 @@
         <div id="report-tab" class="tab-content" style="display: none;">
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
 
-                <section id="report-expense-form-container" class="lg:col-span-1 bg-white p-6 rounded-2xl card-shadow h-fit lg:sticky lg:top-24 border border-gray-100" style="display: none;">
-                     </section>
+                <section id="report-expense-form-container" class="lg:col-span-1 bg-white p-6 rounded-2xl card-shadow h-fit lg:sticky lg:top-24 border border-gray-100">
+                    <h2 class="text-2xl font-bold mb-6 text-indigo-600 border-b pb-3" id="report-form-title">➕ បញ្ចូលកំណត់ត្រាថ្មី</h2>
+                    <form id="report-form" class="space-y-4">
+                    </form>
+                </section>
 
-                <section id="data-view-section" class="lg:col-span-4 transition-all duration-300">
+                <section id="data-view-section" class="lg:col-span-3 transition-all duration-300">
                     
                     <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-red-500 hover:shadow-lg transition mb-6">
                         <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="receipt" class="w-4 h-4 mr-2 text-red-500"></i> ចំណាយសរុបនៃរបាយការណ៍</p>
@@ -511,20 +516,18 @@
 
             // Ensure filters are reset and data loaded when switching to Report tab
             if (tabName === 'report') {
-                // Since the desktop form is removed, no form visibility management is needed here
+                const reportForm = document.getElementById('report-form');
+                if (reportForm) resetForm(reportForm);
+                
                 document.getElementById('filter-day').value = 'all';
                 document.getElementById('filter-month').value = 'all';
                 document.getElementById('filter-year').value = 'all';
                 
-                resetForm(document.getElementById('mobile-expense-form'));
                 filterRecords();
             }
 
             lucide.createIcons();
         }
-        
-        // NOTE: toggleReportForm is REMOVED as per user request (desktop form is hidden permanently).
-
 
         // --- TOAST NOTIFICATION FUNCTION (UNCHANGED) ---
         function showToast(message, type = 'info', duration = 4000) {
@@ -708,7 +711,7 @@
         function setupForms() {
             const formTemplate = document.getElementById('form-template').innerHTML;
 
-            // Setup Report Form (Desktop Only - Note: This section is hidden, but the form needs initialization for editing via modal on desktop)
+            // Setup Report Form (Desktop Only - Hidden by default)
             const reportForm = document.getElementById('report-form');
             if (reportForm) {
                 reportForm.innerHTML = formTemplate;
@@ -718,7 +721,7 @@
                 });
             }
             
-            // Setup Mobile Form
+            // Setup Mobile Form (Used for FAB/Mobile Modal)
             const mobileForm = document.getElementById('mobile-expense-form');
             if (mobileForm) {
                 mobileForm.innerHTML = formTemplate;
@@ -756,7 +759,6 @@
             const submitBtn = formElement.querySelector('#submit-btn');
             const cancelBtn = formElement.querySelector('#cancel-btn');
             
-            // Determine which title to update (only mobile title is relevant when modal is used)
             const mobileTitle = document.getElementById('mobile-form-title');
 
 
@@ -805,17 +807,18 @@
                 if(mobileForm) { mobileForm.reset(); resetFormUI(mobileForm); }
             }
             
-            activeFormElement = formToReset; // Update activeFormElement to the reset form
+            activeFormElement = formToReset; 
             lucide.createIcons();
         }
 
         function handleCardClick(record) {
              const isMobile = window.innerWidth < 1024;
-             // On mobile, always open the form modal for edit
+             
              if (isMobile) {
+                 // Mobile: use modal for edit
                  editExpense(record.ID, false);
              } else {
-                 // On desktop, use the detail modal
+                 // Desktop: use detail modal
                  openDetailModal(record);
              }
         }
@@ -833,16 +836,15 @@
             const isMobile = window.innerWidth < 1024;
 
             if (isMobile) {
-                // Use mobile modal for mobile editing
+                // Use mobile modal for editing on mobile
                 openFormModal();
                 activeFormElement = document.getElementById('mobile-expense-form');
             } else {
-                // On desktop, show detail modal which has an edit button that calls this function again, or we can use the desktop form (if available).
-                // Given the current requirement to only use modal for adding/editing on mobile:
-                // We'll proceed to use the mobile modal for editing even on desktop if edit is triggered from the report list (as a fallback/simplified UX).
-                // Revert to showing detail modal on desktop first, which offers the dedicated 'edit' button
-                openDetailModal(record);
-                return; 
+                // For editing on desktop, open the detail modal again, which has the edit button
+                // The edit button in detail modal will be set to use the desktop form or directly use the mobile modal. 
+                // Since the request simplified the desktop form for display only, we will fall back to the mobile modal for editing logic.
+                 openFormModal();
+                 activeFormElement = document.getElementById('mobile-expense-form');
             }
 
             if(activeFormElement) {
@@ -932,7 +934,7 @@
             
             if (!select) return;
 
-            // Clear existing custom year options (keep default 'yearly')
+            // Clear existing custom year options (keep default 'all' and 'yearly')
             let existingYearOptions = select.querySelectorAll('option:not([value="all"]):not([value="yearly"])');
             existingYearOptions.forEach(opt => opt.remove());
 
@@ -985,8 +987,6 @@
                 if (filterDay === 'daily') {
                     matchesDay = isSameDay(x.Date, today);
                 } else if (filterDay.startsWith('day_')) {
-                    const targetDay = dayNames.indexOf(filterDay.split('_')[1].charAt(0).toUpperCase() + filterDay.split('_')[1].slice(1)); // Convert 'mon' -> 'Mon' -> 1
-                    // Custom logic for finding day index (0=Sun, 1=Mon, etc)
                     const targetDayIndex = filterDay === 'day_sun' ? 0 : (filterDay === 'day_mon' ? 1 : (filterDay === 'day_tue' ? 2 : (filterDay === 'day_wed' ? 3 : (filterDay === 'day_thu' ? 4 : (filterDay === 'day_fri' ? 5 : (filterDay === 'day_sat' ? 6 : -1))))));
                     matchesDay = recordDay === targetDayIndex;
                 }
@@ -996,7 +996,18 @@
                     matchesMonth = recordMonth === currentMonth && recordYear === currentYear;
                 } else if (filterMonth.startsWith('month_')) {
                     const targetMonth = parseInt(filterMonth.split('_')[1]);
-                    matchesMonth = recordMonth === targetMonth && recordYear === currentYear;
+                    // Only filter by current year if 'all' is not selected for year, or if 'yearly' is not selected
+                    if (filterYear === 'all' || filterYear === 'yearly' || filterYear.startsWith('year_')) {
+                         matchesMonth = recordMonth === targetMonth; // Let year filter handle the year part if active
+                    }
+                    if (filterYear === 'all') { // If year is 'all', filter by month in any year
+                         matchesMonth = recordMonth === targetMonth;
+                    } else if (filterYear === 'yearly') { // If year is 'yearly', filter by month in current year
+                         matchesMonth = recordMonth === targetMonth && recordYear === currentYear;
+                    } else if (filterYear.startsWith('year_')) { // If year is a specific year, filter by month in that year
+                         const targetYear = parseInt(filterYear.split('_')[1]);
+                         matchesMonth = recordMonth === targetMonth && recordYear === targetYear;
+                    }
                 }
 
                 // 3. Year Filter
@@ -1199,7 +1210,6 @@
 
              if (res.ok) {
                  if(source === 'mobile') closeFormModal();
-                 // if (source === 'report-desktop') toggleReportForm(); // Not needed as desktop form is removed
                  
                  resetForm(formElement); // Reset the specific form that submitted
                  // Delay loading data briefly to allow Google Sheet's formula to calculate 'Amount'
