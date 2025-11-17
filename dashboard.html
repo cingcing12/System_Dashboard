@@ -33,13 +33,15 @@
         @media(max-width:1023px){ #fab-add-btn{ display: inline-flex !important; } #mobileFormModal .modal-content-mobile { width: 95%; max-width: 480px; margin: 10px; } }
         
         /* === CUSTOM CSS FOR REQUESTED VIEW TOGGLE === */
-        #main-expense-form-container { display: none; } /* Default hidden on mobile, controlled by JS/media on desktop */
+        /* Default state controlled by JS now, setting them to inline block allows JS to correctly toggle desktop visibility */
+        #main-expense-form-container { display: none; } 
         #data-view-section { display: none; }
         #dashboard-summary-section { display: block; }
+        
+        /* Ensure that the report view containers are hidden by default */
+        #report-form-container, #report-data-view-section { display: none; }
 
         @media (min-width: 1024px) { 
-             /* Override for desktop to allow JS control */
-            #main-expense-form-container { display: block; }
             #mobileFormModal { display: none !important; } 
         }
         /* === END CUSTOM CSS === */
@@ -526,7 +528,7 @@
             }
         }
 
-        // --- SPA NAVIGATION LOGIC (CRITICAL UPDATE) ---
+        // --- SPA NAVIGATION LOGIC (UPDATED) ---
         let currentActiveView = 'dashboard';
         
         function showView(viewId) {
@@ -543,27 +545,29 @@
                 currentActiveView = viewId;
             }
             
-            // 2. Control visibility of Dashboard Summary/Form/List sections
+            // 2. Control visibility of sections in Dashboard vs Report views
             const summarySection = document.getElementById('dashboard-summary-section');
             const formContainer = document.getElementById('main-expense-form-container');
             const dataSection = document.getElementById('data-view-section');
             
-            // Ensure report view elements are not visible in dashboard view
             const reportFormContainer = document.getElementById('report-form-container');
             const reportDataSection = document.getElementById('report-data-view-section');
-            if (reportFormContainer) reportFormContainer.style.display = 'none';
-            if (reportDataSection) reportDataSection.style.display = 'none';
 
             if (viewId === 'dashboard') {
                 // Dashboard: SHOW Summary, HIDE Form & List
                 summarySection.style.display = 'block';
                 formContainer.style.display = 'none';
                 dataSection.style.display = 'none';
+                if (reportFormContainer) reportFormContainer.style.display = 'none';
+                if (reportDataSection) reportDataSection.style.display = 'none';
             } else if (viewId === 'report') {
                  // Report: HIDE Summary, SHOW Form & List
                 summarySection.style.display = 'none';
+                // Show the main dashboard containers inside the report view (as requested by user)
                 formContainer.style.display = 'block';
                 dataSection.style.display = 'block';
+                if (reportFormContainer) reportFormContainer.style.display = 'none';
+                if (reportDataSection) reportDataSection.style.display = 'none'; 
             }
 
             // 3. Update Navigation Tabs
@@ -590,38 +594,49 @@
             const currentYear = new Date().getFullYear();
             const todayDayIndex = new Date().getDay(); 
             
-            const daySelect = document.getElementById('filter-day-of-week');
-            const monthSelect = document.getElementById('filter-month');
-            const yearSelect = document.getElementById('filter-year');
+            // Select inputs for the main dashboard view (which is used for filtering in Report view too, per structure)
+            const filters = [
+                { day: 'filter-day-of-week', month: 'filter-month', year: 'filter-year', today: 'filter-today', search: 'search-input' },
+                // Add report filters here if you intended to duplicate them
+                // { day: 'report-filter-day-of-week', month: 'report-filter-month', year: 'report-filter-year', today: 'report-filter-today', search: 'report-search-input' }
+            ];
 
-            let dayOptions = `<option value="all">ទាំងអស់</option>`;
-            DAY_NAMES.forEach((name, index) => {
-                const isToday = index === todayDayIndex;
-                const display = isToday ? `${name} (ថ្ងៃនេះ)` : name;
-                dayOptions += `<option value="${index}">${display}</option>`;
+            const yearOptions = ['all', currentYear + 1, currentYear, currentYear - 1, currentYear - 2].map(y => `<option value="${y}">${y}</option>`).join('');
+
+            filters.forEach(f => {
+                const daySelect = document.getElementById(f.day);
+                const monthSelect = document.getElementById(f.month);
+                const yearSelect = document.getElementById(f.year);
+
+                if (daySelect) {
+                    let dayOptions = `<option value="all">ទាំងអស់</option>`;
+                    DAY_NAMES.forEach((name, index) => {
+                        const isToday = index === todayDayIndex;
+                        const display = isToday ? `${name} (ថ្ងៃនេះ)` : name;
+                        dayOptions += `<option value="${index}">${display}</option>`;
+                    });
+                    daySelect.innerHTML = dayOptions;
+                    daySelect.value = 'all'; 
+                }
+
+                if (monthSelect) {
+                    monthSelect.innerHTML = MONTH_NAMES.map((name, index) => 
+                        `<option value="${index === 0 ? 'all' : index}">${name}</option>`
+                    ).join('');
+                    monthSelect.value = 'all';
+                }
+
+                if (yearSelect) {
+                    yearSelect.innerHTML = yearOptions;
+                    yearSelect.value = 'all';
+                }
+                
+                const todaySelect = document.getElementById(f.today);
+                if (todaySelect) todaySelect.value = 'all';
             });
-            daySelect.innerHTML = dayOptions;
-            daySelect.value = 'all'; 
-
-            monthSelect.innerHTML = MONTH_NAMES.map((name, index) => 
-                `<option value="${index === 0 ? 'all' : index}">${name}</option>`
-            ).join('');
-            monthSelect.value = 'all';
-
-            const years = ['all', currentYear + 1, currentYear, currentYear - 1, currentYear - 2]; 
-            const existingYears = [...new Set(allExpenses.map(x => new Date(x.Date).getFullYear()))].filter(y => !years.includes(y)).sort((a, b) => b - a);
-            
-            yearSelect.innerHTML = `<option value="all">ទាំងអស់</option>` + years
-                .filter((y, index) => y !== 'all' && years.indexOf(y) === index) 
-                .concat(existingYears)
-                .map(year => `<option value="${year}">${year}</option>`)
-                .join('');
-            yearSelect.value = 'all';
-            
-            document.getElementById('filter-today').value = 'all';
         }
 
-        // --- TOAST, CONFIRMATION, LOGOUT ---
+        // --- TOAST, CONFIRMATION, LOGOUT (UNCHANGED logic) ---
         function showToast(message, type = 'info', duration = 4000) {
             const container = document.getElementById('toast-container');
             if (!container) return;
@@ -798,20 +813,37 @@
             }
         }
         
+        // NOTE: We only need to setup the dashboard form, as the filters target the dashboard elements
+        // This is based on the provided HTML structure where filters/list aren't duplicated for report view,
+        // so we reuse the elements in both views via the showView function.
         function setupForms() {
             const formTemplate = document.getElementById('form-template').innerHTML;
+            
+            // Setup main desktop form
             const desktopForm = document.getElementById('expense-form');
             desktopForm.innerHTML = formTemplate;
             desktopForm.addEventListener('submit', (e) => handleFormSubmission(e, 'desktop'));
             desktopForm.querySelectorAll('.expense-input').forEach(input => {
                 input.addEventListener('input', () => updateAmountSummary(desktopForm));
             });
+            
+            // Setup mobile form (for modal)
             const mobileForm = document.getElementById('mobile-expense-form');
             mobileForm.innerHTML = formTemplate;
             mobileForm.addEventListener('submit', (e) => handleFormSubmission(e, 'mobile'));
             mobileForm.querySelectorAll('.expense-input').forEach(input => {
                 input.addEventListener('input', () => updateAmountSummary(mobileForm));
             });
+
+             // Setup report form (for report view, reusing the logic)
+            const reportForm = document.getElementById('report-expense-form');
+            if(reportForm) {
+                reportForm.innerHTML = formTemplate;
+                reportForm.addEventListener('submit', (e) => handleFormSubmission(e, 'report'));
+                reportForm.querySelectorAll('.expense-input').forEach(input => {
+                    input.addEventListener('input', () => updateAmountSummary(reportForm));
+                });
+            }
         }
 
         function openFormModal() {
@@ -847,7 +879,12 @@
                 submitBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
                 cancelBtn.classList.remove('hidden');
                 
-                document.getElementById('main-form-title').textContent = "📝 កែប្រែកំណត់ត្រា";
+                // Update titles based on the form element's ID to ensure correct UI when editing
+                if (formElement.id === 'expense-form') {
+                    document.getElementById('main-form-title').textContent = "📝 កែប្រែកំណត់ត្រា";
+                } else if (formElement.id === 'report-expense-form') {
+                     document.getElementById('report-main-form-title').textContent = "📝 កែប្រែកំណត់ត្រា";
+                }
                 const mobileTitle = document.getElementById('mobile-form-title');
                 if(mobileTitle) mobileTitle.textContent = "📝 កែប្រែកំណត់ត្រា";
             } else {
@@ -865,7 +902,11 @@
             submitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
             cancelBtn.classList.add('hidden');
             
-            document.getElementById('main-form-title').textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
+            // Reset titles
+            const mainTitle = document.getElementById('main-form-title');
+            if (mainTitle) mainTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
+            const reportTitle = document.getElementById('report-main-form-title');
+            if (reportTitle) reportTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
             const mobileTitle = document.getElementById('mobile-form-title');
             if(mobileTitle) mobileTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
             
@@ -876,14 +917,21 @@
             editingID = null;
             const desktopForm = document.getElementById('expense-form');
             const mobileForm = document.getElementById('mobile-expense-form');
+            const reportForm = document.getElementById('report-expense-form');
+            
             desktopForm.reset();
             mobileForm.reset();
+            if(reportForm) reportForm.reset();
+
             resetFormUI(desktopForm);
             resetFormUI(mobileForm);
+            if(reportForm) resetFormUI(reportForm);
+            
             activeFormElement = null; 
             lucide.createIcons();
             updateAmountSummary(desktopForm);
             updateAmountSummary(mobileForm);
+            if(reportForm) updateAmountSummary(reportForm);
         }
         
         function handleCardClick(record) {
@@ -907,9 +955,12 @@
             
             const isMobile = window.innerWidth < 1024;
             
+            // Determine which form to populate based on current view/device
             if (isMobile) {
                 openFormModal(); 
                 activeFormElement = document.getElementById('mobile-expense-form');
+            } else if (currentActiveView === 'report' && document.getElementById('report-expense-form')) {
+                activeFormElement = document.getElementById('report-expense-form');
             } else {
                 activeFormElement = document.getElementById('expense-form');
             }
@@ -919,14 +970,15 @@
             }
             
             if(scrollToForm && !isMobile) {
-                document.getElementById("main-expense-form-container").scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const targetId = currentActiveView === 'report' ? "report-form-container" : "main-expense-form-container";
+                const targetEl = document.getElementById(targetId);
+                if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
         // --- UTILS ---
         function formatCurrency(amount) {
             const num = parseFloat(amount) || 0;
-            // Use Intl.NumberFormat for cleaner Khmer formatting (or simulate based on request)
             const formatted = num.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
             return `${formatted} ៛`;
         }
@@ -939,13 +991,13 @@
                    d1.getDate() === d2.getDate();
         }
 
-        // --- SUMMARY & FILTERING LOGIC (CRITICAL UPDATE: Set fixed/simulated data) ---
+        // --- SUMMARY & FILTERING LOGIC ---
         let filteredDataForReport = []; 
 
         function calculateSummary(data) {
             // Apply the user-requested fixed values
             document.getElementById('total-expense-summary').textContent = '9,600,002 ៛';
-            document.getElementById('monthly-expense-summary').textContent = '9,600,002 ៛'; // Assuming all active data is in the current month for simulation
+            document.getElementById('monthly-expense-summary').textContent = '9,600,002 ៛';
             document.getElementById('meat-total-summary').textContent = '4,333,336 ៛';
             document.getElementById('vegetable-total-summary').textContent = '4,333,333 ៛';
             document.getElementById('fruit-total-summary').textContent = '933,333 ៛';
@@ -954,6 +1006,11 @@
         }
         
         function filterRecords() {
+            // Determine which filter inputs and output list to use based on the current active view
+            const isDashboardView = currentActiveView === 'dashboard';
+            const expenseListId = 'expense-list'; // The main list is rendered whether visible or not
+            
+            // Use dashboard filter elements regardless of the view (since they are visible/used in both views now)
             const filterToday = document.getElementById('filter-today').value;
             const filterDayOfWeek = document.getElementById('filter-day-of-week').value;
             const filterMonth = document.getElementById('filter-month').value;
@@ -990,20 +1047,29 @@
             }).sort((a, b) => new Date(b.Date) - new Date(a.Date)); 
 
             filteredDataForReport = filtered;
-            renderExpenseList(filtered);
+            
+            // Render the list to the appropriate element based on the view
+            const renderTargetId = isDashboardView ? 'expense-list' : 'report-expense-list';
+            renderExpenseList(filtered, renderTargetId);
         }
         
         function switchView(view) {
             currentView = view;
             const trashBtn = document.getElementById('trash-btn');
-            trashBtn.innerHTML = view === 'active' ? 
-                '<i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប' : 
-                '<i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> មើលកំណត់ត្រាសកម្ម';
-            trashBtn.onclick = view === 'active' ? () => switchView('trash') : () => switchView('active');
-            trashBtn.classList.toggle('bg-gray-100', view === 'active');
-            trashBtn.classList.toggle('bg-indigo-500', view === 'trash');
-            trashBtn.classList.toggle('text-white', view === 'trash');
-            trashBtn.classList.toggle('text-gray-600', view === 'active');
+            const reportTrashBtn = document.getElementById('report-trash-btn');
+
+            [trashBtn, reportTrashBtn].forEach(btn => {
+                if(btn) {
+                    btn.innerHTML = view === 'active' ? 
+                        '<i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប' : 
+                        '<i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> មើលកំណត់ត្រាសកម្ម';
+                    btn.onclick = view === 'active' ? () => switchView('trash') : () => switchView('active');
+                    btn.classList.toggle('bg-gray-100', view === 'active');
+                    btn.classList.toggle('bg-indigo-500', view === 'trash');
+                    btn.classList.toggle('text-white', view === 'trash');
+                    btn.classList.toggle('text-gray-600', view === 'active');
+                }
+            });
             
             document.getElementById('filter-today').value = 'all';
             document.getElementById('filter-day-of-week').value = 'all'; 
@@ -1014,9 +1080,11 @@
             lucide.createIcons();
         }
 
-        // --- RENDER LIST (UNCHANGED logic) ---
-        function renderExpenseList(data) {
-            const list = document.getElementById("expense-list");
+        // --- RENDER LIST (Updated to support dynamic list ID) ---
+        function renderExpenseList(data, listId = 'expense-list') {
+            const list = document.getElementById(listId);
+            if (!list) return;
+
             const isTrashView = currentView === 'trash';
             
             if (data.length === 0) {
@@ -1098,7 +1166,7 @@
         // --- CRUD/DATA OPERATIONS ---
         async function handleFormSubmission(e, source) {
             e.preventDefault();
-            const formElement = source === 'mobile' ? document.getElementById('mobile-expense-form') : document.getElementById('expense-form');
+            const formElement = source === 'mobile' ? document.getElementById('mobile-expense-form') : (source === 'report' ? document.getElementById('report-expense-form') : document.getElementById('expense-form'));
             
             const date = formElement.querySelector("#date").value;
             const meat = parseFloat(formElement.querySelector("#meat").value) || 0;
@@ -1171,8 +1239,16 @@
             showToast("🗑️ កំណត់ត្រាត្រូវបានលុបជាអចិន្ត្រៃយ៍ដោយជោគជ័យ។", 'success'); setTimeout(loadAllData, 500);
         }
 
-        // --- DATA EXPORT (UNCHANGED logic) ---
-        async function exportData(format) {
+        // --- DATA EXPORT (Updated to use correct list ID) ---
+        async function exportData(format, sourceView = 'dashboard') {
+            const listId = sourceView === 'report' ? 'report-data-view-section' : 'data-view-section';
+            const inputElement = document.getElementById(listId);
+            
+            if (filteredDataForReport.length === 0) {
+                showToast("⚠️ មិនមានទិន្នន័យសម្រាប់ទាញយកទេ។ សូមជ្រើសរើសរបាយការណ៍ផ្សេងទៀត។", 'warning', 6000); 
+                return;
+            }
+
             showToast(`🔄 កំពុងរៀបចំឯកសារ ${format.toUpperCase()}...`, 'info');
             await new Promise(r => setTimeout(r, 1000));
             // Actual export logic is simulated here, but the functions remain the same
@@ -1182,6 +1258,8 @@
         // --- Initialization ---
         async function loadAllData() {
             document.getElementById("expense-list").innerHTML = '<p class="text-center text-gray-500 py-10 flex items-center justify-center"><i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-3"></i> កំពុងទាញទិន្នន័យ...</p>';
+            document.getElementById("report-expense-list").innerHTML = '<p class="text-center text-gray-500 py-10 flex items-center justify-center"><i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-3"></i> កំពុងទាញទិន្នន័យ...</p>';
+
 
             // Simulate Data (Matching user's request list)
             const data = [
