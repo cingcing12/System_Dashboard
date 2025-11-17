@@ -54,6 +54,9 @@
 
         .confirm-modal-content { animation: fadeInScale 0.3s ease-out; }
         @keyframes fadeInScale { from { opacity: 0; transform: scale(0.9) translateY(-20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .view-content.hidden { display: none !important; }
+        .view-content.active { display: block; }
+
         @media print {
             body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: #ffffff !important; }
             .card-shadow-lg { box-shadow: none !important; border: 1px solid #ccc; }
@@ -93,29 +96,9 @@
                 </h1>
                 
                 <div class="dropdown md:hidden">
-                    <button onclick="toggleDropdown(event)" class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-semibold hover:bg-indigo-600 transition duration-150 relative ring-2 ring-indigo-300 ring-offset-2">
+                    <button onclick="openProfileModal(); return false;" class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-semibold hover:bg-indigo-600 transition duration-150 relative ring-2 ring-indigo-300 ring-offset-2">
                         <div id="user-avatar-initials-mobile" class="avatar-initials w-full h-full text-sm">...</div>
                     </button>
-                    <div id="profile-dropdown-menu" class="dropdown-menu">
-                        <div class="p-4 border-b text-left bg-gray-50 rounded-t-xl flex items-center space-x-3">
-                            <div id="dropdown-avatar-initials" class="avatar-initials w-10 h-10 text-base">...</div>
-                            <div>
-                                <p class="font-bold text-gray-800 truncate" id="dropdown-email">Loading...</p>
-                                <span class="text-sm text-indigo-500" id="dropdown-role">Loading...</span>
-                            </div>
-                        </div>
-                        
-                        <a href="user.html" id="user-management-link" class="hidden items-center p-3 hover:bg-indigo-50 transition text-purple-700">
-                            <i data-lucide="users" class="w-4 h-4 mr-2"></i> គ្រប់គ្រងអ្នកប្រើ
-                        </a>
-                        
-                        <a href="#" onclick="openProfileModal(); return false;" class="flex items-center p-3 hover:bg-gray-50 transition text-gray-700">
-                            <i data-lucide="user-cog" class="w-4 h-4 mr-2"></i> ព័ត៌មានគណនី
-                        </a>
-                        <a href="#" onclick="customLogout(); return false;" class="flex items-center p-3 hover:bg-red-50 transition text-red-600 border-t mt-1">
-                            <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> ចាកចេញ
-                        </a>
-                    </div>
                 </div>
             </div>
 
@@ -125,7 +108,7 @@
                         <i data-lucide="layout-dashboard" class="w-4 h-4 mr-1"></i> ផ្ទាំងគ្រប់គ្រង
                     </li>
                     <li onclick="showView('report')" id="nav-report" class="nav-item pb-3 border-b-4 border-transparent text-gray-600 hover:border-indigo-100 hover:text-indigo-500 transition cursor-pointer flex items-center">
-                        <i data-lucide="pie-chart" class="w-4 h-4 mr-1"></i> របាយការណ៍
+                        <i data-lucide="list-ordered" class="w-4 h-4 mr-1"></i> បញ្ជីប្រតិបត្តិការចំណាយ
                     </li>
                     <li onclick="window.location.href='user.html'" id="user-management-tab" class="hidden pb-3 border-b-4 border-transparent text-gray-600 hover:border-purple-100 hover:text-purple-500 transition cursor-pointer flex items-center">
                         <i data-lucide="users" class="w-4 h-4 mr-1"></i> គ្រប់គ្រងអ្នកប្រើ
@@ -134,7 +117,7 @@
             </nav>
             
             <div class="dropdown hidden md:block pl-4 py-3">
-                <button onclick="toggleDropdown(event)" class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-semibold hover:bg-indigo-600 transition duration-150 relative ring-2 ring-indigo-300 ring-offset-2">
+                <button onclick="openProfileModal(); return false;" class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-semibold hover:bg-indigo-600 transition duration-150 relative ring-2 ring-indigo-300 ring-offset-2">
                     <div id="user-avatar-initials-desktop" class="avatar-initials w-full h-full text-sm">...</div>
                 </button>
             </div>
@@ -144,6 +127,8 @@
     <main id="main-content-container" class="max-w-7xl mx-auto p-4 md:p-8">
         
         <div id="dashboard-view" class="view-content active">
+            <h2 class="text-3xl font-bold text-gray-700 mb-6 flex items-center"><i data-lucide="layout-dashboard" class="w-6 h-6 mr-2 text-indigo-500"></i> ផ្ទាំងគ្រប់គ្រងសង្ខេប</h2>
+            
             <section class="mb-8">
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow-lg border-l-4 border-red-600 hover:shadow-xl transition transform hover:scale-[1.01]">
@@ -185,7 +170,7 @@
                     <form id="expense-form" class="space-y-4"></form>
                 </section>
                 
-                <section id="data-view-section" class="lg:col-span-3 bg-white p-4 sm:p-6 rounded-2xl card-shadow-lg border border-gray-100">
+                <section id="data-view-section-dashboard" class="lg:col-span-3 bg-white p-4 sm:p-6 rounded-2xl card-shadow-lg border border-gray-100">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-2">
                         <h2 class="text-xl sm:text-2xl font-bold text-gray-700 mb-2 sm:mb-0">បញ្ជីប្រតិបត្តិការចំណាយ</h2>
                         <button onclick="switchView('trash')" id="trash-btn" class="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition flex items-center font-semibold text-sm shadow-sm">
@@ -239,12 +224,12 @@
 
         <div id="report-view" class="view-content hidden">
             <div class="bg-white p-6 rounded-2xl card-shadow-lg">
-                <h2 class="text-2xl font-bold text-gray-700 mb-4 flex items-center"><i data-lucide="pie-chart" class="w-6 h-6 mr-2 text-indigo-500"></i> របាយការណ៍លម្អិត & ក្រាហ្វ</h2>
-                <p class="text-gray-500 border-b pb-4 mb-4">ផ្នែកនេះត្រូវបានរៀបចំសម្រាប់បង្ហាញក្រាហ្វ (ឧ. ចំណាយតាមខែ ឬតាមប្រភេទ)។</p>
+                <h2 class="text-3xl font-bold text-gray-700 mb-4 flex items-center"><i data-lucide="list-ordered" class="w-6 h-6 mr-2 text-indigo-500"></i> បញ្ជីប្រតិបត្តិការចំណាយទាំងអស់</h2>
+                <p class="text-gray-500 border-b pb-4 mb-4">បង្ហាញប្រតិបត្តិការទាំងអស់ (សកម្ម & លុបបណ្ដោះអាសន្ន) ដោយគ្មានទម្រង់បញ្ចូល។</p>
                 
                 <div class="bg-gray-100 p-6 rounded-xl border border-dashed border-gray-300">
-                    <p class="text-center text-gray-600 font-semibold">📈 ទិន្នន័យក្រាហ្វនឹងបង្ហាញនៅទីនេះ</p>
-                </div>
+                    <p class="text-center text-gray-600 font-semibold">📈 នេះអាចជាកន្លែងសម្រាប់បង្ហាញតារាង Pivot ឬរបាយការណ៍សង្ខេបប្រចាំខែ</p>
+                    </div>
             </div>
         </div>
 
@@ -274,7 +259,9 @@
 
             <div class="flex justify-end space-x-3 pt-6 border-t mt-6">
                 <button type="button" onclick="closeProfileModal()" class="px-6 py-3 bg-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-400 transition">បិទ</button>
-                <button type="button" onclick="customLogout()" class="px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition">ចាកចេញ</button>
+                <button type="button" onclick="customLogout()" class="px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition flex items-center">
+                    <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> ចាកចេញ
+                </button>
             </div>
             
             <button onclick="closeProfileModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition">
@@ -413,12 +400,12 @@
             "ទាំងអស់", "មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា", 
             "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ"
         ];
-        // NEW: Day of Week Names (0=Sunday, 1=Monday... 6=Saturday)
+        // Day of Week Names (0=Sunday, 1=Monday... 6=Saturday)
         const DAY_NAMES = [
             "អាទិត្យ", "ច័ន្ទ", "អង្គារ", "ពុធ", "ព្រហស្បតិ៍", "សុក្រ", "សៅរ៍"
         ];
 
-        // --- NEW: AVATAR & IMAGE HANDLING FUNCTION ---
+        // --- AVATAR & IMAGE HANDLING FUNCTION ---
         function getInitials(email) {
             if (!email) return 'U';
             const parts = email.split('@')[0].split('.');
@@ -428,9 +415,6 @@
             return initials.toUpperCase().slice(0, 2);
         }
         
-        /**
-         * Sets the background image or initials for an avatar element.
-         */
         function setAvatar(element, email, imageUrl = null) {
             element.classList.remove('avatar-image');
             element.style.backgroundImage = '';
@@ -443,7 +427,7 @@
                 img.onload = () => {
                     element.style.backgroundImage = `url(${imageUrl})`;
                     element.style.backgroundColor = 'transparent';
-                    element.style.color = 'transparent'; // Hide initials when image is present
+                    element.style.color = 'transparent'; 
                     element.textContent = '';
                     element.classList.add('avatar-image');
                 };
@@ -454,7 +438,7 @@
             }
         }
 
-        // --- SPA NAVIGATION LOGIC ---
+        // --- SPA NAVIGATION LOGIC (Simplified: just Dashboard & Report) ---
         let currentActiveView = 'dashboard';
         
         function showView(viewId) {
@@ -483,11 +467,10 @@
                 activeTab.classList.remove('border-transparent', 'text-gray-600');
             }
             
-            // Re-render icons after view switch
             lucide.createIcons();
         }
 
-        // --- POPULATE DATE FILTERS (UPDATED) ---
+        // --- POPULATE DATE FILTERS ---
         function populateDateFilters() {
             const currentYear = new Date().getFullYear();
             const todayDayIndex = new Date().getDay(); // 0=Sunday, 1=Monday...
@@ -495,12 +478,13 @@
             const daySelect = document.getElementById('filter-day-of-week');
             const monthSelect = document.getElementById('filter-month');
             const yearSelect = document.getElementById('filter-year');
+            const filterTodaySelect = document.getElementById('filter-today');
 
             // 1. Day of Week Filter
             let dayOptions = `<option value="all">ទាំងអស់</option>`;
             DAY_NAMES.forEach((name, index) => {
                 const isToday = index === todayDayIndex;
-                const display = isToday ? `${name} (ថ្ងៃនេះ)` : name;
+                const display = isToday ? `${name}` : name;
                 dayOptions += `<option value="${index}">${display}</option>`;
             });
             daySelect.innerHTML = dayOptions;
@@ -524,10 +508,11 @@
             yearSelect.value = 'all';
             
             // 4. Reset 'Today' filter
-            document.getElementById('filter-today').value = 'all';
+            filterTodaySelect.value = 'all';
+            filterTodaySelect.options[1].textContent = `ថ្ងៃនេះ (${DAY_NAMES[todayDayIndex]})`;
         }
 
-        // --- TOAST, CONFIRMATION, LOGOUT (UNCHANGED logic) ---
+        // --- TOAST, CONFIRMATION, LOGOUT ---
         function showToast(message, type = 'info', duration = 4000) {
             const container = document.getElementById('toast-container');
             if (!container) return;
@@ -612,49 +597,27 @@
         }
         function logout() { customLogout(); } 
 
-        // --- INIT & AUTH (UPDATED with Avatar logic) ---
+        // --- INIT & AUTH ---
         if (!user) {
             showToast("⚠️ សូមចូលប្រព័ន្ធជាមុនសិន។", 'warning');
             window.location.href = "index.html";
         } else {
-            document.getElementById("dropdown-email").textContent = user.Email || 'N/A';
-            document.getElementById("dropdown-role").textContent = user.Role || 'User';
-            // NEW: Set avatars for mobile, dropdown, and desktop
+            // Setup Avatar/Profile Info on Load
+            document.getElementById("modal-profile-email").textContent = user.Email || 'N/A';
+            document.getElementById("modal-profile-role").textContent = user.Role || 'User';
             setAvatar(document.getElementById("user-avatar-initials-mobile"), user.Email, user.ProfileImage);
-            setAvatar(document.getElementById("dropdown-avatar-initials"), user.Email, user.ProfileImage);
+            setAvatar(document.getElementById("modal-profile-avatar"), user.Email, user.ProfileImage);
             setAvatar(document.getElementById("user-avatar-initials-desktop"), user.Email, user.ProfileImage);
             if (user.Role === 'Owner') {
-                document.getElementById('user-management-link').classList.remove('hidden');
-                document.getElementById('user-management-link').classList.add('flex');
                 document.getElementById('user-management-tab').classList.remove('hidden');
                 document.getElementById('user-management-tab').classList.add('flex');
             }
         }
         
-        // --- PROFILE/DROPDOWN/MODALS (UPDATED with Avatar logic) ---
-        function toggleDropdown(event) {
-            const menu = document.getElementById('profile-dropdown-menu');
-            document.querySelectorAll('.dropdown-menu.active').forEach(m => {
-                if (m !== menu) m.classList.remove('active');
-            });
-            menu.classList.toggle('active');
-            event.stopPropagation();
-        }
-
-        document.addEventListener('click', function(event) {
-            const dropdown = document.getElementById('profile-dropdown-menu');
-            if (dropdown.classList.contains('active') && !event.target.closest('.dropdown')) {
-                dropdown.classList.remove('active');
-            }
-        });
-        
-        function closeDropdown() { document.getElementById('profile-dropdown-menu').classList.remove('active'); }
+        // --- PROFILE MODAL FUNCTIONS ---
         function openProfileModal() {
-            closeDropdown();
-            document.getElementById('modal-profile-email').textContent = user.Email;
-            document.getElementById('modal-profile-role').textContent = user.Role;
-            setAvatar(document.getElementById("modal-profile-avatar"), user.Email, user.ProfileImage);
             document.getElementById('profileModal').classList.add('active');
+            lucide.createIcons();
         }
         function closeProfileModal() { document.getElementById('profileModal').classList.remove('active'); }
         
@@ -678,7 +641,7 @@
             activeDetailRecord = null;
         }
         
-        // Form logic
+        // Form logic (Unchanged)
         function updateAmountSummary(formElement) {
             const meat = parseFloat(formElement.querySelector("#meat").value) || 0;
             const vegetable = parseFloat(formElement.querySelector("#vegetable").value) || 0;
@@ -821,7 +784,7 @@
             }
         }
 
-        // --- UTILS ---
+        // --- UTILS (Unchanged) ---
         function formatCurrency(amount) {
             const num = parseFloat(amount) || 0;
             return `${num.toLocaleString('km-KH')} ៛`;
@@ -835,7 +798,7 @@
                    d1.getDate() === d2.getDate();
         }
 
-        // --- SUMMARY & FILTERING LOGIC (CRITICAL UPDATE: Filter logic updated) ---
+        // --- SUMMARY & FILTERING LOGIC ---
         let filteredDataForReport = []; 
 
         function calculateSummary(data) {
@@ -976,7 +939,7 @@
             lucide.createIcons();
         }
 
-        // --- RENDER LIST (UNCHANGED logic) ---
+        // --- RENDER LIST ---
         function renderExpenseList(data) {
             const list = document.getElementById("expense-list");
             const isTrashView = currentView === 'trash';
@@ -999,10 +962,11 @@
                 
                 const recordJson = JSON.stringify(x).split("'").join("\\'");
 
-                // Show day of the week
+                // Show day of the week, and mark if it's today
                 const recordDate = new Date(x.Date);
                 const dayOfWeek = DAY_NAMES[recordDate.getDay()];
-                const dateDisplay = `${x.Date} (${dayOfWeek})`;
+                const isRecordToday = isSameDay(x.Date, today);
+                const dateDisplay = `${x.Date} (${dayOfWeek}${isRecordToday ? ' ថ្ងៃនេះ' : ''})`;
                 
                 const breakdown = `
                     <div class="flex flex-wrap text-xs text-gray-500 mt-2 space-x-3">
@@ -1057,8 +1021,7 @@
             lucide.createIcons();
         }
 
-        // --- CRUD/DATA OPERATIONS (UNCHANGED logic) ---
-        // ... (Keep existing CRUD functions) ...
+        // --- CRUD/DATA OPERATIONS (Unchanged) ---
         async function handleFormSubmission(e, source) {
             e.preventDefault();
             const formElement = source === 'mobile' ? document.getElementById('mobile-expense-form') : document.getElementById('expense-form');
@@ -1193,7 +1156,7 @@
             }
         }
         
-        // --- DATA EXPORT (UNCHANGED logic) ---
+        // --- DATA EXPORT (Unchanged) ---
         async function exportData(format) {
             const dataToExport = filteredDataForReport; 
             const filterMonth = document.getElementById('filter-month').value;
@@ -1235,10 +1198,10 @@
                 }
 
             } 
-            // --- PDF EXPORT (UNCHANGED Logic) ---
+            // --- PDF EXPORT (Unchanged Logic) ---
             else if (format === 'pdf') {
                 const { jsPDF } = window.jspdf;
-                const inputElement = document.getElementById('data-view-section'); 
+                const inputElement = document.getElementById('data-view-section-dashboard'); // Target the list section
                 
                 document.querySelectorAll('.item-actions').forEach(el => el.style.display = 'none');
                 
@@ -1323,7 +1286,7 @@
         setupForms();
         loadAllData(); 
         
-        // Initial view setup
+        // Initial view setup (Ensure Dashboard is the default)
         showView('dashboard');
     </script>
 </body>
