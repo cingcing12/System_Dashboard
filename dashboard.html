@@ -23,18 +23,16 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); justify-content: center; align-items: center; z-index: 999; backdrop-filter: blur(4px); transition: opacity 0.3s ease; }
         .modal.active { display:flex; }
-        /* Adjusted Shadow for a softer, elevated look */
         .card-shadow-lg { box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05), 0 5px 15px rgba(0, 0, 0, 0.03); }
         .dropdown { position: relative; }
         .dropdown-menu { display: none; position: absolute; right: 0; top: 100%; min-width: 240px; background-color: white; border-radius: 12px; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); z-index: 100; margin-top: 12px; transform: translateY(-10px); opacity: 0; transition: all 0.2s ease-out; }
         .dropdown-menu.active { display: block; transform: translateY(0); opacity: 1; }
         
-        /* Updated Expense Card Design */
         .expense-item { 
             transition: all 0.3s ease; 
             border: 1px solid #e2e8f0; 
             background: #ffffff; 
-            border-left: 6px solid; /* Use variable color */
+            border-left: 6px solid; 
         }
         .expense-item:hover { 
             cursor: pointer; 
@@ -44,9 +42,8 @@
         }
 
         #fab-add-btn { position: fixed; bottom: 24px; right: 24px; z-index: 50; width: 64px; height: 64px; border-radius: 50%; display: none; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3); }
-        @media(max-width:1023px){ #fab-add-btn{ display: inline-flex !important; } #mobileFormModal .modal-content-mobile { width: 95%; max-width: 480px; margin: 10px; } }
+        @media(max-width:1023px){ #fab-add-btn{ display: none; } /* Controlled by JS showView for mobile */ #mobileFormModal .modal-content-mobile { width: 95%; max-width: 480px; margin: 10px; } }
         
-        /* Form container needs to stay hidden/block on desktop */
         #main-expense-form-container { display: none; }
         @media (min-width: 1024px) { #main-expense-form-container { display: block !important; } #mobileFormModal { display: none !important; } }
         
@@ -204,9 +201,14 @@
                     <h2 class="text-xl sm:text-2xl font-bold text-gray-700 mb-2 sm:mb-0 flex items-center">
                         <i data-lucide="list-ordered" class="w-6 h-6 mr-2 text-indigo-500"></i> បញ្ជីប្រតិបត្តិការចំណាយ
                     </h2>
-                    <button onclick="switchView('trash')" id="trash-btn" class="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition flex items-center font-semibold text-sm shadow-sm">
-                        <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប
-                    </button>
+                    <div class="flex space-x-3">
+                        <button onclick="openFormModal();" class="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-lg transition flex items-center font-semibold text-sm shadow-md md:hidden">
+                            <i data-lucide="plus" class="w-4 h-4 mr-2"></i> បន្ថែមចំណាយ
+                        </button>
+                        <button onclick="switchView('trash')" id="trash-btn" class="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition flex items-center font-semibold text-sm shadow-sm">
+                            <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប
+                        </button>
+                    </div>
                 </div>
 
                 <div class="mb-6 p-4 border rounded-xl bg-indigo-50 border-indigo-200 shadow-inner">
@@ -404,898 +406,441 @@
     </div>
 
 
-   <script src="config.js"></script>
-<script>
-    // --- GLOBAL STATE ---
-    const user = JSON.parse(localStorage.getItem("user"));
-    let allExpenses = [];
-    let currentView = 'active'; 
-    let editingID = null;
-    let activeDetailRecord = null;
-    let customConfirmResolver; 
-    let activeFormElement = null; 
-    
-    // --- HELPER ARRAYS ---
-    const MONTH_NAMES = [
-        "ទាំងអស់", "មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា", 
-        "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ"
-    ];
-    // Day of Week Names (0=Sunday, 1=Monday... 6=Saturday)
-    const DAY_NAMES = [
-        "អាទិត្យ", "ច័ន្ទ", "អង្គារ", "ពុធ", "ព្រហស្បតិ៍", "សុក្រ", "សៅរ៍"
-    ];
+    <script src="config.js"></script>
+    <script>
+        // --- GLOBAL STATE ---
+        const user = JSON.parse(localStorage.getItem("user"));
+        let allExpenses = [];
+        let currentView = 'active'; 
+        let editingID = null;
+        let activeDetailRecord = null;
+        let customConfirmResolver; 
+        let activeFormElement = null; 
+        
+        // --- HELPER ARRAYS ---
+        const MONTH_NAMES = [
+            "ទាំងអស់", "មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា", 
+            "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ"
+        ];
+        // Day of Week Names (0=Sunday, 1=Monday... 6=Saturday)
+        const DAY_NAMES = [
+            "អាទិត្យ", "ច័ន្ទ", "អង្គារ", "ពុធ", "ព្រហស្បតិ៍", "សុក្រ", "សៅរ៍"
+        ];
 
-    // --- AVATAR & IMAGE HANDLING FUNCTION ---
-    function getInitials(email) {
-        if (!email) return 'U';
-        const parts = email.split('@')[0].split('.');
-        let initials = '';
-        if (parts.length > 0) initials += parts[0][0];
-        if (parts.length > 1) initials += parts[parts.length - 1][0];
-        return initials.toUpperCase().slice(0, 2);
-    }
-    
-    function setAvatar(element, email, imageUrl = null) {
-        element.classList.remove('avatar-image');
-        element.style.backgroundImage = '';
-        element.textContent = getInitials(email);
-        element.style.backgroundColor = '#6366f1';
-        element.style.color = 'white';
-
-        if (imageUrl) {
-            const img = new Image();
-            img.onload = () => {
-                element.style.backgroundImage = `url(${imageUrl})`;
-                element.style.backgroundColor = 'transparent';
-                element.style.color = 'transparent'; 
-                element.textContent = '';
-                element.classList.add('avatar-image');
-            };
-            img.onerror = () => {
-                element.style.backgroundImage = '';
-            };
-            img.src = imageUrl;
-        }
-    }
-
-    // --- SPA NAVIGATION LOGIC ---
-    let currentActiveView = 'dashboard';
-    
-    function showView(viewId) {
-        const views = document.querySelectorAll('.view-content');
-        views.forEach(view => {
-            view.classList.add('hidden');
-            view.classList.remove('active');
-        });
-
-        const targetView = document.getElementById(`${viewId}-view`);
-        if (targetView) {
-            targetView.classList.remove('hidden');
-            targetView.classList.add('active');
-            currentActiveView = viewId;
+        // --- AVATAR & IMAGE HANDLING FUNCTION ---
+        function getInitials(email) {
+            if (!email) return 'U';
+            const parts = email.split('@')[0].split('.');
+            let initials = '';
+            if (parts.length > 0) initials += parts[0][0];
+            if (parts.length > 1) initials += parts[parts.length - 1][0];
+            return initials.toUpperCase().slice(0, 2);
         }
         
-        // Update Navigation Tabs
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.classList.remove('border-indigo-600', 'text-indigo-600', 'font-bold');
-            item.classList.add('border-transparent', 'text-gray-600');
-        });
+        function setAvatar(element, email, imageUrl = null) {
+            element.classList.remove('avatar-image');
+            element.style.backgroundImage = '';
+            element.textContent = getInitials(email);
+            element.style.backgroundColor = '#6366f1';
+            element.style.color = 'white';
 
-        const activeTab = document.getElementById(`nav-${viewId}`);
-        if (activeTab) {
-            activeTab.classList.add('border-indigo-600', 'text-indigo-600', 'font-bold');
-            activeTab.classList.remove('border-transparent', 'text-gray-600');
+            if (imageUrl) {
+                const img = new Image();
+                img.onload = () => {
+                    element.style.backgroundImage = `url(${imageUrl})`;
+                    element.style.backgroundColor = 'transparent';
+                    element.style.color = 'transparent'; 
+                    element.textContent = '';
+                    element.classList.add('avatar-image');
+                };
+                img.onerror = () => {
+                    element.style.backgroundImage = '';
+                };
+                img.src = imageUrl;
+            }
         }
+
+        // --- SPA NAVIGATION LOGIC ---
+        let currentActiveView = 'dashboard';
         
-        // Only show FAB button if on dashboard (for input)
-        const fabBtn = document.getElementById('fab-add-btn');
-        if (viewId === 'dashboard' && window.innerWidth < 1024) {
-            fabBtn.style.display = 'inline-flex';
-        } else {
+        function showView(viewId) {
+            const views = document.querySelectorAll('.view-content');
+            views.forEach(view => {
+                view.classList.add('hidden');
+                view.classList.remove('active');
+            });
+
+            const targetView = document.getElementById(`${viewId}-view`);
+            if (targetView) {
+                targetView.classList.remove('hidden');
+                targetView.classList.add('active');
+                currentActiveView = viewId;
+            }
+            
+            // Update Navigation Tabs
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('border-indigo-600', 'text-indigo-600', 'font-bold');
+                item.classList.add('border-transparent', 'text-gray-600');
+            });
+
+            const activeTab = document.getElementById(`nav-${viewId}`);
+            if (activeTab) {
+                activeTab.classList.add('border-indigo-600', 'text-indigo-600', 'font-bold');
+                activeTab.classList.remove('border-transparent', 'text-gray-600');
+            }
+            
+            // Manage FAB button display (always hidden on Operation view, only shown on Dashboard)
+            const fabBtn = document.getElementById('fab-add-btn');
+            // FAB is only visible on large screens when a form is available, or on mobile when explicitly active (which we handle via the modal now, so just hide it here)
             fabBtn.style.display = 'none';
-        }
 
-        lucide.createIcons();
-        
-        // Ensure filters and list are re-rendered if switching to operation list
-        if (viewId === 'operation') {
-            filterRecords();
-        }
-    }
-
-    // --- AUTH & INIT ---
-    if (!user) {
-        // This block handles redirection if not logged in
-        showToast("⚠️ សូមចូលប្រព័ន្ធជាមុនសិន។", 'warning');
-        window.location.href = "index.html";
-    } else {
-        // Setup Avatar/Profile Info on Load
-        document.getElementById("modal-profile-email").textContent = user.Email || 'N/A';
-        document.getElementById("modal-profile-role").textContent = user.Role || 'User';
-        setAvatar(document.getElementById("user-avatar-initials-mobile"), user.Email, user.ProfileImage);
-        setAvatar(document.getElementById("modal-profile-avatar"), user.Email, user.ProfileImage);
-        setAvatar(document.getElementById("user-avatar-initials-desktop"), user.Email, user.ProfileImage);
-        if (user.Role === 'Owner') {
-            document.getElementById('user-management-tab').classList.remove('hidden');
-            document.getElementById('user-management-tab').classList.add('flex');
-        }
-        
-        // Execute setup and initial data load right after auth check
-        setupForms();
-        loadAllData(); 
-        showView('dashboard');
-    }
-
-    // --- MODAL & LOGOUT FUNCTIONS ---
-    function openProfileModal() {
-        document.getElementById('profileModal').classList.add('active');
-        lucide.createIcons();
-    }
-    function closeProfileModal() { document.getElementById('profileModal').classList.remove('active'); }
-    async function customLogout() {
-        const confirmed = await customConfirm(
-            "ចាកចេញពីគណនី",
-            "តើអ្នកប្រាកដថាចង់ចាកចេញពីប្រព័ន្ធគ្រប់គ្រងចំណាយមែនទេ?",
-            "ចាកចេញ",
-            "logout"
-        );
-        
-        if (confirmed) {
-            localStorage.removeItem("user");
-            localStorage.clear();
-            window.location.href = "index.html";
-        }
-    }
-    
-    // Toast and Confirm are kept here for scope access
-    function showToast(message, type = 'info', duration = 4000) {
-        const container = document.getElementById('toast-container');
-        if (!container) return;
-        let bgColor, icon, iconColor;
-        switch (type) {
-            case 'success': bgColor = 'bg-green-600'; icon = 'check-circle'; iconColor = 'text-green-200'; break;
-            case 'error': bgColor = 'bg-red-600'; icon = 'x-circle'; iconColor = 'text-red-200'; break;
-            case 'warning': bgColor = 'bg-yellow-500'; icon = 'alert-triangle'; iconColor = 'text-yellow-200'; break;
-            case 'info': default: bgColor = 'bg-blue-600'; icon = 'info'; iconColor = 'text-blue-200'; break;
-        }
-        const toast = document.createElement('div');
-        toast.className = `p-4 max-w-sm w-full rounded-lg shadow-xl text-white flex items-center space-x-3 transform transition-all ease-in-out duration-300 opacity-0 translate-x-full pointer-events-auto ${bgColor}`;
-        toast.style.minWidth = '250px'; 
-        toast.innerHTML = `
-            <i data-lucide="${icon}" class="w-6 h-6 ${iconColor} flex-shrink-0"></i>
-            <p class="font-medium text-sm flex-1">${message}</p>
-            <button onclick="this.closest('div').remove()" class="p-1 -mr-1 rounded-full hover:bg-white/20 transition-all flex-shrink-0">
-                <i data-lucide="x" class="w-4 h-4 text-white"></i>
-            </button>`;
-        container.appendChild(toast);
-        lucide.createIcons(); 
-        setTimeout(() => {
-            toast.classList.remove('opacity-0', 'translate-x-full');
-            toast.classList.add('opacity-100', 'translate-x-0');
-        }, 50); 
-        setTimeout(() => {
-            toast.classList.remove('opacity-100', 'translate-x-0');
-            toast.classList.add('opacity-0', 'translate-x-full');
-            setTimeout(() => toast.remove(), 300); 
-        }, duration);
-    }
-
-    function customConfirm(title, message, actionText, type = 'delete') {
-        return new Promise((resolve) => {
-            const modal = document.getElementById('customConfirmModal');
-            const titleEl = document.getElementById('confirm-title');
-            const messageEl = document.getElementById('confirm-message');
-            const actionBtn = document.getElementById('confirm-action-btn');
-            const iconBox = document.getElementById('confirm-icon-box');
-            actionBtn.classList.remove('bg-red-600', 'hover:bg-red-700', 'bg-green-600', 'hover:bg-green-700', 'bg-red-800', 'hover:bg-red-900', 'bg-indigo-600', 'hover:bg-indigo-700', 'bg-blue-600', 'hover:bg-blue-700');
-            iconBox.className = 'w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center';
-            let iconHtml = '';
-
-            if (type === 'delete') { actionBtn.classList.add('bg-red-600', 'hover:bg-red-700'); iconBox.classList.add('bg-red-100'); iconHtml = '<i data-lucide="trash-2" class="w-6 h-6 text-red-600"></i>';
-            } else if (type === 'permanent_delete') { actionBtn.classList.add('bg-red-800', 'hover:bg-red-900'); iconBox.classList.add('bg-red-200'); iconHtml = '<i data-lucide="skull" class="w-6 h-6 text-red-800"></i>';
-            } else if (type === 'restore') { actionBtn.classList.add('bg-green-600', 'hover:bg-green-700'); iconBox.classList.add('bg-green-100'); iconHtml = '<i data-lucide="rotate-ccw" class="w-6 h-6 text-green-600"></i>';
-            } else if (type === 'logout') { actionBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700'); iconBox.classList.add('bg-indigo-100'); iconHtml = '<i data-lucide="log-out" class="w-6 h-6 text-indigo-600"></i>';
-            } else { actionBtn.classList.add('bg-blue-600', 'hover:bg-blue-700'); iconBox.classList.add('bg-blue-100'); iconHtml = '<i data-lucide="help-circle" class="w-6 h-6 text-blue-600"></i>';
-            }
-
-            titleEl.textContent = title;
-            messageEl.textContent = message;
-            actionBtn.textContent = actionText;
-            iconBox.innerHTML = iconHtml;
             lucide.createIcons();
-            customConfirmResolver = resolve;
-            modal.classList.add('active');
-        });
-    }
-    
-    function resolveCustomConfirm(result) {
-        document.getElementById('customConfirmModal').classList.remove('active');
-        if (customConfirmResolver) {
-            customConfirmResolver(result);
-            customConfirmResolver = null;
-        }
-    }
-
-    // --- FORM/DATA FUNCTIONS (Hoisted) ---
-    
-    function formatCurrency(amount) {
-        const num = parseFloat(amount) || 0;
-        return `${num.toLocaleString('km-KH')} ៛`;
-    }
-
-    function isSameDay(date1, date2) {
-        const d1 = new Date(date1);
-        const d2 = new Date(date2);
-        return d1.getFullYear() === d2.getFullYear() &&
-                d1.getMonth() === d2.getMonth() &&
-                d1.getDate() === d2.getDate();
-    }
-
-    function setupForms() {
-        const formTemplate = document.getElementById('form-template').innerHTML;
-        const desktopForm = document.getElementById('expense-form');
-        desktopForm.innerHTML = formTemplate;
-        desktopForm.addEventListener('submit', (e) => handleFormSubmission(e, 'desktop'));
-        desktopForm.querySelectorAll('.expense-input').forEach(input => {
-            input.addEventListener('input', () => updateAmountSummary(desktopForm));
-        });
-        const mobileForm = document.getElementById('mobile-expense-form');
-        mobileForm.innerHTML = formTemplate;
-        mobileForm.addEventListener('submit', (e) => handleFormSubmission(e, 'mobile'));
-        mobileForm.querySelectorAll('.expense-input').forEach(input => {
-            input.addEventListener('input', () => updateAmountSummary(mobileForm));
-        });
-    }
-
-    function updateAmountSummary(formElement) {
-        const meat = parseFloat(formElement.querySelector("#meat").value) || 0;
-        const vegetable = parseFloat(formElement.querySelector("#vegetable").value) || 0;
-        const fruit = parseFloat(formElement.querySelector("#fruit").value) || 0;
-        const total = meat + vegetable + fruit;
-        formElement.querySelector("#amount-summary").value = formatCurrency(total);
-        formElement.querySelector("#amount").value = total;
-        const summaryInput = formElement.querySelector("#amount-summary");
-        if (total === 0) {
-            summaryInput.classList.remove('text-red-600');
-            summaryInput.classList.add('text-gray-500');
-        } else {
-            summaryInput.classList.remove('text-gray-500');
-            summaryInput.classList.add('text-red-600');
-        }
-    }
-
-    async function loadAllData() {
-        // Check if the list element exists before trying to update it
-        const expenseListElement = document.getElementById("expense-list");
-        if (expenseListElement) {
-            expenseListElement.innerHTML = '<p class="text-center text-gray-500 py-10 flex items-center justify-center"><i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-3"></i> កំពុងទាញទិន្នន័យ...</p>';
-        }
-
-        try {
-            const res = await fetch(sheetUrl(SHEET_EXPENSES));
-            const data = await res.json();
             
-            allExpenses = data.filter(x => x.ID && (x.Type === 'Expense' || x.Status === 'Deleted') && x.Amount !== undefined); 
+            // Rerender list/filters if switching to the Operation List view
+            if (viewId === 'operation') {
+                filterRecords();
+            }
+        }
+
+        // --- MODAL & LOGOUT FUNCTIONS ---
+        function openProfileModal() {
+            document.getElementById('profileModal').classList.add('active');
+            lucide.createIcons();
+        }
+        function closeProfileModal() { document.getElementById('profileModal').classList.remove('active'); }
+        async function customLogout() {
+            const confirmed = await customConfirm(
+                "ចាកចេញពីគណនី",
+                "តើអ្នកប្រាកដថាចង់ចាកចេញពីប្រព័ន្ធគ្រប់គ្រងចំណាយមែនទេ?",
+                "ចាកចេញ",
+                "logout"
+            );
             
-            calculateSummary(allExpenses); 
-            populateDateFilters(); 
-            filterRecords(); 
-        } catch (error) {
+            if (confirmed) {
+                localStorage.removeItem("user");
+                localStorage.clear();
+                window.location.href = "index.html";
+            }
+        }
+        
+        // --- TOAST, CONFIRM ---
+        function showToast(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            let bgColor, icon, iconColor;
+            switch (type) {
+                case 'success': bgColor = 'bg-green-600'; icon = 'check-circle'; iconColor = 'text-green-200'; break;
+                case 'error': bgColor = 'bg-red-600'; icon = 'x-circle'; iconColor = 'text-red-200'; break;
+                case 'warning': bgColor = 'bg-yellow-500'; icon = 'alert-triangle'; iconColor = 'text-yellow-200'; break;
+                case 'info': default: bgColor = 'bg-blue-600'; icon = 'info'; iconColor = 'text-blue-200'; break;
+            }
+            const toast = document.createElement('div');
+            toast.className = `p-4 max-w-sm w-full rounded-lg shadow-xl text-white flex items-center space-x-3 transform transition-all ease-in-out duration-300 opacity-0 translate-x-full pointer-events-auto ${bgColor}`;
+            toast.style.minWidth = '250px'; 
+            toast.innerHTML = `
+                <i data-lucide="${icon}" class="w-6 h-6 ${iconColor} flex-shrink-0"></i>
+                <p class="font-medium text-sm flex-1">${message}</p>
+                <button onclick="this.closest('div').remove()" class="p-1 -mr-1 rounded-full hover:bg-white/20 transition-all flex-shrink-0">
+                    <i data-lucide="x" class="w-4 h-4 text-white"></i>
+                </button>`;
+            container.appendChild(toast);
+            lucide.createIcons(); 
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', 'translate-x-full');
+                toast.classList.add('opacity-100', 'translate-x-0');
+            }, 50); 
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-x-0');
+                toast.classList.add('opacity-0', 'translate-x-full');
+                setTimeout(() => toast.remove(), 300); 
+            }, duration);
+        }
+
+        function customConfirm(title, message, actionText, type = 'delete') {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('customConfirmModal');
+                const titleEl = document.getElementById('confirm-title');
+                const messageEl = document.getElementById('confirm-message');
+                const actionBtn = document.getElementById('confirm-action-btn');
+                const iconBox = document.getElementById('confirm-icon-box');
+                actionBtn.classList.remove('bg-red-600', 'hover:bg-red-700', 'bg-green-600', 'hover:bg-green-700', 'bg-red-800', 'hover:bg-red-900', 'bg-indigo-600', 'hover:bg-indigo-700', 'bg-blue-600', 'hover:bg-blue-700');
+                iconBox.className = 'w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center';
+                let iconHtml = '';
+
+                if (type === 'delete') { actionBtn.classList.add('bg-red-600', 'hover:bg-red-700'); iconBox.classList.add('bg-red-100'); iconHtml = '<i data-lucide="trash-2" class="w-6 h-6 text-red-600"></i>';
+                } else if (type === 'permanent_delete') { actionBtn.classList.add('bg-red-800', 'hover:bg-red-900'); iconBox.classList.add('bg-red-200'); iconHtml = '<i data-lucide="skull" class="w-6 h-6 text-red-800"></i>';
+                } else if (type === 'restore') { actionBtn.classList.add('bg-green-600', 'hover:bg-green-700'); iconBox.classList.add('bg-green-100'); iconHtml = '<i data-lucide="rotate-ccw" class="w-6 h-6 text-green-600"></i>';
+                } else if (type === 'logout') { actionBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700'); iconBox.classList.add('bg-indigo-100'); iconHtml = '<i data-lucide="log-out" class="w-6 h-6 text-indigo-600"></i>';
+                } else { actionBtn.classList.add('bg-blue-600', 'hover:bg-blue-700'); iconBox.classList.add('bg-blue-100'); iconHtml = '<i data-lucide="help-circle" class="w-6 h-6 text-blue-600"></i>';
+                }
+
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+                actionBtn.textContent = actionText;
+                iconBox.innerHTML = iconHtml;
+                lucide.createIcons();
+                customConfirmResolver = resolve;
+                modal.classList.add('active');
+            });
+        }
+        
+        function resolveCustomConfirm(result) {
+            document.getElementById('customConfirmModal').classList.remove('active');
+            if (customConfirmResolver) {
+                customConfirmResolver(result);
+                customConfirmResolver = null;
+            }
+        }
+        
+        // --- FORM/DATA FUNCTIONS (Hoisted) ---
+        
+        function formatCurrency(amount) {
+            const num = parseFloat(amount) || 0;
+            return `${num.toLocaleString('km-KH')} ៛`;
+        }
+
+        function isSameDay(date1, date2) {
+            const d1 = new Date(date1);
+            const d2 = new Date(date2);
+            return d1.getFullYear() === d2.getFullYear() &&
+                    d1.getMonth() === d2.getMonth() &&
+                    d1.getDate() === d2.getDate();
+        }
+
+        function setupForms() {
+            const formTemplate = document.getElementById('form-template').innerHTML;
+            const desktopForm = document.getElementById('expense-form');
+            desktopForm.innerHTML = formTemplate;
+            desktopForm.addEventListener('submit', (e) => handleFormSubmission(e, 'desktop'));
+            desktopForm.querySelectorAll('.expense-input').forEach(input => {
+                input.addEventListener('input', () => updateAmountSummary(desktopForm));
+            });
+            const mobileForm = document.getElementById('mobile-expense-form');
+            mobileForm.innerHTML = formTemplate;
+            mobileForm.addEventListener('submit', (e) => handleFormSubmission(e, 'mobile'));
+            mobileForm.querySelectorAll('.expense-input').forEach(input => {
+                input.addEventListener('input', () => updateAmountSummary(mobileForm));
+            });
+        }
+
+        function updateAmountSummary(formElement) {
+            const meat = parseFloat(formElement.querySelector("#meat").value) || 0;
+            const vegetable = parseFloat(formElement.querySelector("#vegetable").value) || 0;
+            const fruit = parseFloat(formElement.querySelector("#fruit").value) || 0;
+            const total = meat + vegetable + fruit;
+            formElement.querySelector("#amount-summary").value = formatCurrency(total);
+            formElement.querySelector("#amount").value = total;
+            const summaryInput = formElement.querySelector("#amount-summary");
+            if (total === 0) {
+                summaryInput.classList.remove('text-red-600');
+                summaryInput.classList.add('text-gray-500');
+            } else {
+                summaryInput.classList.remove('text-gray-500');
+                summaryInput.classList.add('text-red-600');
+            }
+        }
+
+        function handleCardClick(record) {
+            const isMobile = window.innerWidth < 1024;
+            if (isMobile) {
+                editExpense(record.ID, false); 
+            } else {
+                openDetailModal(record); 
+            }
+        }
+        
+        async function loadAllData() {
+            const expenseListElement = document.getElementById("expense-list");
             if (expenseListElement) {
-                expenseListElement.innerHTML = '<p class="text-center text-red-500 py-10 text-lg">❌ មានបញ្ហាក្នុងការទាញទិន្នន័យ។ សូមពិនិត្យមើល Column headers ក្នុង SheetDB</p>';
-            }
-            console.error("Error loading expenses:", error);
-            showToast("❌ កំហុសក្នុងការផ្ទុកទិន្នន័យចំណាយ! (ពិនិត្យ Column names ក្នុង SheetDB)", 'error', 6000); 
-        }
-    }
-
-    // --- Filter, Render, CRUD functions (kept outside main execution block) ---
-    function populateDateFilters() {
-        const currentYear = new Date().getFullYear();
-        const todayDayIndex = new Date().getDay(); 
-        
-        const daySelect = document.getElementById('filter-day-of-week');
-        const monthSelect = document.getElementById('filter-month');
-        const yearSelect = document.getElementById('filter-year');
-        const filterTodaySelect = document.getElementById('filter-today');
-
-        // 1. Day of Week Filter
-        let dayOptions = `<option value="all">ទាំងអស់</option>`;
-        DAY_NAMES.forEach((name, index) => {
-            dayOptions += `<option value="${index}">${name}</option>`;
-        });
-        daySelect.innerHTML = dayOptions;
-        daySelect.value = 'all'; 
-
-        // 2. Month Filter
-        monthSelect.innerHTML = MONTH_NAMES.map((name, index) => 
-            `<option value="${index === 0 ? 'all' : index}">${name}</option>`
-        ).join('');
-        monthSelect.value = 'all';
-
-        // 3. Year Filter
-        const years = ['all', currentYear + 1, currentYear, currentYear - 1, currentYear - 2]; 
-        const existingYears = [...new Set(allExpenses.map(x => new Date(x.Date).getFullYear()))].filter(y => !years.includes(y)).sort((a, b) => b - a);
-        
-        yearSelect.innerHTML = `<option value="all">ទាំងអស់</option>` + years
-            .filter((y, index) => y !== 'all' && years.indexOf(y) === index) 
-            .concat(existingYears)
-            .map(year => `<option value="${year}">${year}</option>`)
-            .join('');
-        yearSelect.value = 'all';
-        
-        // 4. Update Today filter text
-        filterTodaySelect.value = 'all';
-        filterTodaySelect.options[1].textContent = `ថ្ងៃនេះ (${DAY_NAMES[todayDayIndex]})`;
-    }
-
-    function calculateSummary(data) {
-        const today = new Date();
-        const currentYear = today.getFullYear();
-        const currentMonth = today.getMonth();
-
-        const activeExpenses = data.filter(x => x.Status === "Active"); 
-        let totalExpense = 0;
-        let todayExpense = 0;
-        let monthlyExpense = 0;
-        let totalMeat = 0;
-        let totalVegetable = 0;
-        let totalFruit = 0;
-        let totalCount = activeExpenses.length;
-
-        activeExpenses.forEach(x => {
-            const amount = parseFloat(x.Amount) || 0;
-            const recordDate = new Date(x.Date);
-            
-            const meat = parseFloat(x.Meat) || 0;
-            const vegetable = parseFloat(x.Vegetable) || 0;
-            const fruit = parseFloat(x.Fruit) || 0;
-            totalMeat += meat;
-            totalVegetable += vegetable;
-            totalFruit += fruit;
-            
-            totalExpense += amount; 
-
-            if (isSameDay(x.Date, today)) {
-                todayExpense += amount;
-            }
-            
-            if (recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear) {
-                monthlyExpense += amount;
-            }
-        });
-        
-        // Rendering Summary Cards
-        document.getElementById('total-expense-summary').textContent = formatCurrency(totalExpense);
-        document.getElementById('today-expense-summary').textContent = formatCurrency(todayExpense);
-        document.getElementById('monthly-expense-summary').textContent = formatCurrency(monthlyExpense);
-        document.getElementById('meat-total-summary').textContent = formatCurrency(totalMeat);
-        document.getElementById('vegetable-total-summary').textContent = formatCurrency(totalVegetable);
-        document.getElementById('fruit-total-summary').textContent = formatCurrency(totalFruit);
-        document.getElementById('total-count-summary').textContent = `${totalCount} កំណត់ត្រា`;
-    }
-
-    function filterRecords() {
-        const filterToday = document.getElementById('filter-today').value;
-        const filterDayOfWeek = document.getElementById('filter-day-of-week').value;
-        const filterMonth = document.getElementById('filter-month').value;
-        const filterYear = document.getElementById('filter-year').value;
-        const searchTerm = document.getElementById('search-input').value.toLowerCase();
-        
-        const expenseOnlyData = allExpenses.filter(x => x.Type === "Expense" || x.Status === "Deleted");
-
-        const dataToFilter = currentView === 'active' ? 
-                             expenseOnlyData.filter(x => x.Status === "Active") : 
-                             expenseOnlyData.filter(x => x.Status === "Deleted");
-                                
-        let filtered = dataToFilter;
-
-        const today = new Date();
-
-        filtered = filtered.filter(x => {
-            const recordDate = new Date(x.Date);
-            const description = (x.Description || '').toLowerCase(); 
-            
-            let matchesToday = true;
-            let matchesDayOfWeek = true;
-            let matchesMonth = true;
-            let matchesYear = true;
-            let matchesSearch = true;
-
-            // Today Filter
-            if (filterToday === 'today') {
-                matchesToday = isSameDay(x.Date, today);
-            }
-            
-            // Day of Week Filter
-            if (filterDayOfWeek !== 'all') {
-                const dayIndex = parseInt(filterDayOfWeek); 
-                matchesDayOfWeek = recordDate.getDay() === dayIndex;
+                expenseListElement.innerHTML = '<p class="text-center text-gray-500 py-10 flex items-center justify-center"><i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-3"></i> កំពុងទាញទិន្នន័យ...</p>';
             }
 
-            // Month Filter
-            if (filterMonth !== 'all') {
-                if (filterToday === 'today') { matchesMonth = true; } 
-                else {
-                    const monthIndex = parseInt(filterMonth) - 1;
-                    matchesMonth = recordDate.getMonth() === monthIndex;
-                }
-            }
-
-            // Year Filter
-            if (filterYear !== 'all') {
-                if (filterToday === 'today') { matchesYear = true; }
-                else {
-                    const yearValue = parseInt(filterYear);
-                    matchesYear = recordDate.getFullYear() === yearValue;
-                }
-            }
-            
-            // Search Filter
-            if (searchTerm) {
-                matchesSearch = description.includes(searchTerm);
-            }
-            
-            return matchesToday && matchesDayOfWeek && matchesMonth && matchesYear && matchesSearch;
-        }).sort((a, b) => new Date(b.Date) - new Date(a.Date)); 
-
-        filteredDataForReport = filtered;
-        renderExpenseList(filtered);
-    }
-    
-    function switchView(view) {
-        currentView = view;
-        const trashBtn = document.getElementById('trash-btn');
-        trashBtn.innerHTML = view === 'active' ? 
-            '<i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប' : 
-            '<i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> មើលកំណត់ត្រាសកម្ម';
-        trashBtn.onclick = view === 'active' ? () => switchView('trash') : () => switchView('active');
-        trashBtn.classList.toggle('bg-gray-100', view === 'active');
-        trashBtn.classList.toggle('bg-indigo-500', view === 'trash');
-        trashBtn.classList.toggle('text-white', view === 'trash');
-        trashBtn.classList.toggle('text-gray-600', view === 'active');
-        
-        // Reset filters on view switch
-        document.getElementById('filter-today').value = 'all';
-        document.getElementById('filter-day-of-week').value = 'all'; 
-        document.getElementById('filter-month').value = 'all';
-        document.getElementById('filter-year').value = 'all';
-        document.getElementById('search-input').value = '';
-        filterRecords();
-        lucide.createIcons();
-    }
-
-    function renderExpenseList(data) {
-        const list = document.getElementById("expense-list");
-        const isTrashView = currentView === 'trash';
-        
-        if (!list) return; // Prevent error if the list element doesn't exist in the current view
-
-        if (data.length === 0) {
-            list.innerHTML = `<p class="text-center text-gray-500 py-10 text-xl border-dashed border-2 border-gray-300 rounded-lg m-4 bg-gray-50">
-                ${isTrashView ? '🗑️ មិនមានទិន្នន័យក្នុងធុងសំរាមទេ។' : '✅ មិនមានកំណត់ត្រាចំណាយសកម្មទេ។'}
-            </p>`;
-            lucide.createIcons();
-            return;
-        }
-
-        const today = new Date();
-
-        list.innerHTML = data.map(x => {
-            const isDeleted = x.Status === 'Deleted';
-            const badgeClass = isDeleted ? 'bg-gray-200 text-gray-600' : 'bg-red-100 text-red-700';
-            const amountTextClass = isDeleted ? 'text-gray-500 line-through' : 'text-red-700';
-            const borderColor = isDeleted ? '#6b7280' : '#ef4444'; // Tailwind gray-500 or red-500
-            const icon = 'arrow-down-left'; 
-            
-            const recordJson = JSON.stringify(x).split("'").join("\\'");
-
-            const recordDate = new Date(x.Date);
-            const dayOfWeek = DAY_NAMES[recordDate.getDay()];
-            const isRecordToday = isSameDay(x.Date, today);
-            const dateDisplay = isRecordToday ? `ថ្ងៃនេះ (${dayOfWeek})` : `${x.Date} (${dayOfWeek})`;
-            
-            const breakdown = `
-                <div class="flex flex-wrap text-xs text-gray-500 mt-2 space-x-4">
-                    <span class="flex items-center"><i data-lucide="utensils" class="w-3 h-3 mr-1 text-orange-500"></i>សាច់: <span class="font-semibold text-orange-600 ml-1">${formatCurrency(x.Meat)}</span></span>
-                    <span class="flex items-center"><i data-lucide="leaf" class="w-3 h-3 mr-1 text-green-500"></i>បន្លែ: <span class="font-semibold text-green-600 ml-1">${formatCurrency(x.Vegetable)}</span></span>
-                    <span class="flex items-center"><i data-lucide="apple" class="w-3 h-3 mr-1 text-yellow-500"></i>ផ្លែឈើ: <span class="font-semibold text-yellow-600 ml-1">${formatCurrency(x.Fruit)}</span></span>
-                </div>
-            `;
-            
-            const actionButtons = isDeleted ? `
-                <button onclick="event.stopPropagation(); restoreExpense('${x.ID}')" class="text-green-600 hover:text-green-800 p-2 rounded-full hover:bg-green-50 transition" title="ទាញយកមកវិញ">
-                    <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
-                </button>
-                <button onclick="event.stopPropagation(); permanentDeleteExpense('${x.ID}')" class="text-gray-600 hover:text-red-800 p-2 rounded-full hover:bg-red-50 transition" title="លុបជាអចិន្ត្រៃយ៍">
-                    <i data-lucide="x-circle" class="w-5 h-5"></i>
-                </button>
-            ` : `
-                <button onclick="event.stopPropagation(); editExpense('${x.ID}')" class="text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50 transition" title="កែប្រែ">
-                    <i data-lucide="pencil" class="w-5 h-5"></i>
-                </button>
-                <button onclick="event.stopPropagation(); deleteExpense('${x.ID}')" class="text-red-600 hover:text-red-800 p-2 rounded-full hover:bg-red-50 transition" title="លុប">
-                    <i data-lucide="trash-2" class="w-5 h-5"></i>
-                </button>
-            `;
-            
-            return `
-                <div onclick="handleCardClick(${recordJson})" class="expense-item p-4 rounded-xl shadow-md flex justify-between items-center" style="border-left-color: ${borderColor};">
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center space-x-3 mb-1">
-                            <span class="text-xs font-medium px-2 py-0.5 rounded-full ${badgeClass}">ចំណាយ</span>
-                            <span class="text-sm text-gray-500 font-medium">${dateDisplay}</span>
-                        </div>
-                        <p class="text-base font-bold text-gray-800 truncate">ចំណាយគ្រឿងទេស</p>
-                        <p class="text-sm text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
-                        ${!isDeleted ? breakdown : ''}
-                    </div>
-
-                    <div class="text-right ml-4 flex items-center space-x-2">
-                        <p class="text-xl font-extrabold ${amountTextClass} flex items-center justify-end whitespace-nowrap">
-                            ${!isDeleted ? `<i data-lucide="${icon}" class="w-5 h-5 mr-1 text-red-400"></i>` : ''}
-                            ${formatCurrency(parseFloat(x.Amount))}
-                        </p>
-                        <div class="item-actions flex space-x-1 flex-shrink-0">
-                            ${actionButtons}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join("");
-        
-        lucide.createIcons();
-    }
-    
-    // The rest of the functions (handleCardClick, editExpense, form functions, CRUD API calls, exportData) are kept the same.
-    // They are correctly defined above this point to resolve the original ReferenceError.
-    
-    function handleCardClick(record) {
-        const isMobile = window.innerWidth < 1024;
-        if (isMobile) {
-            editExpense(record.ID, false); 
-        } else {
-            openDetailModal(record); 
-        }
-    }
-    
-    async function editExpense(id, scrollToForm=true) {
-        const record = allExpenses.find(x => x.ID.toString() === id.toString());
-        if (!record) { 
-            showToast("❌ មិនអាចរកកំណត់ត្រាបានទេ។", 'error'); 
-            return; 
-        }
-        
-        closeDetailModal(); 
-        editingID = id;
-        
-        const isMobile = window.innerWidth < 1024;
-        
-        if (isMobile) {
-            openFormModal(); 
-            activeFormElement = document.getElementById('mobile-expense-form');
-        } else {
-            activeFormElement = document.getElementById('expense-form');
-        }
-        
-        if(activeFormElement) {
-            populateForm(activeFormElement, record);
-        }
-        
-        if(scrollToForm && !isMobile) {
-            document.getElementById("main-expense-form-container").scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    }
-
-    function openFormModal() {
-        resetForm();
-        document.getElementById('mobile-form-title').textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
-        document.getElementById('mobileFormModal').classList.add('active');
-        activeFormElement = document.getElementById('mobile-expense-form');
-        if(activeFormElement) activeFormElement.reset();
-        lucide.createIcons();
-    }
-
-    function closeFormModal() {
-        resetForm();
-        document.getElementById('mobileFormModal').classList.remove('active');
-        activeFormElement = null;
-    }
-
-    function populateForm(formElement, record) {
-        formElement.querySelector("#date").value = record.Date;
-        formElement.querySelector("#meat").value = parseFloat(record.Meat) || 0;
-        formElement.querySelector("#vegetable").value = parseFloat(record.Vegetable) || 0;
-        formElement.querySelector("#fruit").value = parseFloat(record.Fruit) || 0;
-        formElement.querySelector("#desc").value = record.Description;
-        updateAmountSummary(formElement);
-
-        const isEditing = record !== null;
-        const submitBtn = formElement.querySelector('#submit-btn');
-        const cancelBtn = formElement.querySelector('#cancel-btn');
-        
-        if (isEditing) {
-            submitBtn.innerHTML = '<i data-lucide="save" class="w-5 h-5 mr-1"></i> រក្សាទុកការកែប្រែ';
-            submitBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-            submitBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
-            cancelBtn.classList.remove('hidden');
-            
-            document.getElementById('main-form-title').textContent = "📝 កែប្រែកំណត់ត្រា";
-            const mobileTitle = document.getElementById('mobile-form-title');
-            if(mobileTitle) mobileTitle.textContent = "📝 កែប្រែកំណត់ត្រា";
-        } else {
-            resetFormUI(formElement);
-        }
-        lucide.createIcons();
-    }
-    
-    function resetFormUI(formElement) {
-        const submitBtn = formElement.querySelector('#submit-btn');
-        const cancelBtn = formElement.querySelector('#cancel-btn');
-        
-        submitBtn.innerHTML = '<i data-lucide="plus" class="w-5 h-5 mr-1"></i> បន្ថែមកំណត់ត្រា';
-        submitBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
-        submitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-        cancelBtn.classList.add('hidden');
-        
-        document.getElementById('main-form-title').textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
-        const mobileTitle = document.getElementById('mobile-form-title');
-        if(mobileTitle) mobileTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
-        
-        updateAmountSummary(formElement);
-    }
-
-    function resetForm() {
-        editingID = null;
-        const desktopForm = document.getElementById('expense-form');
-        const mobileForm = document.getElementById('mobile-expense-form');
-        desktopForm.reset();
-        mobileForm.reset();
-        resetFormUI(desktopForm);
-        resetFormUI(mobileForm);
-        activeFormElement = null; 
-        lucide.createIcons();
-        updateAmountSummary(desktopForm);
-        updateAmountSummary(mobileForm);
-    }
-
-    async function handleFormSubmission(e, source) {
-        e.preventDefault();
-        const formElement = source === 'mobile' ? document.getElementById('mobile-expense-form') : document.getElementById('expense-form');
-        
-        const date = formElement.querySelector("#date").value;
-        const meat = parseFloat(formElement.querySelector("#meat").value) || 0;
-        const vegetable = parseFloat(formElement.querySelector("#vegetable").value) || 0;
-        const fruit = parseFloat(formElement.querySelector("#fruit").value) || 0;
-        const desc = formElement.querySelector("#desc").value;
-        const type = 'Expense'; 
-        
-        const submitBtn = formElement.querySelector("#submit-btn");
-
-        if (!date || (meat + vegetable + fruit) <= 0) {
-            showToast("⚠️ សូមបំពេញកាលបរិច្ឆេទ និងត្រូវតែមានចំនួនប្រាក់ចំណាយសរុប!", 'warning');
-            return;
-        }
-
-        const originalText = submitBtn.textContent;
-        submitBtn.innerHTML = editingID ? '<i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-1"></i> កំពុងកែប្រែ...' : '<i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-1"></i> កំពុងបន្ថែម...';
-        lucide.createIcons();
-        submitBtn.disabled = true;
-
-        const recordData = {
-            Date: date,
-            Type: type,
-            Meat: meat, 
-            Vegetable: vegetable, 
-            Fruit: fruit, 
-            Description: desc,
-            ModifiedDate: new Date().toISOString()
-        };
-
-        let res;
-        if (editingID) {
-            const url = `${SHEETDB_BASE_URL}/ID/${editingID}?sheet=${SHEET_EXPENSES}`;
-            res = await fetch(url, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ data: [recordData] })
-            });
-            if (res.ok) showToast("✅ កំណត់ត្រាត្រូវបានកែប្រែដោយជោគជ័យ!", 'success');
-        } else {
-            const payload = {
-                data: [{
-                    ID: Date.now(),
-                    Date: date,
-                    Type: type,
-                    Meat: meat,
-                    Vegetable: vegetable,
-                    Fruit: fruit,
-                    Description: desc,
-                    UserEmail: user.Email,
-                    Status: "Active",
-                    ModifiedDate: new Date().toISOString()
-                }]
-            };
-            res = await fetch(sheetUrl(SHEET_EXPENSES), {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-            if (res.ok) showToast("✅ កំណត់ត្រាត្រូវបានបន្ថែមដោយជោគជ័យ!", 'success');
-        }
-
-        if (res.ok) {
-            if(source === 'mobile') closeFormModal();
-            resetForm();
-            setTimeout(loadAllData, 1500); 
-        } else {
-            showToast("❌ ប្រតិបត្តិការបរាជ័យ។", 'error');
-        }
-
-        submitBtn.textContent = originalText;
-        submitBtn.disabled = false;
-        lucide.createIcons();
-    }
-
-    async function deleteExpense(id) {
-        const confirmed = await customConfirm(
-            "បញ្ជាក់ការលុបបណ្ដោះអាសន្ន",
-            "កំណត់ត្រានេះនឹងត្រូវបានផ្លាស់ទៅកាន់ធុងសំរាម។ តើអ្នកប្រាកដទេ?",
-            "ផ្លាស់ទៅធុងសំរាម",
-            "delete"
-        );
-        if (confirmed) { await updateStatus(id, "Deleted", "លុបបណ្ដោះអាសន្ន"); }
-    }
-    
-    async function restoreExpense(id) {
-        const confirmed = await customConfirm(
-            "បញ្ជាក់ការទាញយកមកវិញ",
-            "តើអ្នកប្រាកដថាចង់ទាញយកកំណត់ត្រានេះត្រឡប់មកវិញទេ?",
-            "ទាញយកមកវិញ",
-            "restore"
-        );
-        if (confirmed) { await updateStatus(id, "Active", "ទាញយកមកវិញ"); }
-    }
-    
-    async function permanentDeleteExpense(id) {
-        const confirmed = await customConfirm(
-            "⚠️ លុបជាអចិន្ត្រៃយ៍",
-            "កំណត់ត្រានេះនឹងត្រូវលុបចេញពីប្រព័ន្ធទាំងស្រុង ហើយមិនអាចយកមកវិញបានទេ។ តើអ្នកប្រាកដទេ?",
-            "លុបជាអចិន្ត្រៃយ៍",
-            "permanent_delete"
-        );
-        
-        if (!confirmed) return;
-        const url = `${SHEETDB_BASE_URL}/ID/${id}?sheet=${SHEET_EXPENSES}`;
-        const res = await fetch(url, { method: "DELETE" });
-
-        if (res.ok) {
-            showToast("🗑️ កំណត់ត្រាត្រូវបានលុបជាអចិន្ត្រៃយ៍ដោយជោគជ័យ។", 'success'); 
-            loadAllData();
-        } else {
-            showToast("❌ ការលុបបរាជ័យ។", 'error'); 
-        }
-    }
-    
-    async function updateStatus(id, newStatus, actionName) {
-        const url = `${SHEETDB_BASE_URL}/ID/${id}?sheet=${SHEET_EXPENSES}`;
-        const res = await fetch(url, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ data: [{ Status: newStatus, ModifiedDate: new Date().toISOString() }] })
-        });
-
-        if (res.ok) {
-            showToast(`✅ កំណត់ត្រាត្រូវបាន${actionName}ដោយជោគជ័យ។`, 'success'); 
-            setTimeout(loadAllData, 1500);
-        } else {
-            showToast("❌ ប្រតិបត្តិការបរាជ័យ។", 'error'); 
-        }
-    }
-
-    async function exportData(format) {
-        const dataToExport = filteredDataForReport; 
-        const filterMonth = document.getElementById('filter-month').value;
-        const filterYear = document.getElementById('filter-year').value;
-        const reportName = `របាយការណ៍_${MONTH_NAMES[filterMonth] || 'ទាំងអស់'}_${filterYear || 'ទាំងអស់'}`;
-
-        if (dataToExport.length === 0) {
-            showToast("⚠️ មិនមានទិន្នន័យសម្រាប់ទាញយកទេ។ សូមជ្រើសរើសរបាយការណ៍ផ្សេងទៀត។", 'warning', 6000); 
-            return;
-        }
-        
-        // --- EXCEL EXPORT ---
-        if (format === 'excel') {
-            const structuredData = dataToExport.map(x => ({
-                'កាលបរិច្ឆេទ': x.Date,
-                'ប្រភេទ': x.Type, 
-                'សរុបប្រាក់ (៛)': parseFloat(x.Amount) || 0,
-                'សាច់ (៛)': parseFloat(x.Meat) || 0,
-                'បន្លែ (៛)': parseFloat(x.Vegetable) || 0,
-                'ផ្លែឈើ (៛)': parseFloat(x.Fruit) || 0,
-                'ពិពណ៌នា': x.Description || '',
-                'ស្ថានភាព': x.Status
-            }));
-            
-            if (typeof XLSX === 'undefined') {
-                showToast("❌ កំហុស! SheetJS (XLSX) library មិនត្រូវបានផ្ទុកទេ។", 'error');
-                return;
-            }
-            
             try {
-                const workbook = XLSX.utils.book_new();
-                const worksheet = XLSX.utils.json_to_sheet(structuredData);
-                XLSX.utils.book_append_sheet(workbook, worksheet, 'ExpenseData');
-                XLSX.writeFile(workbook, `${reportName}_${new Date().toISOString().slice(0,10)}.xlsx`);
-                showToast(`✅ ឯកសារ Excel (.xlsx) ត្រូវបានទាញយកដោយជោគជ័យ!`, 'success');
+                // Assuming sheetUrl and SHEET_EXPENSES are defined in config.js
+                const res = await fetch(sheetUrl(SHEET_EXPENSES));
+                const data = await res.json();
+                
+                allExpenses = data.filter(x => x.ID && (x.Type === 'Expense' || x.Status === 'Deleted') && x.Amount !== undefined); 
+                
+                calculateSummary(allExpenses); 
+                populateDateFilters(); 
+                filterRecords(); 
             } catch (error) {
-                console.error("Excel Export Failed:", error);
-                showToast("❌ ការទាញយកឯកសារ Excel បរាជ័យ។", 'error');
-            }
-
-        } 
-        // --- PDF EXPORT ---
-        else if (format === 'pdf') {
-            const { jsPDF } = window.jspdf;
-            const inputElement = document.getElementById('data-view-section'); // Target the list section
-            
-            document.querySelectorAll('.item-actions').forEach(el => el.style.display = 'none');
-            
-            const pdfBtn = document.querySelector('button[onclick="exportData(\'pdf\')"]');
-            const originalPdfBtnContent = pdfBtn.innerHTML;
-            pdfBtn.innerHTML = '<i data-lucide="loader-2" class="animate-spin w-4 h-4 mr-1"></i> កំពុងរៀបចំ PDF...';
-            pdfBtn.disabled = true;
-
-            try {
-                const canvas = await html2canvas(inputElement, {
-                    scale: 2, 
-                    useCORS: true, 
-                    windowWidth: inputElement.scrollWidth,
-                    windowHeight: inputElement.scrollHeight
-                });
-
-                const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
-                
-                const imgHeight = canvas.height * pdfWidth / canvas.width;
-                let position = 25; 
-                
-                // Add Title Header
-                pdf.setFontSize(18);
-                pdf.text(`របាយការណ៍ចំណាយ: ${reportName}`, 10, 10);
-                pdf.setFontSize(10);
-                pdf.text(`កាលបរិច្ឆេទបង្កើត: ${new Date().toLocaleDateString('km-KH')}`, 10, 17);
-                
-                let heightLeft = imgHeight;
-                let imgX = 0; 
-
-                while (heightLeft > 0) {
-                    pdf.addImage(imgData, 'JPEG', imgX, position, pdfWidth, imgHeight, undefined, 'FAST');
-                    heightLeft -= pdfHeight - 20; 
-                    position -= pdfHeight - 20;
-                    
-                    if (heightLeft > 0) { 
-                        pdf.addPage();
-                        position = 10; 
-                    }
+                if (expenseListElement) {
+                    expenseListElement.innerHTML = '<p class="text-center text-red-500 py-10 text-lg">❌ មានបញ្ហាក្នុងការទាញទិន្នន័យ។ សូមពិនិត្យមើល Column headers ក្នុង SheetDB</p>';
                 }
-
-                pdf.save(`${reportName}_Report_${new Date().toISOString().slice(0,10)}.pdf`);
-                showToast(`✅ ឯកសារ PDF ត្រូវបានទាញយកដោយជោគជ័យ!`, 'success');
-
-            } catch(error) {
-                console.error("PDF Export failed:", error);
-                showToast("❌ ការទាញយក PDF បរាជ័យ។", 'error');
-            } finally {
-                document.querySelectorAll('.item-actions').forEach(el => el.style.display = 'flex');
-                pdfBtn.innerHTML = originalPdfBtnContent; 
-                pdfBtn.disabled = false;
-                lucide.createIcons(); 
+                console.error("Error loading expenses:", error);
+                showToast("❌ កំហុសក្នុងការផ្ទុកទិន្នន័យចំណាយ! (ពិនិត្យ Column names ក្នុង SheetDB)", 'error', 6000); 
             }
         }
-</script>
+
+        function populateDateFilters() {
+            const currentYear = new Date().getFullYear();
+            const todayDayIndex = new Date().getDay(); 
+            
+            const daySelect = document.getElementById('filter-day-of-week');
+            const monthSelect = document.getElementById('filter-month');
+            const yearSelect = document.getElementById('filter-year');
+            const filterTodaySelect = document.getElementById('filter-today');
+
+            // 1. Day of Week Filter
+            let dayOptions = `<option value="all">ទាំងអស់</option>`;
+            DAY_NAMES.forEach((name, index) => {
+                dayOptions += `<option value="${index}">${name}</option>`;
+            });
+            if(daySelect) {
+                daySelect.innerHTML = dayOptions;
+                daySelect.value = 'all'; 
+            }
+
+            // 2. Month Filter
+            if(monthSelect) {
+                monthSelect.innerHTML = MONTH_NAMES.map((name, index) => 
+                    `<option value="${index === 0 ? 'all' : index}">${name}</option>`
+                ).join('');
+                monthSelect.value = 'all';
+            }
+
+            // 3. Year Filter
+            const years = ['all', currentYear + 1, currentYear, currentYear - 1, currentYear - 2]; 
+            const existingYears = [...new Set(allExpenses.map(x => new Date(x.Date).getFullYear()))].filter(y => !years.includes(y)).sort((a, b) => b - a);
+            
+            if(yearSelect) {
+                yearSelect.innerHTML = `<option value="all">ទាំងអស់</option>` + years
+                    .filter((y, index) => y !== 'all' && years.indexOf(y) === index) 
+                    .concat(existingYears)
+                    .map(year => `<option value="${year}">${year}</option>`)
+                    .join('');
+                yearSelect.value = 'all';
+            }
+            
+            // 4. Update Today filter text
+            if(filterTodaySelect) {
+                filterTodaySelect.value = 'all';
+                filterTodaySelect.options[1].textContent = `ថ្ងៃនេះ (${DAY_NAMES[todayDayIndex]})`;
+            }
+        }
+
+        function calculateSummary(data) {
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth();
+
+            const activeExpenses = data.filter(x => x.Status === "Active"); 
+            let totalExpense = 0;
+            let todayExpense = 0;
+            let monthlyExpense = 0;
+            let totalMeat = 0;
+            let totalVegetable = 0;
+            let totalFruit = 0;
+            let totalCount = activeExpenses.length;
+
+            activeExpenses.forEach(x => {
+                const amount = parseFloat(x.Amount) || 0;
+                const recordDate = new Date(x.Date);
+                
+                const meat = parseFloat(x.Meat) || 0;
+                const vegetable = parseFloat(x.Vegetable) || 0;
+                const fruit = parseFloat(x.Fruit) || 0;
+                totalMeat += meat;
+                totalVegetable += vegetable;
+                totalFruit += fruit;
+                
+                totalExpense += amount; 
+
+                if (isSameDay(x.Date, today)) {
+                    todayExpense += amount;
+                }
+                
+                if (recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear) {
+                    monthlyExpense += amount;
+                }
+            });
+            
+            // Rendering Summary Cards (Check if elements exist)
+            if (document.getElementById('total-expense-summary')) {
+                document.getElementById('total-expense-summary').textContent = formatCurrency(totalExpense);
+                document.getElementById('today-expense-summary').textContent = formatCurrency(todayExpense);
+                document.getElementById('monthly-expense-summary').textContent = formatCurrency(monthlyExpense);
+                document.getElementById('meat-total-summary').textContent = formatCurrency(totalMeat);
+                document.getElementById('vegetable-total-summary').textContent = formatCurrency(totalVegetable);
+                document.getElementById('fruit-total-summary').textContent = formatCurrency(totalFruit);
+                document.getElementById('total-count-summary').textContent = `${totalCount} កំណត់ត្រា`;
+            }
+        }
+
+        function filterRecords() {
+            const filterToday = document.getElementById('filter-today') ? document.getElementById('filter-today').value : 'all';
+            const filterDayOfWeek = document.getElementById('filter-day-of-week') ? document.getElementById('filter-day-of-week').value : 'all';
+            const filterMonth = document.getElementById('filter-month') ? document.getElementById('filter-month').value : 'all';
+            const filterYear = document.getElementById('filter-year') ? document.getElementById('filter-year').value : 'all';
+            const searchTerm = document.getElementById('search-input') ? document.getElementById('search-input').value.toLowerCase() : '';
+            
+            const expenseOnlyData = allExpenses.filter(x => x.Type === "Expense" || x.Status === "Deleted");
+
+            const dataToFilter = currentView === 'active' ? 
+                                 expenseOnlyData.filter(x => x.Status === "Active") : 
+                                 expenseOnlyData.filter(x => x.Status === "Deleted");
+                                    
+            let filtered = dataToFilter;
+
+            const today = new Date();
+
+            filtered = filtered.filter(x => {
+                const recordDate = new Date(x.Date);
+                const description = (x.Description || '').toLowerCase(); 
+                
+                let matchesToday = true;
+                let matchesDayOfWeek = true;
+                let matchesMonth = true;
+                let matchesYear = true;
+                let matchesSearch = true;
+
+                // Filtering logic (same as previous)
+                if (filterToday === 'today') { matchesToday = isSameDay(x.Date, today); }
+                if (filterDayOfWeek !== 'all') { matchesDayOfWeek = recordDate.getDay() === parseInt(filterDayOfWeek); }
+                if (filterMonth !== 'all') { matchesMonth = recordDate.getMonth() === parseInt(filterMonth) - 1; }
+                if (filterYear !== 'all') { matchesYear = recordDate.getFullYear() === parseInt(filterYear); }
+                if (searchTerm) { matchesSearch = description.includes(searchTerm); }
+                
+                // If 'today' is active, override month/year filter logic to ensure it shows only today's date
+                if (filterToday === 'today') {
+                    matchesMonth = true; // Ignored if today is active
+                    matchesYear = true;  // Ignored if today is active
+                }
+
+                return matchesToday && matchesDayOfWeek && matchesMonth && matchesYear && matchesSearch;
+            }).sort((a, b) => new Date(b.Date) - new Date(a.Date)); 
+
+            filteredDataForReport = filtered;
+            renderExpenseList(filtered);
+        }
+
+        function openDetailModal(record) {
+            activeDetailRecord = record;
+            document.getElementById('detail-date').textContent = record.Date;
+            document.getElementById('detail-amount').textContent = formatCurrency(parseFloat(record.Amount)); 
+            document.getElementById('detail-amount').className = 'text-3xl font-extrabold mt-1 text-red-600'; 
+            document.getElementById('detail-meat').textContent = formatCurrency(parseFloat(record.Meat));
+            document.getElementById('detail-vegetable').textContent = formatCurrency(parseFloat(record.Vegetable));
+            document.getElementById('detail-fruit').textContent = formatCurrency(parseFloat(record.Fruit));
+            document.getElementById('detail-desc').textContent = record.Description || 'គ្មានពិពណ៌នា';
+            document.getElementById('detail-modified').textContent = record.ModifiedDate ? new Date(record.ModifiedDate).toLocaleString('km-KH') : 'N/A';
+            document.getElementById('detail-status').textContent = record.Status === 'Deleted' ? 'លុបបណ្ដោះអាសន្ន' : 'សកម្ម';
+            document.getElementById('detailModal').classList.add('active');
+            lucide.createIcons();
+        }
+
+        // --- Execute Setup ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Setup Forms and load data immediately to populate filters/summary
+            if (user) {
+                // Re-run this setup inside DOMContentLoaded to ensure elements are available
+                setupForms();
+                loadAllData();
+                showView('dashboard');
+            }
+        });
+    </script>
 </body>
 </html>
