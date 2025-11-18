@@ -173,7 +173,6 @@
                 display: flex;
                 flex-wrap: wrap; /* Allow items to wrap */
                 gap: 5px 8px; /* Compact horizontal spacing */
-                margin-top: 4px;
             }
             .expense-item .mobile-breakdown span {
                 display: inline-block;
@@ -1095,9 +1094,69 @@
         }
 
         // --- UTILS ---
+        /**
+         * UPDATED: Custom currency formatter to use the Khmer words "មុឺន" (muen - 10k)
+         * and "លាន" (lean - 1M) for large numbers.
+         */
         function formatCurrency(amount) {
             const num = parseFloat(amount) || 0;
-            return `${num.toLocaleString('km-KH')} ៛`;
+            const rielSymbol = ' ៛';
+            const muen = 10000;
+            const lean = 1000000;
+
+            if (num === 0) {
+                return `0${rielSymbol}`;
+            }
+            
+            const absNum = Math.abs(num);
+            let result = '';
+
+            if (absNum >= lean) {
+                // Handle Millions (លាន) - up to 999,999,999
+                const numLean = Math.floor(absNum / lean);
+                const remainderLean = absNum % lean;
+
+                // Format millions part (e.g., 10 លាន)
+                result += `${numLean.toLocaleString('km-KH', { maximumFractionDigits: 0 })} លាន`;
+
+                if (remainderLean > 0) {
+                    // Handle remainder: should use មុឺន/standard formatting
+                    if (remainderLean >= muen) {
+                        const numMuen = Math.floor(remainderLean / muen);
+                        const remainderMuen = remainderLean % muen;
+                        result += ` ${numMuen.toLocaleString('km-KH', { maximumFractionDigits: 0 })} មុឺន`;
+                        if (remainderMuen > 0) {
+                            result += ` ${remainderMuen.toLocaleString('km-KH', { maximumFractionDigits: 0 })}`;
+                        }
+                    } else {
+                        result += ` ${remainderLean.toLocaleString('km-KH', { maximumFractionDigits: 0 })}`;
+                    }
+                }
+            } 
+            else if (absNum >= muen) {
+                // Handle Ten Thousands (មុឺន) - up to 999,999
+                const numMuen = Math.floor(absNum / muen);
+                const remainderMuen = absNum % muen;
+
+                // Format ten thousands part (e.g., 5 មុឺន)
+                result += `${numMuen.toLocaleString('km-KH', { maximumFractionDigits: 0 })} មុឺន`;
+
+                if (remainderMuen > 0) {
+                    // Handle remainder (e.g., 2,500)
+                    result += ` ${remainderMuen.toLocaleString('km-KH', { maximumFractionDigits: 0 })}`;
+                }
+            } 
+            else {
+                // Standard formatting for < 10,000
+                result = absNum.toLocaleString('km-KH', { maximumFractionDigits: 0 });
+            }
+            
+            // Add negative sign if original number was negative
+            if (num < 0) {
+                result = `- ${result}`;
+            }
+
+            return `${result}${rielSymbol}`;
         }
         
         /**
@@ -1370,10 +1429,10 @@
                             </p>
                             <div class="item-actions flex space-x-1 mt-2 flex-shrink-0">
                                 ${actionButtons}
-                            </div>
                         </div>
                     </div>
-                `;
+                </div>
+            `;
             }).join("");
 
             lucide.createIcons();
@@ -1672,4 +1731,4 @@
         setActiveTab('dashboard'); // NEW: Set initial view to Dashboard
     </script>
 </body>
-</html> 
+</html>
