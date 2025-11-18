@@ -11,11 +11,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Khmer+OS+Battambang:wght@400;600;700&display=swap');
+        /* UPDATED FONT: Importing Khmer OS Muol and Battambang for elegance and fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Khmer+OS+Muol:wght@400;600;700&family=Khmer+OS+Battambang:wght@400;600;700&display=swap');
+        
         body {
+            /* Set default font to Battambang (standard legibility) */
             font-family: 'Khmer OS Battambang', sans-serif;
             min-height: 100vh;
         }
+        
+        /* Apply the more elegant Muol font to headings/titles for a "beautiful" look */
+        h1, h2, h3, .mobile-title, .font-extrabold {
+            font-family: 'Khmer OS Muol', 'Khmer OS Battambang', sans-serif !important;
+        }
+
 
         /* Simple hide scrollbar */
         .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -88,11 +97,26 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
         }
         
+        /* NEW: FAB for FILTER (only on screens < 1024px) */
+        #fab-filter-btn {
+            position: fixed;
+            bottom: 90px; /* Positioned above the Add button */
+            right: 20px;
+            z-index: 50;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            background-color: #3b82f6; /* bg-blue-500 */
+            color: white;
+            transition: background-color 0.15s;
+        }
+
         @media(max-width:1023px){ /* Smaller than lg */
-            #fab-add-btn{
-                display: inline-flex !important;
-            }
-           #fab-export-btn{
+            #fab-add-btn, #fab-export-btn, #fab-filter-btn{
                 display: inline-flex !important;
             }
         }
@@ -117,15 +141,32 @@
             transform: translateY(0);
         }
 
-        /* Filter Modal Custom Style for Mobile (Fixed & Centered) */
+        /* NEW: Filter Modal Custom Style for Mobile (Fixed & Centered) */
+        #filterModal {
+            /* Use standard modal overlay styles */
+        }
         #filterModal .modal-content-filter {
             width: 95%;
             max-width: 450px;
-            animation: fadeInScale 0.3s ease-out;
             border-radius: 12px;
             padding: 24px;
+            
+            /* Apply fixed center transformation */
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            opacity: 0;
+            
+            /* Override the standard modal display which centers flex items */
+            margin: 0; 
         }
-
+        /* Active state for animation */
+        #filterModal.active .modal-content-filter {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
 
         /* Form Visibility Logic */
         #dashboard-expense-form-container {
@@ -136,10 +177,10 @@
             display: none; /* Hide on mobile by default */
         }
         
-        /* HIDE FILTER CONTROLS ON MOBILE */
+        /* HIDE FILTER CONTROLS ON MOBILE (The controls are now moved into a modal) */
         @media (max-width: 1023px) {
             #report-controls {
-                display: none; /* Hidden by default, toggled by JS button */
+                display: none !important; 
             }
         }
 
@@ -160,43 +201,57 @@
             }
         }
 
-        /* Mobile List Item Style Improvement (COMPACT) */
+        /* === MOBILE LIST ITEM STYLING (UX/UI IMPROVEMENT) === */
         @media (max-width: 640px) {
             .expense-item {
                 padding: 12px; /* Smaller padding */
                 align-items: flex-start;
             }
-            .expense-item .flex-1 {
+            .expense-item .flex-main-content {
                 min-width: 60%;
+                flex-grow: 1;
             }
-            .expense-item .mobile-breakdown {
+            .expense-item .header-row {
+                /* New: Distribute space for status badge (left) and date (right) */
                 display: flex;
-                flex-wrap: wrap; /* Allow items to wrap */
-                gap: 5px 8px; /* Compact horizontal spacing */
-                margin-top: 4px;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 4px;
             }
-            .expense-item .mobile-breakdown span {
-                display: inline-block;
-                font-size: 11px; /* Smaller breakdown text */
-                line-height: 1;
-                white-space: nowrap;
-            }
-            .expense-item .mobile-breakdown .pipe-separator {
-                display: none; 
-            }
-            .expense-item .mobile-amount {
-                /* Changed font size from 1.25rem to 1.125rem for smaller display */
-                font-size: 1.125rem; 
+            .expense-item .mobile-title {
+                /* New: Larger title for better readability */
+                font-size: 1rem; /* text-base */
+                font-weight: 700; /* font-bold */
+                color: #1f2937; /* text-gray-800 */
                 margin-top: 0;
             }
+
+            /* --- CRITICAL UPDATE: HIDE DETAIL BREAKDOWN ON MOBILE --- */
+            .expense-item .mobile-description-and-breakdown {
+                display: none !important;
+            }
+            /* ---------------------------------------------------- */
+            
+            /* Target the total amount for smaller/neater look */
+            .expense-item .mobile-amount {
+                font-size: 1.125rem; /* text-xl, for smaller total amount */
+                font-weight: 900; /* font-extrabold */
+                margin-top: 0;
+            }
+            
+            /* Action buttons are visible but moved slightly */
             .expense-item .item-actions {
                 flex-direction: column;
                 margin-left: 8px;
+                gap: 2px; /* Closer buttons */
             }
            .expense-item .item-actions button {
                 padding: 4px; /* Smaller touch target */
              }
         }
+        /* === END MOBILE LIST ITEM STYLING === */
+
+
         /* Print Styles */
         @media print {
             body {
@@ -360,12 +415,6 @@
                             </button>
                         </div>
                         
-                        <div id="toggle-filter-btn" class="mb-4 md:hidden">
-                            <button onclick="toggleMobileFilter()" class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold shadow-md hover:bg-blue-600 transition flex items-center justify-center text-sm">
-                                <i data-lucide="filter" class="w-4 h-4 mr-2"></i> <span id="filter-btn-text">ត្រងទិន្នន័យ</span>
-                            </button>
-                        </div>
-
                         <div id="report-controls" class="mb-6 p-4 border rounded-xl bg-gray-50">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div>
@@ -435,6 +484,10 @@
     
     <button id="fab-export-btn" onclick="openExportModal()" class="bg-blue-600 text-white transition hover:bg-blue-700 ring-4 ring-blue-300 ring-offset-2">
         <i data-lucide="file-down" class="w-8 h-8"></i>
+    </button>
+
+    <button id="fab-filter-btn" onclick="openFilterModal()" class="bg-blue-600 text-white transition hover:bg-blue-700 ring-4 ring-blue-300 ring-offset-2">
+        <i data-lucide="filter" class="w-8 h-8"></i>
     </button>
 
 
@@ -556,6 +609,70 @@
             </button>
         </div>
     </div>
+    
+    <div id="filterModal" class="modal">
+        <div class="modal-content-filter bg-white w-full relative shadow-2xl">
+           <h3 class="text-2xl font-bold text-blue-700 mb-6 border-b pb-2 flex items-center">
+                <i data-lucide="filter" class="w-6 h-6 mr-2"></i> ត្រងទិន្នន័យរបាយការណ៍
+            </h3>
+            <div id="modal-report-controls" class="space-y-4">
+                 <div class="grid grid-cols-1 gap-4">
+                     <div>
+                         <label for="modal-filter-day" class="block text-sm font-medium text-gray-700 mb-1">ត្រងតាមថ្ងៃ:</label>
+                         <select id="modal-filter-day" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                             <option value="all">ទាំងអស់</option>
+                             <option value="daily">ប្រចាំថ្ងៃ</option>
+                             <option value="day_mon">ច័ន្ទ</option>
+                             <option value="day_tue">អង្គារ</option>
+                             <option value="day_wed">ពុធ</option>
+                             <option value="day_thu">ព្រហស្បតិ៍</option>
+                             <option value="day_fri">សុក្រ</option>
+                             <option value="day_sat">សៅរ៍</option>
+                             <option value="day_sun">អាទិត្យ</option>
+                         </select>
+                     </div>
+                     <div>
+                         <label for="modal-filter-month" class="block text-sm font-medium text-gray-700 mb-1">ត្រងតាមខែ:</label>
+                         <select id="modal-filter-month" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                             <option value="all">ទាំងអស់</option>
+                             <option value="monthly">ប្រចាំខែ</option>
+                             <option value="month_0">មករា</option>
+                             <option value="month_1">កុម្ភៈ</option>
+                             <option value="month_2">មីនា</option>
+                             <option value="month_3">មេសា</option>
+                             <option value="month_4">ឧសភា</option>
+                             <option value="month_5">មិថុនា</option>
+                             <option value="month_6">កក្កដា</option>
+                             <option value="month_7">សីហា</option>
+                             <option value="month_8">កញ្ញា</option>
+                             <option value="month_9">តុលា</option>
+                             <option value="month_10">វិច្ឆិកា</option>
+                             <option value="month_11">ធ្នូ</option>
+                         </select>
+                     </div>
+                     <div>
+                         <label for="modal-filter-year" class="block text-sm font-medium text-gray-700 mb-1">ត្រងតាមឆ្នាំ:</label>
+                         <select id="modal-filter-year" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                             <option value="all">ទាំងអស់</option>
+                             <option value="yearly">ប្រចាំឆ្នាំ</option>
+                         </select>
+                     </div>
+                 </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-6 border-t mt-6">
+                <button type="button" onclick="applyModalFilters();" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition flex items-center shadow-md">
+                    <i data-lucide="check" class="w-5 h-5 mr-2"></i> អនុវត្តការត្រង
+                </button>
+                <button type="button" onclick="closeFilterModal()" class="px-6 py-3 bg-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-400 transition">បោះបង់</button>
+            </div>
+
+            <button onclick="closeFilterModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+    </div>
+
 
     <div id="form-template" style="display: none;">
         <input type="hidden" id="record-id" value="">
@@ -628,25 +745,30 @@
             document.getElementById('mobileExportModal').classList.remove('active');
         }
 
-        // --- NEW: Toggle Mobile Filter Function ---
-        function toggleMobileFilter() {
-            const controls = document.getElementById('report-controls');
-            // Toggle visibility of the controls section
-            if (controls.style.display === 'none' || controls.style.display === '') {
-                controls.style.display = 'block';
-                document.getElementById('filter-btn-text').textContent = 'លាក់ការត្រង';
-                document.getElementById('toggle-filter-btn').classList.remove('bg-blue-500', 'hover:bg-blue-600');
-                document.getElementById('toggle-filter-btn').classList.add('bg-gray-500', 'hover:bg-gray-600');
-                controls.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // --- NEW: Filter Modal Functions (for FAB) ---
+        function openFilterModal() {
+             // Sync desktop filter states to the modal filters before opening
+            document.getElementById('modal-filter-day').value = document.getElementById('filter-day').value;
+            document.getElementById('modal-filter-month').value = document.getElementById('filter-month').value;
+            document.getElementById('modal-filter-year').value = document.getElementById('filter-year').value;
 
-            } else {
-                controls.style.display = 'none';
-                document.getElementById('filter-btn-text').textContent = 'ត្រងទិន្នន័យ';
-                document.getElementById('toggle-filter-btn').classList.remove('bg-gray-500', 'hover:bg-gray-600');
-                document.getElementById('toggle-filter-btn').classList.add('bg-blue-500', 'hover:bg-blue-600');
-            }
+            document.getElementById('filterModal').classList.add('active');
             lucide.createIcons();
         }
+        function closeFilterModal() {
+            document.getElementById('filterModal').classList.remove('active');
+        }
+
+        function applyModalFilters() {
+            // Apply modal filter states back to the original filter elements
+            document.getElementById('filter-day').value = document.getElementById('modal-filter-day').value;
+            document.getElementById('filter-month').value = document.getElementById('modal-filter-month').value;
+            document.getElementById('filter-year').value = document.getElementById('modal-filter-year').value;
+
+            closeFilterModal();
+            filterRecords();
+        }
+        // Removed the deprecated toggleMobileFilter function
 
         // --- NEW: TAB SWITCHING FUNCTION ---
         function setActiveTab(tabName) {
@@ -669,17 +791,21 @@
             // Handle FAB visibility 
             const fabBtnAdd = document.getElementById('fab-add-btn');
             const fabBtnExport = document.getElementById('fab-export-btn');
+            const fabBtnFilter = document.getElementById('fab-filter-btn'); // NEW filter FAB
             const isDesktop = window.innerWidth >= 1024;
             
             if (isDesktop) {
                 fabBtnAdd.style.display = 'none';
                 fabBtnExport.style.display = 'none';
+                fabBtnFilter.style.display = 'none';
             } else if (tabName === 'report') {
                 fabBtnAdd.style.display = 'inline-flex';
                 fabBtnExport.style.display = 'inline-flex';
+                fabBtnFilter.style.display = 'inline-flex';
             } else {
                 fabBtnAdd.style.display = 'inline-flex';
                 fabBtnExport.style.display = 'none';
+                fabBtnFilter.style.display = 'none';
             }
 
             // Ensure filters are reset and data loaded when switching to Report tab
@@ -690,23 +816,7 @@
                     if (isDesktop) activeFormElement = reportForm; 
                 }
                 
-                // Reset mobile filter UI state if applicable
-                if (window.innerWidth < 1024) {
-                    const controls = document.getElementById('report-controls');
-                    if (controls) controls.style.display = 'none';
-                    const toggleBtn = document.getElementById('toggle-filter-btn');
-                    if (toggleBtn) {
-                        toggleBtn.style.display = 'block';
-                        document.getElementById('filter-btn-text').textContent = 'ត្រងទិន្នន័យ';
-                        toggleBtn.classList.remove('bg-gray-500', 'hover:bg-gray-600');
-                        toggleBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
-                    }
-                } else {
-                    const toggleBtn = document.getElementById('toggle-filter-btn');
-                    if (toggleBtn) toggleBtn.style.display = 'none';
-                }
-                
-                // Reset all filters
+                // Reset all filters to default 'all'
                 if(document.getElementById('filter-day')) document.getElementById('filter-day').value = 'all';
                 if(document.getElementById('filter-month')) document.getElementById('filter-month').value = 'all';
                 if(document.getElementById('filter-year')) document.getElementById('filter-year').value = 'all';
@@ -884,6 +994,13 @@
 
         // --- DETAIL MODAL (UNCHANGED logic) ---
         function openDetailModal(record) {
+            // FIX: Close edit/add form before opening detail modal
+            if (window.innerWidth >= 1024 && editingID) {
+                resetForm(document.getElementById('report-form'));
+            } else if (window.innerWidth < 1024) {
+                 closeFormModal();
+            }
+
             activeDetailRecord = record;
 
             document.getElementById('detail-date').textContent = record.Date;
@@ -1042,16 +1159,18 @@
             lucide.createIcons();
         }
 
+        /**
+         * CRITICAL CHANGE: Handles click on expense item.
+         * On ANY screen, opens the Detail Modal.
+         */
         function handleCardClick(record) {
-            const isMobile = window.innerWidth < 1024;
-            
-            if (isMobile) {
-                // Mobile/Tablet: Open Modal Form for editing
-                editExpense(record.ID, false);
-            } else {
-                // Desktop/Laptop: Open Detail Modal
-                openDetailModal(record);
+            // FIX: Ensure detail modal opens on click regardless of device type,
+            // but first, close any open forms to prevent conflicts.
+            closeFormModal();
+            if (window.innerWidth >= 1024 && editingID) {
+                resetForm(document.getElementById('report-form')); // Reset desktop form if editing
             }
+            openDetailModal(record);
         }
         
         // Function specifically for Desktop Edit Button (in detail modal)
@@ -1084,13 +1203,20 @@
             const isMobile = window.innerWidth < 1024;
 
             if (isMobile) {
-                // Use mobile modal for editing on mobile
+                // If on mobile, open the form modal for editing
                 openFormModal();
                 activeFormElement = document.getElementById('mobile-expense-form');
                 populateForm(activeFormElement, record);
             } else {
-                // On desktop, open detail modal and use editDesktopForm
-                openDetailModal(record);
+                // If on desktop, populate the desktop form directly
+                const reportForm = document.getElementById('report-form');
+                if (reportForm) {
+                    activeFormElement = reportForm;
+                    populateForm(reportForm, record);
+                    if (scrollToForm) {
+                        document.getElementById("report-expense-form-container").scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
             }
         }
 
@@ -1173,13 +1299,19 @@
 
         // NEW: Populate years dynamically for filtering
         function populateYearOptions(data) {
-            const select = document.getElementById('filter-year');
+            const selectDesktop = document.getElementById('filter-year');
+            const selectModal = document.getElementById('modal-filter-year');
             
-            if (!select) return;
+            if (!selectDesktop || !selectModal) return;
 
             // Clear existing custom year options (keep default 'all' and 'yearly')
-            let existingYearOptions = select.querySelectorAll('option:not([value="all"]):not([value="yearly"])');
-            existingYearOptions.forEach(opt => opt.remove());
+            const clearOptions = (select) => {
+                let existingYearOptions = select.querySelectorAll('option:not([value="all"]):not([value="yearly"])');
+                existingYearOptions.forEach(opt => opt.remove());
+            };
+
+            clearOptions(selectDesktop);
+            clearOptions(selectModal);
 
             const uniqueYears = new Set();
             data.filter(x => x.Status === "Active").forEach(x => {
@@ -1189,12 +1321,17 @@
             
             const sortedYears = Array.from(uniqueYears).sort((a, b) => b - a);
 
-            sortedYears.forEach(year => {
-                const option = document.createElement('option');
-                option.value = `year_${year}`;
-                option.textContent = year;
-                select.appendChild(option);
-            });
+            const createYearOptions = (selectElement) => {
+                sortedYears.forEach(year => {
+                    const option = document.createElement('option');
+                    option.value = `year_${year}`;
+                    option.textContent = year;
+                    selectElement.appendChild(option.cloneNode(true));
+                });
+            };
+            
+            createYearOptions(selectDesktop);
+            createYearOptions(selectModal);
         }
 
         function filterRecords() {
@@ -1297,7 +1434,7 @@
             lucide.createIcons();
         }
 
-        // --- RENDER LIST (UPDATED to show day name and 'Today' badge) ---
+        // --- RENDER LIST (UPDATED UX/UI for mobile) ---
         function renderExpenseList(data) {
             const list = document.getElementById("expense-list");
             const isTrashView = currentView === 'trash';
@@ -1317,25 +1454,28 @@
                 const amountTextClass = isDeleted ? 'text-gray-500 line-through' : 'text-red-600';
                 const icon = 'arrow-down-left';
 
-                const recordDate = new Date(x.Date + 'T00:00:00'); // Add time to fix potential timezone issues with date objects
+                const recordDate = new Date(x.Date + 'T00:00:00'); 
                 const dayName = dayNames[recordDate.getDay()];
                 const isToday = x.Date === today;
-                const dateDisplay = `<span class="text-xs text-gray-500">${dayName} | ${x.Date}</span>${isToday ? ' <span class="font-bold text-red-500 text-xs">(ថ្ងៃនេះ)</span>' : ''}`;
+                
+                // UX/UI Improvement: Place date on the right of the badge row
+                const dateDisplay = `<span class="text-xs text-gray-500 text-right">${dayName} | ${x.Date}</span>${isToday ? ' <span class="font-bold text-red-500 text-xs">(ថ្ងៃនេះ)</span>' : ''}`;
 
                 const recordJson = JSON.stringify(x).split("'").join("\\'");
 
-                // Compact Breakdown for Mobile/Desktop
-                // Added flex and gap to ensure items stay compact horizontally on small screens
+                // Compact Breakdown (HIDDEN ON MOBILE, shown on Desktop)
                 const breakdown = `
-                    <div class="text-xs text-gray-500 mt-1 mobile-breakdown flex flex-wrap gap-x-2">
-                        <span>សាច់: <span class="text-orange-600">${formatCurrency(x.Meat)}</span></span>
-                        <span class="pipe-separator hidden sm:inline">|</span>
-                        <span>បន្លែ: <span class="text-green-600">${formatCurrency(x.Vegetable)}</span></span>
-                        <span class="pipe-separator hidden sm:inline">|</span>
-                        <span>ផ្លែឈើ: <span class="text-yellow-600">${formatCurrency(x.Fruit)}</span></span>
+                    <div class="mobile-description-and-breakdown hidden lg:block">
+                        <p class="text-xs text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
+                        <div class="mobile-breakdown">
+                            <span>សាច់: <span class="text-orange-600 font-medium">${formatCurrency(x.Meat)}</span></span>
+                            <span>បន្លែ: <span class="text-green-600 font-medium">${formatCurrency(x.Vegetable)}</span></span>
+                            <span>ផ្លែឈើ: <span class="text-yellow-600 font-medium">${formatCurrency(x.Fruit)}</span></span>
+                        </div>
                     </div>
                 `;
 
+                // CRITICAL FIX: Ensure mobile action buttons prevent opening the detail modal when clicked
                 const actionButtons = isDeleted ? `
                     <button onclick="event.stopPropagation(); restoreExpense('${x.ID}')" class="text-green-600 hover:text-green-800 p-2 rounded-full hover:bg-green-50 transition" title="ទាញយកមកវិញ">
                         <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
@@ -1354,19 +1494,27 @@
 
                 return `
                     <div onclick="handleCardClick(${recordJson})" class="expense-item bg-white p-4 rounded-xl shadow-md border-l-4 ${isDeleted ? 'border-gray-500' : 'border-red-500'} flex justify-between items-start">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center space-x-2 mb-1">
-                                <span class="text-xs font-medium px-2 py-0.5 rounded-full ${badgeClass} self-start">${x.Type === 'Expense' ? 'ចំណាយ' : 'ចំណូល'}</span>
+                        <div class="flex-main-content">
+                            <div class="header-row">
+                                <span class="text-xs font-medium px-2 py-0.5 rounded-full ${badgeClass}">${x.Type === 'Expense' ? 'ចំណាយ' : 'ចំណូល'}</span>
                                 ${dateDisplay}
                             </div>
-                            <p class="text-base font-bold text-gray-800 truncate">ចំណាយគ្រឿងទេស</p>
-                            <p class="text-xs text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
-                            ${isDeleted ? '' : breakdown}
+                            
+                            <p class="mobile-title">ចំណាយគ្រឿងទេស</p>
+                            
+                            <div class="mobile-description-and-breakdown hidden lg:block">
+                                <p class="text-xs text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
+                                <div class="mobile-breakdown">
+                                    <span>សាច់: <span class="text-orange-600 font-medium">${formatCurrency(x.Meat)}</span></span>
+                                    <span>បន្លែ: <span class="text-green-600 font-medium">${formatCurrency(x.Vegetable)}</span></span>
+                                    <span>ផ្លែឈើ: <span class="text-yellow-600 font-medium">${formatCurrency(x.Fruit)}</span></span>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="text-right ml-4 flex flex-col justify-between items-end">
-                            <p class="text-xl sm:text-2xl font-extrabold ${amountTextClass} flex items-center justify-end whitespace-nowrap mobile-amount">
-                                ${!isDeleted ? `<i data-lucide="${icon}" class="w-5 h-5 mr-1"></i>` : ''}
+                            <p class="mobile-amount font-extrabold ${amountTextClass} flex items-center justify-end whitespace-nowrap">
+                                ${!isDeleted ? `<i data-lucide="${icon}" class="w-4 h-4 mr-1"></i>` : ''}
                                 ${formatCurrency(parseFloat(x.Amount))}
                             </p>
                             <div class="item-actions flex space-x-1 mt-2 flex-shrink-0">
@@ -1522,7 +1670,7 @@
             }
         }
 
-        // --- DATA EXPORT (UPDATED logic) ---
+        // --- DATA EXPORT (UNCHANGED logic) ---
         async function exportData(format) {
             const dataToExport = filteredDataForReport;
             
