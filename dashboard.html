@@ -986,6 +986,13 @@
 
         // --- DETAIL MODAL (UNCHANGED logic) ---
         function openDetailModal(record) {
+            // FIX: Close edit/add form before opening detail modal
+            if (window.innerWidth >= 1024 && editingID) {
+                resetForm(document.getElementById('report-form'));
+            } else if (window.innerWidth < 1024) {
+                 closeFormModal();
+            }
+
             activeDetailRecord = record;
 
             document.getElementById('detail-date').textContent = record.Date;
@@ -1146,10 +1153,11 @@
 
         /**
          * CRITICAL CHANGE: Handles click on expense item.
-         * On mobile/tablet, it opens the Detail Modal.
-         * On desktop, it still opens the Detail Modal.
+         * On ANY screen, opens the Detail Modal.
          */
         function handleCardClick(record) {
+            // Check if the click originated from an action button (Edit/Delete/Restore/Permanent Delete)
+            // Note: Since we use event.stopPropagation() on those buttons, the detail modal should not open if an action button is pressed.
             openDetailModal(record);
         }
         
@@ -1445,7 +1453,7 @@
 
                 // Compact Breakdown (HIDDEN ON MOBILE, shown on Desktop)
                 const breakdown = `
-                    <div class="mobile-description-and-breakdown hidden sm:block">
+                    <div class="mobile-description-and-breakdown hidden lg:block">
                         <p class="text-xs text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
                         <div class="mobile-breakdown">
                             <span>សាច់: <span class="text-orange-600 font-medium">${formatCurrency(x.Meat)}</span></span>
