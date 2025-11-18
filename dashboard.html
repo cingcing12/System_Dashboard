@@ -217,21 +217,11 @@
                 margin-top: 0;
             }
 
-            .expense-item .mobile-breakdown {
-                display: flex;
-                flex-wrap: wrap; 
-                gap: 5px 8px; 
-                margin-top: 6px;
-                font-size: 10px; /* Even smaller for detail */
+            /* --- CRITICAL UPDATE: HIDE DETAIL BREAKDOWN ON MOBILE --- */
+            .expense-item .mobile-description-and-breakdown {
+                display: none !important;
             }
-            .expense-item .mobile-breakdown span {
-                display: inline-block;
-                line-height: 1;
-                white-space: nowrap;
-            }
-            .expense-item .mobile-breakdown .pipe-separator {
-                display: none; 
-            }
+            /* ---------------------------------------------------- */
             
             /* Target the total amount for smaller/neater look */
             .expense-item .mobile-amount {
@@ -239,6 +229,8 @@
                 font-weight: 900; /* font-extrabold */
                 margin-top: 0;
             }
+            
+            /* Action buttons are visible but moved slightly */
             .expense-item .item-actions {
                 flex-direction: column;
                 margin-left: 8px;
@@ -477,7 +469,7 @@
             </div>
         </div>
     </main>
-    
+
     <button id="fab-add-btn" onclick="openFormModal()" class="bg-indigo-600 text-white transition hover:bg-indigo-700 ring-4 ring-indigo-300 ring-offset-2">
         <i data-lucide="plus" class="w-8 h-8"></i>
     </button>
@@ -1152,16 +1144,13 @@
             lucide.createIcons();
         }
 
+        /**
+         * CRITICAL CHANGE: Handles click on expense item.
+         * On mobile/tablet, it opens the Detail Modal.
+         * On desktop, it still opens the Detail Modal.
+         */
         function handleCardClick(record) {
-            const isMobile = window.innerWidth < 1024;
-            
-            if (isMobile) {
-                // Mobile/Tablet: Open Modal Form for editing
-                editExpense(record.ID, false);
-            } else {
-                // Desktop/Laptop: Open Detail Modal
-                openDetailModal(record);
-            }
+            openDetailModal(record);
         }
         
         // Function specifically for Desktop Edit Button (in detail modal)
@@ -1194,13 +1183,20 @@
             const isMobile = window.innerWidth < 1024;
 
             if (isMobile) {
-                // Use mobile modal for editing on mobile
+                // If on mobile, open the form modal for editing
                 openFormModal();
                 activeFormElement = document.getElementById('mobile-expense-form');
                 populateForm(activeFormElement, record);
             } else {
-                // On desktop, open detail modal and use editDesktopForm
-                openDetailModal(record);
+                // If on desktop, populate the desktop form directly
+                const reportForm = document.getElementById('report-form');
+                if (reportForm) {
+                    activeFormElement = reportForm;
+                    populateForm(reportForm, record);
+                    if (scrollToForm) {
+                        document.getElementById("report-expense-form-container").scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
             }
         }
 
@@ -1447,15 +1443,19 @@
 
                 const recordJson = JSON.stringify(x).split("'").join("\\'");
 
-                // Compact Breakdown (Improved grouping, smaller font handled by CSS)
+                // Compact Breakdown (HIDDEN ON MOBILE, shown on Desktop)
                 const breakdown = `
-                    <div class="mobile-breakdown">
-                        <span>សាច់: <span class="text-orange-600 font-medium">${formatCurrency(x.Meat)}</span></span>
-                        <span>បន្លែ: <span class="text-green-600 font-medium">${formatCurrency(x.Vegetable)}</span></span>
-                        <span>ផ្លែឈើ: <span class="text-yellow-600 font-medium">${formatCurrency(x.Fruit)}</span></span>
+                    <div class="mobile-description-and-breakdown hidden sm:block">
+                        <p class="text-xs text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
+                        <div class="mobile-breakdown">
+                            <span>សាច់: <span class="text-orange-600 font-medium">${formatCurrency(x.Meat)}</span></span>
+                            <span>បន្លែ: <span class="text-green-600 font-medium">${formatCurrency(x.Vegetable)}</span></span>
+                            <span>ផ្លែឈើ: <span class="text-yellow-600 font-medium">${formatCurrency(x.Fruit)}</span></span>
+                        </div>
                     </div>
                 `;
 
+                // CRITICAL FIX: Ensure mobile action buttons prevent opening the detail modal when clicked
                 const actionButtons = isDeleted ? `
                     <button onclick="event.stopPropagation(); restoreExpense('${x.ID}')" class="text-green-600 hover:text-green-800 p-2 rounded-full hover:bg-green-50 transition" title="ទាញយកមកវិញ">
                         <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
@@ -1481,8 +1481,15 @@
                             </div>
                             
                             <p class="mobile-title">ចំណាយគ្រឿងទេស</p>
-                            <p class="text-xs text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
-                            ${isDeleted ? '' : breakdown}
+                            
+                            <div class="mobile-description-and-breakdown hidden lg:block">
+                                <p class="text-xs text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
+                                <div class="mobile-breakdown">
+                                    <span>សាច់: <span class="text-orange-600 font-medium">${formatCurrency(x.Meat)}</span></span>
+                                    <span>បន្លែ: <span class="text-green-600 font-medium">${formatCurrency(x.Vegetable)}</span></span>
+                                    <span>ផ្លែឈើ: <span class="text-yellow-600 font-medium">${formatCurrency(x.Fruit)}</span></span>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="text-right ml-4 flex flex-col justify-between items-end">
