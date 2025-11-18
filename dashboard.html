@@ -226,9 +226,27 @@
                 margin-top: 0;
             }
 
-            /* --- CRITICAL UPDATE: HIDE DETAIL BREAKDOWN ON MOBILE --- */
+            /* --- CRITICAL UPDATE: SHOW DETAIL BREAKDOWN ON MOBILE --- */
             .expense-item .mobile-description-and-breakdown {
-                display: none !important;
+                /* Display on small screens */
+                display: block !important; 
+                margin-top: 6px;
+                line-height: 1.4;
+            }
+            .expense-item .mobile-description-and-breakdown p {
+                /* Description text style */
+                font-size: 11px; /* Smaller description */
+                color: #4b5563; /* text-gray-600 */
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .expense-item .mobile-breakdown {
+                display: flex;
+                flex-wrap: wrap; 
+                gap: 5px 12px; 
+                margin-top: 4px;
+                font-size: 11px;
             }
             /* ---------------------------------------------------- */
             
@@ -768,7 +786,6 @@
             closeFilterModal();
             filterRecords();
         }
-        // Removed the deprecated toggleMobileFilter function
 
         // --- NEW: TAB SWITCHING FUNCTION ---
         function setActiveTab(tabName) {
@@ -1463,9 +1480,9 @@
 
                 const recordJson = JSON.stringify(x).split("'").join("\\'");
 
-                // Compact Breakdown (HIDDEN ON MOBILE, shown on Desktop)
+                // Compact Breakdown (SHOWN ON MOBILE AND DESKTOP)
                 const breakdown = `
-                    <div class="mobile-description-and-breakdown hidden lg:block">
+                    <div class="mobile-description-and-breakdown">
                         <p class="text-xs text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
                         <div class="mobile-breakdown">
                             <span>សាច់: <span class="text-orange-600 font-medium">${formatCurrency(x.Meat)}</span></span>
@@ -1502,7 +1519,7 @@
                             
                             <p class="mobile-title">ចំណាយគ្រឿងទេស</p>
                             
-                            <div class="mobile-description-and-breakdown hidden lg:block">
+                            <div class="mobile-description-and-breakdown">
                                 <p class="text-xs text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
                                 <div class="mobile-breakdown">
                                     <span>សាច់: <span class="text-orange-600 font-medium">${formatCurrency(x.Meat)}</span></span>
