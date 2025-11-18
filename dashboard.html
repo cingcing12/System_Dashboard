@@ -115,9 +115,16 @@
             transition: background-color 0.15s;
         }
 
-        @media(max-width:1023px){ /* Smaller than lg */
+        @media(max-width:1023px){ /* Tablet and Mobile */
             #fab-add-btn, #fab-export-btn, #fab-filter-btn{
                 display: inline-flex !important;
+            }
+        }
+        
+        /* CRITICAL CHANGE: Hide FABs on Desktop */
+        @media (min-width: 1024px) {
+            #fab-add-btn, #fab-export-btn, #fab-filter-btn {
+                display: none !important;
             }
         }
 
@@ -142,9 +149,6 @@
         }
 
         /* NEW: Filter Modal Custom Style for Mobile (Fixed & Centered) */
-        #filterModal {
-            /* Use standard modal overlay styles */
-        }
         #filterModal .modal-content-filter {
             width: 95%;
             max-width: 450px;
@@ -228,13 +232,13 @@
 
             /* --- CRITICAL UPDATE: SHOW DETAIL BREAKDOWN ON MOBILE --- */
             .expense-item .mobile-description-and-breakdown {
-                display: block !important; 
+                display: block !important; /* Always show breakdown on mobile */
                 margin-top: 6px;
                 line-height: 1.4;
             }
             .expense-item .mobile-description-and-breakdown p {
                 /* Description text style (Should be smaller for "ល្មមស្អាត") */
-                font-size: 10px; /* Even smaller description */
+                font-size: 9px; /* Even smaller description */
                 color: #4b5563; /* text-gray-600 */
                 white-space: nowrap;
                 overflow: hidden;
@@ -245,7 +249,7 @@
                 flex-wrap: wrap; 
                 gap: 5px 12px; 
                 margin-top: 4px;
-                font-size: 10px; /* Even smaller breakdown text */
+                font-size: 9px; /* Even smaller breakdown text */
             }
             /* ---------------------------------------------------- */
             
@@ -337,7 +341,7 @@
 
             <div class="dropdown">
                 <button onclick="toggleDropdown(event)" class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-semibold hover:bg-indigo-600 transition duration-150 relative ring-2 ring-indigo-300 ring-offset-2 overflow-hidden">
-                    <img id="profile-avatar" src="" alt="User Avatar" class="w-full h-full object-cover">
+                    <img id="profile-avatar" src="" alt="User Avatar">
                 </button>
                 <div id="profile-dropdown-menu" class="dropdown-menu">
                     <div class="p-3 border-b text-center bg-gray-50">
