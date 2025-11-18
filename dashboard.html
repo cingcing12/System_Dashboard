@@ -160,43 +160,66 @@
             }
         }
 
-        /* Mobile List Item Style Improvement (COMPACT) */
+        /* === MOBILE LIST ITEM STYLING (UX/UI IMPROVEMENT) === */
         @media (max-width: 640px) {
             .expense-item {
                 padding: 12px; /* Smaller padding */
                 align-items: flex-start;
             }
-            .expense-item .flex-1 {
+            .expense-item .flex-main-content {
                 min-width: 60%;
+                flex-grow: 1;
             }
+            .expense-item .header-row {
+                /* New: Distribute space for status badge (left) and date (right) */
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 4px;
+            }
+            .expense-item .mobile-title {
+                /* New: Larger title for better readability */
+                font-size: 1rem; /* text-base */
+                font-weight: 700; /* font-bold */
+                color: #1f2937; /* text-gray-800 */
+                margin-top: 0;
+            }
+
             .expense-item .mobile-breakdown {
                 display: flex;
-                flex-wrap: wrap; /* Allow items to wrap */
-                gap: 5px 8px; /* Compact horizontal spacing */
-                margin-top: 4px;
+                flex-wrap: wrap; 
+                gap: 5px 8px; 
+                margin-top: 6px;
+                font-size: 10px; /* Even smaller for detail */
             }
             .expense-item .mobile-breakdown span {
                 display: inline-block;
-                font-size: 11px; /* Smaller breakdown text */
                 line-height: 1;
                 white-space: nowrap;
             }
             .expense-item .mobile-breakdown .pipe-separator {
                 display: none; 
             }
+            
+            /* Target the total amount for smaller/neater look */
             .expense-item .mobile-amount {
-                /* Changed font size from 1.25rem to 1.125rem for smaller display */
-                font-size: 1.125rem; 
+                font-size: 1.125rem; /* text-xl, for smaller total amount */
+                font-weight: 900; /* font-extrabold */
                 margin-top: 0;
+                /* Ensure Riel symbol is tight to the number (use CSS space separation if necessary, but locale format handles it) */
             }
             .expense-item .item-actions {
                 flex-direction: column;
                 margin-left: 8px;
+                gap: 2px; /* Closer buttons */
             }
            .expense-item .item-actions button {
                 padding: 4px; /* Smaller touch target */
              }
         }
+        /* === END MOBILE LIST ITEM STYLING === */
+
+
         /* Print Styles */
         @media print {
             body {
@@ -320,6 +343,7 @@
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-4">
+                    <div class="hidden lg:block"></div>
                     <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-orange-500 hover:shadow-lg transition">
                         <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="utensils" class="w-4 h-4 mr-2 text-orange-500"></i> សាច់សរុប</p>
                         <p class="text-2xl sm:text-4xl font-extrabold text-orange-600 truncate" id="meat-total-summary">-- ៛</p>
@@ -1297,7 +1321,7 @@
             lucide.createIcons();
         }
 
-        // --- RENDER LIST (UPDATED to show day name and 'Today' badge) ---
+        // --- RENDER LIST (UPDATED UX/UI for mobile) ---
         function renderExpenseList(data) {
             const list = document.getElementById("expense-list");
             const isTrashView = currentView === 'trash';
@@ -1317,22 +1341,22 @@
                 const amountTextClass = isDeleted ? 'text-gray-500 line-through' : 'text-red-600';
                 const icon = 'arrow-down-left';
 
-                const recordDate = new Date(x.Date + 'T00:00:00'); // Add time to fix potential timezone issues with date objects
+                const recordDate = new Date(x.Date + 'T00:00:00'); 
                 const dayName = dayNames[recordDate.getDay()];
                 const isToday = x.Date === today;
+                
                 const dateDisplay = `<span class="text-xs text-gray-500">${dayName} | ${x.Date}</span>${isToday ? ' <span class="font-bold text-red-500 text-xs">(ថ្ងៃនេះ)</span>' : ''}`;
 
                 const recordJson = JSON.stringify(x).split("'").join("\\'");
 
-                // Compact Breakdown for Mobile/Desktop
-                // Added flex and gap to ensure items stay compact horizontally on small screens
+                // Compact Breakdown for Mobile/Desktop (Improved grouping)
                 const breakdown = `
-                    <div class="text-xs text-gray-500 mt-1 mobile-breakdown flex flex-wrap gap-x-2">
-                        <span>សាច់: <span class="text-orange-600">${formatCurrency(x.Meat)}</span></span>
+                    <div class="mobile-breakdown">
+                        <span>សាច់: <span class="text-orange-600 font-medium">${formatCurrency(x.Meat)}</span></span>
                         <span class="pipe-separator hidden sm:inline">|</span>
-                        <span>បន្លែ: <span class="text-green-600">${formatCurrency(x.Vegetable)}</span></span>
+                        <span>បន្លែ: <span class="text-green-600 font-medium">${formatCurrency(x.Vegetable)}</span></span>
                         <span class="pipe-separator hidden sm:inline">|</span>
-                        <span>ផ្លែឈើ: <span class="text-yellow-600">${formatCurrency(x.Fruit)}</span></span>
+                        <span>ផ្លែឈើ: <span class="text-yellow-600 font-medium">${formatCurrency(x.Fruit)}</span></span>
                     </div>
                 `;
 
@@ -1354,19 +1378,20 @@
 
                 return `
                     <div onclick="handleCardClick(${recordJson})" class="expense-item bg-white p-4 rounded-xl shadow-md border-l-4 ${isDeleted ? 'border-gray-500' : 'border-red-500'} flex justify-between items-start">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center space-x-2 mb-1">
-                                <span class="text-xs font-medium px-2 py-0.5 rounded-full ${badgeClass} self-start">${x.Type === 'Expense' ? 'ចំណាយ' : 'ចំណូល'}</span>
+                        <div class="flex-main-content">
+                            <div class="header-row">
+                                <span class="text-xs font-medium px-2 py-0.5 rounded-full ${badgeClass}">${x.Type === 'Expense' ? 'ចំណាយ' : 'ចំណូល'}</span>
                                 ${dateDisplay}
                             </div>
-                            <p class="text-base font-bold text-gray-800 truncate">ចំណាយគ្រឿងទេស</p>
+                            
+                            <p class="mobile-title">ចំណាយគ្រឿងទេស</p>
                             <p class="text-xs text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
                             ${isDeleted ? '' : breakdown}
                         </div>
 
                         <div class="text-right ml-4 flex flex-col justify-between items-end">
-                            <p class="text-xl sm:text-2xl font-extrabold ${amountTextClass} flex items-center justify-end whitespace-nowrap mobile-amount">
-                                ${!isDeleted ? `<i data-lucide="${icon}" class="w-5 h-5 mr-1"></i>` : ''}
+                            <p class="mobile-amount font-extrabold ${amountTextClass} flex items-center justify-end whitespace-nowrap">
+                                ${!isDeleted ? `<i data-lucide="${icon}" class="w-4 h-4 mr-1"></i>` : ''}
                                 ${formatCurrency(parseFloat(x.Amount))}
                             </p>
                             <div class="item-actions flex space-x-1 mt-2 flex-shrink-0">
@@ -1522,7 +1547,7 @@
             }
         }
 
-        // --- DATA EXPORT (UPDATED logic) ---
+        // --- DATA EXPORT (UNCHANGED logic) ---
         async function exportData(format) {
             const dataToExport = filteredDataForReport;
             
