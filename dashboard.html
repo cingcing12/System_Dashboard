@@ -88,11 +88,26 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
         }
         
+        /* NEW: FAB for FILTER (only on screens < 1024px) */
+        #fab-filter-btn {
+            position: fixed;
+            bottom: 90px; /* Positioned above the Add button */
+            right: 20px;
+            z-index: 50;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            background-color: #3b82f6; /* bg-blue-500 */
+            color: white;
+            transition: background-color 0.15s;
+        }
+
         @media(max-width:1023px){ /* Smaller than lg */
-            #fab-add-btn{
-                display: inline-flex !important;
-            }
-           #fab-export-btn{
+            #fab-add-btn, #fab-export-btn, #fab-filter-btn{
                 display: inline-flex !important;
             }
         }
@@ -117,15 +132,32 @@
             transform: translateY(0);
         }
 
-        /* Filter Modal Custom Style for Mobile (Fixed & Centered) */
+        /* NEW: Filter Modal Custom Style for Mobile (Fixed & Centered) */
+        #filterModal {
+            /* Use standard modal overlay styles */
+        }
         #filterModal .modal-content-filter {
             width: 95%;
             max-width: 450px;
-            animation: fadeInScale 0.3s ease-out;
             border-radius: 12px;
             padding: 24px;
+            
+            /* Apply fixed center transformation */
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            opacity: 0;
+            
+            /* Override the standard modal display which centers flex items */
+            margin: 0; 
         }
-
+        /* Active state for animation */
+        #filterModal.active .modal-content-filter {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
 
         /* Form Visibility Logic */
         #dashboard-expense-form-container {
@@ -136,10 +168,10 @@
             display: none; /* Hide on mobile by default */
         }
         
-        /* HIDE FILTER CONTROLS ON MOBILE */
+        /* HIDE FILTER CONTROLS ON MOBILE (The controls are now moved into a modal) */
         @media (max-width: 1023px) {
             #report-controls {
-                display: none; /* Hidden by default, toggled by JS button */
+                display: none !important; 
             }
         }
 
@@ -206,7 +238,6 @@
                 font-size: 1.125rem; /* text-xl, for smaller total amount */
                 font-weight: 900; /* font-extrabold */
                 margin-top: 0;
-                /* Ensure Riel symbol is tight to the number (use CSS space separation if necessary, but locale format handles it) */
             }
             .expense-item .item-actions {
                 flex-direction: column;
@@ -384,12 +415,6 @@
                             </button>
                         </div>
                         
-                        <div id="toggle-filter-btn" class="mb-4 md:hidden">
-                            <button onclick="toggleMobileFilter()" class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold shadow-md hover:bg-blue-600 transition flex items-center justify-center text-sm">
-                                <i data-lucide="filter" class="w-4 h-4 mr-2"></i> <span id="filter-btn-text">ត្រងទិន្នន័យ</span>
-                            </button>
-                        </div>
-
                         <div id="report-controls" class="mb-6 p-4 border rounded-xl bg-gray-50">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <div>
@@ -452,13 +477,17 @@
             </div>
         </div>
     </main>
-
+    
     <button id="fab-add-btn" onclick="openFormModal()" class="bg-indigo-600 text-white transition hover:bg-indigo-700 ring-4 ring-indigo-300 ring-offset-2">
         <i data-lucide="plus" class="w-8 h-8"></i>
     </button>
     
     <button id="fab-export-btn" onclick="openExportModal()" class="bg-blue-600 text-white transition hover:bg-blue-700 ring-4 ring-blue-300 ring-offset-2">
         <i data-lucide="file-down" class="w-8 h-8"></i>
+    </button>
+
+    <button id="fab-filter-btn" onclick="openFilterModal()" class="bg-blue-600 text-white transition hover:bg-blue-700 ring-4 ring-blue-300 ring-offset-2">
+        <i data-lucide="filter" class="w-8 h-8"></i>
     </button>
 
 
@@ -580,6 +609,70 @@
             </button>
         </div>
     </div>
+    
+    <div id="filterModal" class="modal">
+        <div class="modal-content-filter bg-white w-full relative shadow-2xl">
+           <h3 class="text-2xl font-bold text-blue-700 mb-6 border-b pb-2 flex items-center">
+                <i data-lucide="filter" class="w-6 h-6 mr-2"></i> ត្រងទិន្នន័យរបាយការណ៍
+            </h3>
+            <div id="modal-report-controls" class="space-y-4">
+                 <div class="grid grid-cols-1 gap-4">
+                     <div>
+                         <label for="modal-filter-day" class="block text-sm font-medium text-gray-700 mb-1">ត្រងតាមថ្ងៃ:</label>
+                         <select id="modal-filter-day" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                             <option value="all">ទាំងអស់</option>
+                             <option value="daily">ប្រចាំថ្ងៃ</option>
+                             <option value="day_mon">ច័ន្ទ</option>
+                             <option value="day_tue">អង្គារ</option>
+                             <option value="day_wed">ពុធ</option>
+                             <option value="day_thu">ព្រហស្បតិ៍</option>
+                             <option value="day_fri">សុក្រ</option>
+                             <option value="day_sat">សៅរ៍</option>
+                             <option value="day_sun">អាទិត្យ</option>
+                         </select>
+                     </div>
+                     <div>
+                         <label for="modal-filter-month" class="block text-sm font-medium text-gray-700 mb-1">ត្រងតាមខែ:</label>
+                         <select id="modal-filter-month" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                             <option value="all">ទាំងអស់</option>
+                             <option value="monthly">ប្រចាំខែ</option>
+                             <option value="month_0">មករា</option>
+                             <option value="month_1">កុម្ភៈ</option>
+                             <option value="month_2">មីនា</option>
+                             <option value="month_3">មេសា</option>
+                             <option value="month_4">ឧសភា</option>
+                             <option value="month_5">មិថុនា</option>
+                             <option value="month_6">កក្កដា</option>
+                             <option value="month_7">សីហា</option>
+                             <option value="month_8">កញ្ញា</option>
+                             <option value="month_9">តុលា</option>
+                             <option value="month_10">វិច្ឆិកា</option>
+                             <option value="month_11">ធ្នូ</option>
+                         </select>
+                     </div>
+                     <div>
+                         <label for="modal-filter-year" class="block text-sm font-medium text-gray-700 mb-1">ត្រងតាមឆ្នាំ:</label>
+                         <select id="modal-filter-year" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                             <option value="all">ទាំងអស់</option>
+                             <option value="yearly">ប្រចាំឆ្នាំ</option>
+                         </select>
+                     </div>
+                 </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-6 border-t mt-6">
+                <button type="button" onclick="applyModalFilters();" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition flex items-center shadow-md">
+                    <i data-lucide="check" class="w-5 h-5 mr-2"></i> អនុវត្តការត្រង
+                </button>
+                <button type="button" onclick="closeFilterModal()" class="px-6 py-3 bg-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-400 transition">បោះបង់</button>
+            </div>
+
+            <button onclick="closeFilterModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+    </div>
+
 
     <div id="form-template" style="display: none;">
         <input type="hidden" id="record-id" value="">
@@ -652,25 +745,30 @@
             document.getElementById('mobileExportModal').classList.remove('active');
         }
 
-        // --- NEW: Toggle Mobile Filter Function ---
-        function toggleMobileFilter() {
-            const controls = document.getElementById('report-controls');
-            // Toggle visibility of the controls section
-            if (controls.style.display === 'none' || controls.style.display === '') {
-                controls.style.display = 'block';
-                document.getElementById('filter-btn-text').textContent = 'លាក់ការត្រង';
-                document.getElementById('toggle-filter-btn').classList.remove('bg-blue-500', 'hover:bg-blue-600');
-                document.getElementById('toggle-filter-btn').classList.add('bg-gray-500', 'hover:bg-gray-600');
-                controls.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // --- NEW: Filter Modal Functions (for FAB) ---
+        function openFilterModal() {
+             // Sync desktop filter states to the modal filters before opening
+            document.getElementById('modal-filter-day').value = document.getElementById('filter-day').value;
+            document.getElementById('modal-filter-month').value = document.getElementById('filter-month').value;
+            document.getElementById('modal-filter-year').value = document.getElementById('filter-year').value;
 
-            } else {
-                controls.style.display = 'none';
-                document.getElementById('filter-btn-text').textContent = 'ត្រងទិន្នន័យ';
-                document.getElementById('toggle-filter-btn').classList.remove('bg-gray-500', 'hover:bg-gray-600');
-                document.getElementById('toggle-filter-btn').classList.add('bg-blue-500', 'hover:bg-blue-600');
-            }
+            document.getElementById('filterModal').classList.add('active');
             lucide.createIcons();
         }
+        function closeFilterModal() {
+            document.getElementById('filterModal').classList.remove('active');
+        }
+
+        function applyModalFilters() {
+            // Apply modal filter states back to the original filter elements
+            document.getElementById('filter-day').value = document.getElementById('modal-filter-day').value;
+            document.getElementById('filter-month').value = document.getElementById('modal-filter-month').value;
+            document.getElementById('filter-year').value = document.getElementById('modal-filter-year').value;
+
+            closeFilterModal();
+            filterRecords();
+        }
+        // Removed the deprecated toggleMobileFilter function
 
         // --- NEW: TAB SWITCHING FUNCTION ---
         function setActiveTab(tabName) {
@@ -693,17 +791,21 @@
             // Handle FAB visibility 
             const fabBtnAdd = document.getElementById('fab-add-btn');
             const fabBtnExport = document.getElementById('fab-export-btn');
+            const fabBtnFilter = document.getElementById('fab-filter-btn'); // NEW filter FAB
             const isDesktop = window.innerWidth >= 1024;
             
             if (isDesktop) {
                 fabBtnAdd.style.display = 'none';
                 fabBtnExport.style.display = 'none';
+                fabBtnFilter.style.display = 'none';
             } else if (tabName === 'report') {
                 fabBtnAdd.style.display = 'inline-flex';
                 fabBtnExport.style.display = 'inline-flex';
+                fabBtnFilter.style.display = 'inline-flex';
             } else {
                 fabBtnAdd.style.display = 'inline-flex';
                 fabBtnExport.style.display = 'none';
+                fabBtnFilter.style.display = 'none';
             }
 
             // Ensure filters are reset and data loaded when switching to Report tab
@@ -714,23 +816,7 @@
                     if (isDesktop) activeFormElement = reportForm; 
                 }
                 
-                // Reset mobile filter UI state if applicable
-                if (window.innerWidth < 1024) {
-                    const controls = document.getElementById('report-controls');
-                    if (controls) controls.style.display = 'none';
-                    const toggleBtn = document.getElementById('toggle-filter-btn');
-                    if (toggleBtn) {
-                        toggleBtn.style.display = 'block';
-                        document.getElementById('filter-btn-text').textContent = 'ត្រងទិន្នន័យ';
-                        toggleBtn.classList.remove('bg-gray-500', 'hover:bg-gray-600');
-                        toggleBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
-                    }
-                } else {
-                    const toggleBtn = document.getElementById('toggle-filter-btn');
-                    if (toggleBtn) toggleBtn.style.display = 'none';
-                }
-                
-                // Reset all filters
+                // Reset all filters to default 'all'
                 if(document.getElementById('filter-day')) document.getElementById('filter-day').value = 'all';
                 if(document.getElementById('filter-month')) document.getElementById('filter-month').value = 'all';
                 if(document.getElementById('filter-year')) document.getElementById('filter-year').value = 'all';
@@ -1197,13 +1283,19 @@
 
         // NEW: Populate years dynamically for filtering
         function populateYearOptions(data) {
-            const select = document.getElementById('filter-year');
+            const selectDesktop = document.getElementById('filter-year');
+            const selectModal = document.getElementById('modal-filter-year');
             
-            if (!select) return;
+            if (!selectDesktop || !selectModal) return;
 
             // Clear existing custom year options (keep default 'all' and 'yearly')
-            let existingYearOptions = select.querySelectorAll('option:not([value="all"]):not([value="yearly"])');
-            existingYearOptions.forEach(opt => opt.remove());
+            const clearOptions = (select) => {
+                let existingYearOptions = select.querySelectorAll('option:not([value="all"]):not([value="yearly"])');
+                existingYearOptions.forEach(opt => opt.remove());
+            };
+
+            clearOptions(selectDesktop);
+            clearOptions(selectModal);
 
             const uniqueYears = new Set();
             data.filter(x => x.Status === "Active").forEach(x => {
@@ -1213,12 +1305,17 @@
             
             const sortedYears = Array.from(uniqueYears).sort((a, b) => b - a);
 
-            sortedYears.forEach(year => {
-                const option = document.createElement('option');
-                option.value = `year_${year}`;
-                option.textContent = year;
-                select.appendChild(option);
-            });
+            const createYearOptions = (selectElement) => {
+                sortedYears.forEach(year => {
+                    const option = document.createElement('option');
+                    option.value = `year_${year}`;
+                    option.textContent = year;
+                    selectElement.appendChild(option.cloneNode(true));
+                });
+            };
+            
+            createYearOptions(selectDesktop);
+            createYearOptions(selectModal);
         }
 
         function filterRecords() {
@@ -1345,17 +1442,16 @@
                 const dayName = dayNames[recordDate.getDay()];
                 const isToday = x.Date === today;
                 
-                const dateDisplay = `<span class="text-xs text-gray-500">${dayName} | ${x.Date}</span>${isToday ? ' <span class="font-bold text-red-500 text-xs">(ថ្ងៃនេះ)</span>' : ''}`;
+                // UX/UI Improvement: Place date on the right of the badge row
+                const dateDisplay = `<span class="text-xs text-gray-500 text-right">${dayName} | ${x.Date}</span>${isToday ? ' <span class="font-bold text-red-500 text-xs">(ថ្ងៃនេះ)</span>' : ''}`;
 
                 const recordJson = JSON.stringify(x).split("'").join("\\'");
 
-                // Compact Breakdown for Mobile/Desktop (Improved grouping)
+                // Compact Breakdown (Improved grouping, smaller font handled by CSS)
                 const breakdown = `
                     <div class="mobile-breakdown">
                         <span>សាច់: <span class="text-orange-600 font-medium">${formatCurrency(x.Meat)}</span></span>
-                        <span class="pipe-separator hidden sm:inline">|</span>
                         <span>បន្លែ: <span class="text-green-600 font-medium">${formatCurrency(x.Vegetable)}</span></span>
-                        <span class="pipe-separator hidden sm:inline">|</span>
                         <span>ផ្លែឈើ: <span class="text-yellow-600 font-medium">${formatCurrency(x.Fruit)}</span></span>
                     </div>
                 `;
