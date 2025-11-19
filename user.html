@@ -152,7 +152,7 @@ body{ font-family:'Khmer OS Battambang', sans-serif; background:linear-gradient(
       <div class="flex items-center gap-2">
         <select id="cameraSelect" class="text-sm p-2 border rounded-md small-muted hidden"></select>
         <button id="switchCamBtn" class="icon-btn" title="បម្លែងកាមេរ៉ា"><i data-lucide="repeat" class="w-4 h-4"></i></button>
-        <button id="openBackCamBtn" class="icon-btn" title="Open Back Camera"><i data-lucide="camera-off" class="w-4 h-4"></i></button>
+        <button id="openBackCamBtn" class="icon-btn" title="បើកកាមេរ៉ាក្រោយ"><i data-lucide="camera-off" class="w-4 h-4"></i></button>
         <button id="closeCamera" class="icon-btn" title="បិទ"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
     </div>
@@ -220,6 +220,7 @@ const cameraPreview = document.getElementById('cameraPreview');
 const closeCamera = document.getElementById('closeCamera');
 const faceSourceNote = document.getElementById('faceSourceNote');
 const captureCanvas = document.getElementById('captureCanvas');
+const openBackCamBtn = document.getElementById('openBackCamBtn');
 
 let editingUserEmail = null;
 let currentUserEmail = '';
@@ -300,10 +301,28 @@ cameraSelect.addEventListener('change', async (e)=>{
   await startStream();
 });
 
+// Handler for Force Back Camera Button
+openBackCamBtn.addEventListener('click', async () => {
+  try {
+    currentDeviceId = null; // Clear any specific device selection
+    if (cameraSelect) cameraSelect.value = ""; // Clear dropdown selection
+    isFront = false; // Set state to back camera
+    await startStream(); // Restart stream
+  } catch(err){
+    console.error('Back camera failed', err);
+    Swal.fire({icon:'error', title:'មិនអាចបើកកាមេរ៉ា​ក្រោយ', text:'សូមពិនិត្យឧបករណ៍'});  
+  }
+});
+
 async function openCameraModal(){
   cameraModal.classList.add('active');
   cameraPreviewContainer.style.display='none';
   capturedBlob = null; capturedDataUrl = null;
+  
+  // Reset to front camera by default when opening
+  currentDeviceId = null;
+  isFront = true; 
+
   await enumerateCameras();
   await startStream();
 }
@@ -328,6 +347,7 @@ async function enumerateCameras(){
           opt.textContent = d.label || `Camera ${i+1}`;
           cameraSelect.appendChild(opt);
         });
+        // Default to first device found
         currentDeviceId = devices[0].deviceId;
         cameraSelect.value = currentDeviceId;
       } else {
@@ -348,16 +368,45 @@ async function enumerateCameras(){
 async function startStream(){
   try{
     stopStream();
-    const constraints = { audio: false, video: { width: { ideal: 1280 }, height: { ideal: 720 } } };
+
+    const videoConstraints = {
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
+    };
+
+    // Logic to handle device selection or forcing back camera
     if(currentDeviceId){
-      constraints.video.deviceId = { exact: currentDeviceId };
+      videoConstraints.deviceId = { exact: currentDeviceId };
+      // Try to detect if this ID is front or back for mirroring logic
       const match = devices.find(d => d.deviceId === currentDeviceId);
-      isFront = match && /front|selfie/i.test(match.label || '') ? true : false;
+      if (match) {
+         isFront = /front|selfie|user/i.test(match.label || '');
+      }
     } else {
-      constraints.video.facingMode = isFront ? "user" : "environment";
+      // Fallback logic: if no ID, rely on facingMode
+      if (!isFront) {
+        // If user clicked "Back Camera", try to force environment
+        videoConstraints.facingMode = { exact: "environment" };
+      } else {
+        videoConstraints.facingMode = "user";
+      }
     }
-    stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: videoConstraints });
+    } catch (err) {
+        // If "exact: environment" fails (common on laptops), retry with ideal "environment"
+        if (!isFront && err.name === 'OverconstrainedError') {
+            console.warn('Exact environment failed, retrying with ideal...');
+            videoConstraints.facingMode = "environment";
+            stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: videoConstraints });
+        } else {
+            throw err;
+        }
+    }
+
     cameraVideo.srcObject = stream;
+    // Mirror only if it's the front camera
     cameraVideo.style.transform = isFront ? "scaleX(-1)" : "scaleX(1)";
     await cameraVideo.play();
   } catch (err){
@@ -374,28 +423,32 @@ function stopStream(){
 
 async function switchCamera(){
   try {
+    // If devices are listed and selectable
     if(devices.length > 1 && cameraSelect.classList.contains('hidden') === false){
       const idx = devices.findIndex(d => d.deviceId === currentDeviceId);
       const next = devices[(idx + 1) % devices.length];
       currentDeviceId = next.deviceId;
       cameraSelect.value = currentDeviceId;
-      isFront = /front|selfie/i.test(next.label || '') ? true : false;
       await startStream();
       return;
     }
+    // If devices exist but no labels (select hidden)
     if(devices.length > 1 && cameraSelect.classList.contains('hidden')){
-      let idx = devices.findIndex(d => d.deviceId === currentDeviceId);
-      if(idx === -1) idx = 0;
-      const next = devices[(idx + 1) % devices.length];
-      currentDeviceId = next.deviceId;
-      isFront = /front|selfie/i.test(next.label || '') ? true : false;
-      await startStream();
-      return;
+       // Simple toggle logic for device ID
+       let idx = devices.findIndex(d => d.deviceId === currentDeviceId);
+       if(idx === -1) idx = 0;
+       const next = devices[(idx + 1) % devices.length];
+       currentDeviceId = next.deviceId;
+       await startStream();
+       return;
     }
+    
+    // Fallback if no devices enumerated or just single camera logic
     isFront = !isFront;
     currentDeviceId = null;
     await startStream();
   } catch (err) {
+    // Basic toggle if all else fails
     isFront = !isFront;
     currentDeviceId = null;
     await startStream();
@@ -414,7 +467,10 @@ function capturePhoto(){
   captureCanvas.width = w;
   captureCanvas.height = h;
   const ctx = captureCanvas.getContext('2d');
+  
+  // Flip horizontal only if front camera
   if(isFront){ ctx.translate(w, 0); ctx.scale(-1, 1); }
+  
   ctx.drawImage(video, 0, 0, w, h);
   captureCanvas.toBlob((blob)=>{
     if(!blob){ Swal.fire({icon:'error', title:'ថតបរាជ័យ', text:'សូមព្យាយាមម្តងទៀត'}); return; }
@@ -587,19 +643,6 @@ async function deleteUserSwal(email){
     await loadUsers();
   } catch(err){ console.error(err); Swal.fire({icon:'error', title:'មានបញ្ហា', text: err.message || String(err)}); }
 }
-
-const openBackCamBtn = document.getElementById('openBackCamBtn');
-openBackCamBtn.addEventListener('click', async () => {
-  try {
-    stopStream();
-    isFront = false;
-    currentDeviceId = null;
-    await startStream();
-  } catch(err){
-    console.error('Back camera failed', err);
-    Swal.fire({icon:'error', title:'មិនអាចបើកកាមេរ៉ា​ក្រោយ', text:'សូមពិនិត្យឧបករណ៍'});  
-  }
-});
 
 loadUsers();
 window.addEventListener('beforeunload', ()=> { if(stream) stream.getTracks().forEach(t=>t.stop()); });
