@@ -2,2086 +2,777 @@
 <html lang="km">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ផ្ទាំងគ្រប់គ្រង - គ្រប់គ្រងចំណាយគ្រឿងទេស</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Expense Manager Pro</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
     <style>
-        /* UPDATED FONT: Importing Khmer OS Muol and Battambang for elegance and fallback */
         @import url('https://fonts.googleapis.com/css2?family=Khmer+OS+Muol:wght@400;600;700&family=Khmer+OS+Battambang:wght@400;600;700&display=swap');
         
-        body {
-            /* Set default font to Battambang (standard legibility) */
-            font-family: 'Khmer OS Battambang', sans-serif;
-            min-height: 100vh;
-        }
+        body { font-family: 'Khmer OS Battambang', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; padding-bottom: 100px; }
+        h1, h2, h3, .font-khmer-header { font-family: 'Khmer OS Muol', 'Khmer OS Battambang', sans-serif !important; }
         
-        /* Apply the more elegant Muol font to headings/titles for a "beautiful" look */
-        h1, h2, h3, .mobile-title, .font-extrabold {
-            font-family: 'Khmer OS Muol', 'Khmer OS Battambang', sans-serif !important;
+        /* ANIMATIONS */
+        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .animate-fade-in { animation: fadeIn 0.2s ease-out; }
+        .animate-pop-in { animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+
+        /* MODALS */
+        .modal { 
+            display: none; position: fixed; inset: 0; 
+            background: rgba(15, 23, 42, 0.65); 
+            justify-content: center; align-items: flex-end; 
+            z-index: 50; backdrop-filter: blur(4px);
+            transition: all 0.3s ease;
         }
+        .modal.active { display: flex; animation: fadeIn 0.2s; }
+        @media (min-width: 1024px) { .modal { align-items: center; } }
 
-
-        /* Simple hide scrollbar */
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        /* General Modal Styling */
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.65);
-            justify-content: center;
-            align-items: center;
-            z-index: 999;
-            backdrop-filter: blur(3px);
-            transition: opacity 0.3s ease;
+        /* BOTTOM DOCK */
+        .bottom-dock {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 400px;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px);
+            border-radius: 24px; padding: 8px 24px;
+            box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255,255,255,0.5);
+            display: flex; justify-content: space-between; align-items: center; z-index: 40;
         }
-        .modal.active { display:flex; }
-
-        /* Custom status badges (Slightly improved colors) */
-        .badge-expense { background-color: #fee2e2; color: #b91c1c; }
-        .badge-income { background-color: #dcfce7; color: #15803d; }
-        .badge-deleted { background-color: #f3f4f6; color: #6b7280; }
-
-        /* Modern shadow for cards */
-        .card-shadow { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
-
-        /* Dropdown */
-        .dropdown { position: relative; }
-        .dropdown-menu { display: none; position: absolute; right: 0; top: 100%; min-width: 200px; background-color: white; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); z-index: 100; margin-top: 10px; }
-        .dropdown-menu.active { display: block; }
-
-        /* List Item Hover Effect */
-        .expense-item {
-            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-            border: 1px solid #e5e7eb; /* Added subtle border */
+        .add-btn-dock {
+            background: linear-gradient(135deg, #4f46e5, #3730a3);
+            width: 60px; height: 60px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; box-shadow: 0 8px 20px -4px rgba(79, 70, 229, 0.5);
+            transform: translateY(-30px); transition: transform 0.2s; border: 4px solid #f8fafc;
         }
-        .expense-item:hover {
-            cursor: pointer;
-            transform: translateY(-3px);
-            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
-        }
+        .add-btn-dock:active { transform: translateY(-30px) scale(0.95); }
+        .dock-icon { color: #64748b; padding: 10px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .dock-icon span { font-size: 10px; font-weight: 600; }
+        .dock-icon:active { background-color: #f1f5f9; color: #334155; }
 
-        /* FAB for ADD (only on screens < 1024px) */
-        #fab-add-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 50;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        /* CONFIRM BOX */
+        .confirm-box { background: white; border-radius: 24px; padding: 24px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: popIn 0.2s forwards; }
+
+        /* TOAST */
+        .toast-box { 
+            background: white; border-left: 4px solid; 
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15); 
+            border-radius: 12px; padding: 16px; 
+            display: flex; align-items: center; gap: 12px; 
+            min-width: 300px; animation: slideInRight 0.3s ease-out;
         }
-        /* FAB for EXPORT (only on screens < 1024px) */
-        #fab-export-btn {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            z-index: 50;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-        }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* CARDS */
+        .card-gradient-1 { background: linear-gradient(135deg, #6366f1, #4338ca); color: white; }
+        .card-gradient-2 { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .card-gradient-3 { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+        .card-gradient-4 { background: linear-gradient(135deg, #ec4899, #be185d); color: white; }
         
-        /* NEW: FAB for FILTER (only on screens < 1024px) */
-        #fab-filter-btn {
-            position: fixed;
-            bottom: 90px; /* Positioned above the Add button */
-            right: 20px;
-            z-index: 50;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-            background-color: #3b82f6; /* bg-blue-500 */
-            color: white;
-            transition: background-color 0.15s;
-        }
+        .loading-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.95); display: flex; justify-content: center; align-items: center; z-index: 60; flex-direction: column; }
+        .tab-btn.active { border-bottom: 3px solid #4f46e5; color: #4f46e5; font-weight: bold; }
+        .tab-btn { color: #64748b; }
 
-        @media(max-width:1023px){ /* Tablet and Mobile */
-            #fab-add-btn, #fab-export-btn, #fab-filter-btn{
-                display: inline-flex !important;
-            }
-        }
-        
-        /* CRITICAL CHANGE: Hide FABs on Desktop */
-        @media (min-width: 1024px) {
-            #fab-add-btn, #fab-export-btn, #fab-filter-btn {
-                display: none !important;
-            }
-        }
-
-        /* Mobile Modal Fix (Ensures the modal form is 100% on small screens) */
-        #mobileFormModal .modal-content-mobile {
-            width: 95%; 
-            max-width: 480px; 
-            margin: 20px;
-        }
-        
-        /* Export Modal Custom Style for Mobile */
-        #mobileExportModal .modal-content-export {
-            width: 95%; 
-            max-width: 400px;
-            transform: translateY(100%);
-            transition: transform 0.3s ease-out;
-            align-self: flex-end; /* Pin to the bottom */
-            margin-bottom: 20px;
-        }
-        #mobileExportModal.active .modal-content-export {
-            transform: translateY(0);
-        }
-
-        /* NEW: Filter Modal Custom Style for Mobile (Fixed & Centered) */
-        #filterModal .modal-content-filter {
-            width: 95%;
-            max-width: 450px;
-            border-radius: 12px;
-            padding: 24px;
-            
-            /* Apply fixed center transformation */
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.9);
-            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-            opacity: 0;
-            
-            /* Override the standard modal display which centers flex items */
-            margin: 0; 
-        }
-        /* Active state for animation */
-        #filterModal.active .modal-content-filter {
-            transform: translate(-50%, -50%) scale(1);
-            opacity: 1;
-        }
-
-        /* Form Visibility Logic */
-        #dashboard-expense-form-container {
-            display: none !important;
-        }
-        /* Report form is visible on desktop, hidden on mobile */
-        #report-expense-form-container {
-            display: none; /* Hide on mobile by default */
-        }
-        
-        /* HIDE FILTER CONTROLS ON MOBILE (The controls are now moved into a modal) */
-        @media (max-width: 1023px) {
-            #report-controls {
-                display: none !important; 
-            }
-        }
-
-        /* Desktop Layout: Report Form is visible on Desktop by default */
-        @media (min-width: 1024px) {
-            #report-tab #report-expense-form-container {
-                display: block; /* Show the form container on Desktop/Report tab */
-            }
-            #report-tab #data-view-section {
-                grid-column: span 3 / span 3; /* List takes 3 columns */
-            }
-            /* Hide the mobile modal/toggle buttons on desktop */
-            #mobileFormModal, #mobileExportModal, #filterModal {
-                display: none !important;
-            }
-            #toggle-filter-btn {
-                display: none !important;
-            }
-        }
-
-        /* === MOBILE LIST ITEM STYLING (UX/UI IMPROVEMENT) === */
-        @media (max-width: 640px) {
-            .expense-item {
-                padding: 12px; /* Smaller padding */
-                align-items: flex-start;
-            }
-            .expense-item .flex-main-content {
-                min-width: 60%;
-                flex-grow: 1;
-            }
-            .expense-item .header-row {
-                /* New: Distribute space for status badge (left) and date (right) */
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 4px;
-            }
-            .expense-item .mobile-title {
-                /* NEW: Smaller title font size (approx 15px) */
-                font-size: 0.9375rem; 
-                font-weight: 700; /* font-bold */
-                color: #1f2937; /* text-gray-800 */
-                margin-top: 0;
-            }
-
-            /* --- CRITICAL UPDATE: SHOW DETAIL BREAKDOWN ON MOBILE --- */
-            .expense-item .mobile-description-and-breakdown {
-                display: block !important; /* Always show breakdown on mobile */
-                margin-top: 6px;
-                line-height: 1.4;
-            }
-            .expense-item .mobile-description-and-breakdown p {
-                /* Description text style (Should be smaller for "ល្មមស្អាត") */
-                font-size: 9px; /* Even smaller description */
-                color: #4b5563; /* text-gray-600 */
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-            .expense-item .mobile-breakdown {
-                display: flex;
-                flex-wrap: wrap; 
-                gap: 5px 12px; 
-                margin-top: 4px;
-                font-size: 9px; /* Even smaller breakdown text */
-            }
-            /* ---------------------------------------------------- */
-            
-            /* Target the total amount for smaller/neater look */
-            .expense-item .mobile-amount {
-                font-size: 1.125rem; /* text-xl, for smaller total amount */
-                font-weight: 900; /* font-extrabold */
-                margin-top: 0;
-            }
-            
-            /* Action buttons are visible but moved slightly */
-            .expense-item .item-actions {
-                /* Use flex container to vertically center buttons against the main content area */
-                display: flex;
-                flex-direction: column;
-                justify-content: center; /* Vertically centers the buttons */
-                margin-left: 8px;
-                gap: 2px; /* Closer buttons */
-            }
-           .expense-item .item-actions button {
-                padding: 4px; /* Smaller touch target */
-             }
-        }
-        /* === END MOBILE LIST ITEM STYLING === */
-
-
-        /* Print Styles */
-        @media print {
-            body {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                background-color: #ffffff !important;
-            }
-            .card-shadow { box-shadow: none !important; border: 1px solid #ccc; }
-            .hide-on-print { display: none !important; }
-            .expense-item { page-break-inside: avoid; }
-
-            /* Hide unnecessary elements for printing */
-            header, #fab-add-btn, #fab-export-btn, .item-actions, #report-expense-form-container, #report-controls, #report-tabs, #add-report-btn, #toggle-filter-btn, #filterModal { display: none !important; }
-
-            /* Force the report content to show up for printing */
-            #report-tab { display: block !important; }
-        }
-
-        /* Custom Confirmation Modal Styling */
-        .confirm-modal-content {
-            animation: fadeInScale 0.3s ease-out;
-        }
-        @keyframes fadeInScale {
-            from { opacity: 0; transform: scale(0.9) translateY(-20px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        
-        /* Profile Avatar Styling */
-        #profile-avatar {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 50%;
+        /* Custom Select Styling */
+        select.custom-select {
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
         }
     </style>
 </head>
-<body class="bg-gray-50">
+<body>
 
-    <div id="toast-container" class="fixed top-4 right-4 z-[1000] space-y-3 pointer-events-none">
-    </div>
+    <div id="toast-container" class="fixed top-4 right-4 z-[100] space-y-2 pointer-events-none"></div>
 
-    <div id="customConfirmModal" class="modal">
-        <div class="confirm-modal-content bg-white rounded-2xl p-8 w-full max-w-sm relative shadow-2xl">
-            <div id="confirm-icon-box" class="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center text-white bg-red-100">
-                <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
+    <div id="customConfirmModal" class="modal items-center" style="z-index: 60;">
+        <div class="confirm-box">
+            <div id="confirm-icon-box" class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i id="confirm-icon" data-lucide="alert-triangle" class="w-8 h-8 text-red-500"></i>
             </div>
-            <h3 id="confirm-title" class="text-xl font-bold text-gray-800 mb-2 text-center">តើអ្នកប្រាកដទេ?</h3>
-            <p id="confirm-message" class="text-gray-600 mb-6 text-center text-sm">ប្រតិបត្តិការនេះមិនអាចត្រលប់ក្រោយបានទេ។</p>
-
-            <div class="flex justify-center space-x-4">
-                <button type="button" onclick="resolveCustomConfirm(false)" class="px-6 py-3 bg-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-400 transition">បោះបង់</button>
-                <button type="button" id="confirm-action-btn" onclick="resolveCustomConfirm(true)" class="px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition">យល់ព្រម</button>
+            <h3 class="text-xl font-bold text-slate-800 mb-2 font-khmer-header" id="confirm-title">Are you sure?</h3>
+            <p class="text-sm text-slate-500 mb-6" id="confirm-msg">This action cannot be undone.</p>
+            <div class="flex gap-3">
+                <button id="confirm-cancel-btn" onclick="closeConfirm(false)" class="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition">Cancel</button>
+                <button id="confirm-yes-btn" class="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition shadow-lg shadow-red-200">Yes</button>
             </div>
         </div>
     </div>
 
-    <header class="bg-white shadow-md p-4 sticky top-0 z-50 border-b border-gray-200">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl sm:text-3xl font-bold text-blue-700 flex items-center">
-                <i data-lucide="wallet" class="w-6 h-6 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-indigo-500"></i>
-                ប្រព័ន្ធគ្រប់គ្រងចំណាយ
+    <header class="bg-white shadow-sm sticky top-0 z-40 border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-slate-800 flex items-center gap-2 font-khmer-header">
+                <div class="p-2 bg-indigo-100 rounded-lg text-indigo-600"><i data-lucide="wallet" class="w-5 h-5"></i></div>
+                Expense
             </h1>
-
-            <div class="dropdown">
-                <button onclick="toggleDropdown(event)" class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-semibold hover:bg-indigo-600 transition duration-150 relative ring-2 ring-indigo-300 ring-offset-2 overflow-hidden">
-                    <img id="profile-avatar" src="" alt="User Avatar">
-                </button>
-                <div id="profile-dropdown-menu" class="dropdown-menu">
-                    <div class="p-3 border-b text-center bg-gray-50">
-                        <p class="font-bold text-gray-800 truncate" id="dropdown-email">Loading...</p>
-                        <span class="text-sm text-indigo-500" id="dropdown-role">Loading...</span>
+            <div class="flex items-center gap-3">
+                <button onclick="openSettingsModal()" class="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition"><i data-lucide="settings-2" class="w-6 h-6"></i></button>
+                <div class="relative">
+                    <button onclick="toggleProfileMenu()" class="w-10 h-10 rounded-full bg-indigo-100 border-2 border-white shadow-sm flex items-center justify-center overflow-hidden">
+                        <img id="header-avatar" src="" class="w-full h-full object-cover">
+                    </button>
+                    <div id="profile-menu" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl py-2 border border-slate-100 z-50">
+                        <div class="px-4 py-3 border-b border-slate-50">
+                            <p class="text-sm font-bold text-slate-800 truncate" id="menu-email">Loading...</p>
+                            <span class="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full font-medium" id="menu-role">...</span>
+                        </div>
+                        <a href="#" onclick="openInfoModal()" class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 flex items-center gap-2"><i data-lucide="user" class="w-4 h-4"></i> ព័ត៌មានគណនី</a>
+                        <a href="user.html" id="btn-manage-users" class="hidden px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 flex items-center gap-2"><i data-lucide="users" class="w-4 h-4"></i> គ្រប់គ្រងអ្នកប្រើ</a>
+                        <a href="#" onclick="confirmLogout()" class="block px-4 py-2 text-sm text-red-500 hover:bg-red-50 flex items-center gap-2 mt-1"><i data-lucide="log-out" class="w-4 h-4"></i> ចាកចេញ</a>
                     </div>
-
-                    <a href="user.html" id="user-management-link" class="hidden items-center p-3 hover:bg-indigo-50 transition text-purple-700">
-                        <i data-lucide="users" class="w-4 h-4 mr-2"></i> គ្រប់គ្រងអ្នកប្រើ
-                    </a>
-
-                    <a href="#" onclick="openProfileModal(); return false;" class="flex items-center p-3 hover:bg-gray-50 transition text-gray-700">
-                        <i data-lucide="user-cog" class="w-4 h-4 mr-2"></i> ព័ត្វមានគណនី
-                    </a>
-                    <a href="#" onclick="customLogout(); return false;" class="flex items-center p-3 hover:bg-red-50 transition text-red-600 border-t mt-1">
-                        <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> ចាកចេញ
-                    </a>
                 </div>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto p-4 md:p-8">
+    <div class="bg-white border-b border-slate-200 sticky top-[64px] z-30">
+        <div class="max-w-7xl mx-auto px-4 flex gap-6">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn active py-3 px-2 text-sm font-medium transition">ផ្ទាំងគ្រប់គ្រង</button>
+            <button onclick="switchTab('report')" id="tab-report" class="tab-btn py-3 px-2 text-sm font-medium transition">របាយការណ៍</button>
+        </div>
+    </div>
 
-        <div id="report-tabs" class="mb-6 border-b border-gray-200">
-            <nav class="flex space-x-4">
-                <button id="tab-dashboard-btn" onclick="setActiveTab('dashboard')" class="py-2 px-4 text-lg font-semibold text-indigo-600 border-b-2 border-indigo-600 transition duration-150 flex items-center">
-                    <i data-lucide="layout-dashboard" class="w-5 h-5 mr-2"></i> ផ្ទាំងគ្រប់គ្រង
-                </button>
-                <button id="tab-report-btn" onclick="setActiveTab('report')" class="py-2 px-4 text-lg font-medium text-gray-500 border-b-2 border-transparent hover:border-gray-300 hover:text-gray-700 transition duration-150 flex items-center">
-                    <i data-lucide="file-text" class="w-5 h-5 mr-2"></i> របាយការណ៍ / បញ្ជី
-                </button>
-            </nav>
+    <main class="max-w-7xl mx-auto p-4">
+        <div id="view-dashboard" class="block space-y-6 fade-in">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div class="card-gradient-1 p-4 rounded-2xl shadow-lg col-span-2 sm:col-span-1">
+                    <p class="text-xs text-indigo-100 mb-1">ចំណាយសរុប</p>
+                    <p class="text-2xl font-bold truncate" id="total-summary">0 ៛</p>
+                </div>
+                <div class="card-gradient-2 p-4 rounded-2xl shadow-lg">
+                    <p class="text-xs text-emerald-100 mb-1">ថ្ងៃនេះ</p>
+                    <p class="text-xl font-bold truncate" id="today-summary">0 ៛</p>
+                </div>
+                <div class="card-gradient-3 p-4 rounded-2xl shadow-lg">
+                    <p class="text-xs text-amber-100 mb-1">ខែនេះ</p>
+                    <p class="text-xl font-bold truncate" id="month-summary">0 ៛</p>
+                </div>
+                <div class="card-gradient-4 p-4 rounded-2xl shadow-lg">
+                    <p class="text-xs text-pink-100 mb-1">ឆ្នាំនេះ</p>
+                    <p class="text-xl font-bold truncate" id="year-summary">0 ៛</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                    <p class="text-xs text-slate-400 mb-1">កំណត់ត្រា</p>
+                    <p class="text-xl font-bold text-slate-700 truncate" id="count-summary">0</p>
+                </div>
+            </div>
         </div>
 
-        <div id="dashboard-tab" class="tab-content" style="display: block;">
-            <section class="mb-8">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-red-500 hover:shadow-lg transition">
-                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="receipt" class="w-4 h-4 mr-2 text-red-500"></i> ចំណាយសរុបរួម</p>
-                        <p class="text-2xl sm:text-4xl font-extrabold text-red-600 truncate" id="total-expense-summary">-- ៛</p>
+        <div id="view-report" class="hidden">
+            
+            <div class="hidden lg:flex bg-white p-3 rounded-2xl shadow-sm border border-slate-200 items-center gap-3 mb-6">
+                
+                <div class="relative flex-grow max-w-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i data-lucide="search" class="h-4 w-4 text-slate-400"></i>
                     </div>
-                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-red-400 hover:shadow-lg transition">
-                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="calendar-check" class="w-4 h-4 mr-2 text-red-400"></i> ចំណាយថ្ងៃនេះ</p>
-                        <p class="text-2xl sm:text-4xl font-extrabold text-red-500 truncate" id="today-expense-summary">0 ៛</p>
-                    </div>
-                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-red-300 hover:shadow-lg transition">
-                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="calendar" class="w-4 h-4 mr-2 text-red-300"></i> ចំណាយប្រចាំខែ</p>
-                        <p class="text-2xl sm:text-4xl font-extrabold text-red-400 truncate" id="monthly-expense-summary">0 ៛</p>
-                    </div>
-                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-gray-400 hover:shadow-lg transition">
-                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="hash" class="w-4 h-4 mr-2 text-gray-500"></i> ចំនួនកំណត់ត្រា</p>
-                        <p class="text-2xl sm:text-4xl font-extrabold text-gray-700" id="total-count-summary">-- កំណត់ត្រា</p>
-                    </div>
+                    <input type="text" id="d-search-input" class="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-xl leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 sm:text-sm transition" placeholder="Search description..." oninput="applyFilters()">
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-4">
-                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-orange-500 hover:shadow-lg transition">
-                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="utensils" class="w-4 h-4 mr-2 text-orange-500"></i> សាច់សរុប</p>
-                        <p class="text-2xl sm:text-4xl font-extrabold text-orange-600 truncate" id="meat-total-summary">-- ៛</p>
+                <div class="h-8 w-px bg-slate-200 mx-2"></div>
+
+                <div class="flex items-center gap-2">
+                    <div class="relative">
+                         <input type="date" id="d-filter-date" class="pl-3 pr-2 py-2 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 text-slate-600" onchange="syncAndApply('desktop')">
                     </div>
-                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-green-500 hover:shadow-lg transition">
-                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="leaf" class="w-4 h-4 mr-2 text-green-500"></i> បន្លែសរុប</p>
-                        <p class="text-2xl sm:text-4xl font-extrabold text-green-600 truncate" id="vegetable-total-summary">-- ៛</p>
+
+                    <div class="relative">
+                        <select id="d-filter-day" class="custom-select pl-3 pr-8 py-2 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 text-slate-600 cursor-pointer hover:bg-white transition" onchange="syncAndApply('desktop')">
+                            <option value="">Day</option><option value="1">Mon</option><option value="2">Tue</option><option value="3">Wed</option><option value="4">Thu</option><option value="5">Fri</option><option value="6">Sat</option><option value="0">Sun</option>
+                        </select>
                     </div>
-                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-yellow-500 hover:shadow-lg transition">
-                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="apple" class="w-4 h-4 mr-2 text-yellow-500"></i> ផ្លែឈើសរុប</p>
-                        <p class="text-2xl sm:text-4xl font-extrabold text-yellow-600 truncate" id="fruit-total-summary">-- ៛</p>
-                    </div>
+
+                    <select id="d-filter-month" class="custom-select pl-3 pr-8 py-2 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 text-slate-600 cursor-pointer hover:bg-white transition" onchange="syncAndApply('desktop')">
+                        <option value="">Month</option>
+                    </select>
+
+                    <select id="d-filter-year" class="custom-select pl-3 pr-8 py-2 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 text-slate-600 cursor-pointer hover:bg-white transition" onchange="syncAndApply('desktop')">
+                        <option value="">Year</option>
+                    </select>
                 </div>
-            </section>
-        </div>
 
-        <div id="report-tab" class="tab-content" style="display: none;">
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                <div class="flex-grow"></div>
 
-                <section id="report-expense-form-container" class="lg:col-span-1 bg-white p-6 rounded-2xl card-shadow h-fit lg:sticky lg:top-24 border border-gray-100">
-                    <h2 class="text-2xl font-bold mb-6 text-indigo-600 border-b pb-3" id="report-form-title">➕ បញ្ចូលកំណត់ត្រាថ្មី</h2>
-                    <form id="report-form" class="space-y-4">
-                    </form>
-                </section>
+                <div class="flex items-center gap-2">
+                    <button onclick="resetFilters()" class="p-2.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition" title="Reset Filters">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="openExportModal()" class="flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white text-sm font-medium rounded-xl hover:bg-slate-800 transition shadow-md">
+                        <i data-lucide="download" class="w-4 h-4"></i> Export
+                    </button>
+                </div>
+            </div>
 
-                <section id="data-view-section" class="lg:col-span-3 transition-all duration-300">
-                    
-                    <div class="bg-white p-4 sm:p-6 rounded-xl card-shadow border-l-4 border-red-500 hover:shadow-lg transition mb-6">
-                        <p class="text-sm text-gray-500 flex items-center mb-1"><i data-lucide="receipt" class="w-4 h-4 mr-2 text-red-500"></i> ចំណាយសរុបនៃរបាយការណ៍</p>
-                        <p class="text-2xl sm:text-4xl font-extrabold text-red-600 truncate" id="filtered-expense-summary">-- ៛</p>
-                    </div>
-
-                    <div class="bg-white p-4 sm:p-6 rounded-2xl card-shadow border border-gray-100">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-2">
-                            <h2 class="text-xl sm:text-2xl font-bold text-gray-700 mb-2 sm:mb-0">បញ្ជីប្រតិបត្តិការចំណាយ</h2>
-                            <button onclick="switchView('trash')" id="trash-btn" class="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg transition flex items-center font-semibold text-sm shadow-sm">
-                                <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold text-slate-800 font-khmer-header" id="list-header-title">បញ្ជីចំណាយ</h2>
+                        <div class="flex gap-2">
+                            <button onclick="toggleTrashView()" id="trash-toggle-btn" class="text-sm text-gray-500 flex items-center gap-1 hover:text-red-500 transition px-3 py-1 rounded-lg border border-gray-200 bg-white shadow-sm">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i> Trash
+                            </button>
+                            <button onclick="loadData()" class="text-sm text-indigo-600 flex items-center gap-1 px-3 py-1 rounded-lg border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 transition">
+                                <i data-lucide="refresh-ccw" class="w-4 h-4"></i>
                             </button>
                         </div>
-                        
-                        <div id="report-controls" class="mb-6 p-4 border rounded-xl bg-gray-50">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                <div>
-                                    <label for="filter-day" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមថ្ងៃ:</label>
-                                    <select id="filter-day" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()">
-                                        <option value="all">ទាំងអស់</option>
-                                        <option value="daily">ប្រចាំថ្ងៃ</option>
-                                        <option value="day_mon">ច័ន្ទ</option>
-                                        <option value="day_tue">អង្គារ</option>
-                                        <option value="day_wed">ពុធ</option>
-                                        <option value="day_thu">ព្រហស្បតិ៍</option>
-                                        <option value="day_fri">សុក្រ</option>
-                                        <option value="day_sat">សៅរ៍</option>
-                                        <option value="day_sun">អាទិត្យ</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="filter-month" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមខែ:</label>
-                                    <select id="filter-month" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()">
-                                        <option value="all">ទាំងអស់</option>
-                                        <option value="monthly">ប្រចាំខែ</option>
-                                        <option value="month_0">មករា</option>
-                                        <option value="month_1">កុម្ភៈ</option>
-                                        <option value="month_2">មីនា</option>
-                                        <option value="month_3">មេសា</option>
-                                        <option value="month_4">ឧសភា</option>
-                                        <option value="month_5">មិថុនា</option>
-                                        <option value="month_6">កក្កដា</option>
-                                        <option value="month_7">សីហា</option>
-                                        <option value="month_8">កញ្ញា</option>
-                                        <option value="month_9">តុលា</option>
-                                        <option value="month_10">វិច្ឆិកា</option>
-                                        <option value="month_11">ធ្នូ</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="filter-year" class="block text-xs font-medium text-gray-500 mb-1">ត្រងតាមឆ្នាំ:</label>
-                                    <select id="filter-year" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="filterRecords()">
-                                        <option value="all">ទាំងអស់</option>
-                                        <option value="yearly">ប្រចាំឆ្នាំ</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="flex flex-wrap justify-end gap-3 border-t pt-3 mt-3 hidden md:flex">
-                                <button onclick="exportData('pdf')" class="bg-red-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-red-700 transition text-sm font-semibold shadow-md">
-                                    <i data-lucide="file-text" class="w-4 h-4 mr-1"></i> ទាញយក PDF
-                                </button>
-                                <button onclick="exportData('excel')" class="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-green-700 transition text-sm font-semibold shadow-md">
-                                    <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1"></i> ទាញយក Excel
-                                </button>
-                            </div>
-                        </div>
-
-                        <div id="expense-list" class="space-y-3 max-h-[65vh] overflow-y-auto pr-2 hide-scrollbar">
-                            <p class="text-center text-gray-500 py-10">កំពុងទាញទិន្នន័យ...</p>
-                        </div>
                     </div>
-                </section>
+                    <div id="expense-list" class="space-y-3 pb-20 lg:pb-0"></div>
+                </div>
+
+                <div class="hidden lg:block bg-white p-6 rounded-2xl shadow-md h-fit sticky top-24 border border-slate-100">
+                    <h2 class="text-xl font-bold text-indigo-700 mb-4 font-khmer-header" id="desktop-form-title">➕ បន្ថែមកំណត់ត្រា</h2>
+                    <form id="desktop-form" onsubmit="handleFormSubmit(event, 'desktop-form')">
+                        <input type="hidden" name="ID" id="desktop-edit-id">
+                        <div id="desktop-dynamic-inputs" class="space-y-4"></div>
+                        <div class="mt-4 pt-4 border-t">
+                            <label class="block text-sm font-medium text-slate-600 mb-1">ពិពណ៌នា</label>
+                            <textarea name="Description" rows="2" class="w-full p-3 border rounded-xl bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none transition"></textarea>
+                        </div>
+                        <div class="mt-4 p-3 bg-indigo-50 rounded-xl flex justify-between items-center">
+                            <span class="text-sm font-medium text-indigo-800">សរុប:</span>
+                            <span class="text-xl font-bold text-indigo-700" id="desktop-total-display">0 ៛</span>
+                        </div>
+                        <div class="flex gap-2 mt-4">
+                            <button type="button" id="desktop-cancel-btn" onclick="resetForm('desktop-form')" class="hidden w-1/3 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold">Cancel</button>
+                            <button type="submit" id="desktop-submit-btn" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">រក្សាទុក</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </main>
 
-    <button id="fab-add-btn" onclick="openFormModal()" class="bg-indigo-600 text-white transition hover:bg-indigo-700 ring-4 ring-indigo-300 ring-offset-2">
-        <i data-lucide="plus" class="w-8 h-8"></i>
-    </button>
-    
-    <button id="fab-export-btn" onclick="openExportModal()" class="bg-blue-600 text-white transition hover:bg-blue-700 ring-4 ring-blue-300 ring-offset-2">
-        <i data-lucide="file-down" class="w-8 h-8"></i>
-    </button>
-
-    <button id="fab-filter-btn" onclick="openFilterModal()" class="bg-blue-600 text-white transition hover:bg-blue-700 ring-4 ring-blue-300 ring-offset-2">
-        <i data-lucide="filter" class="w-8 h-8"></i>
-    </button>
-
-
-    <div id="profileModal" class="modal">
-        <div class="bg-white rounded-2xl p-8 w-full max-w-md relative shadow-2xl">
-            <h3 class="text-2xl font-bold text-blue-700 mb-6 border-b pb-2">ព័ត្វមានគណនី</h3>
-
-            <div class="space-y-4">
-                <div class="p-3 bg-gray-50 rounded-lg border">
-                    <label class="block text-sm font-medium text-gray-500">អ៊ីម៉ែល</label>
-                    <p class="font-semibold text-gray-800" id="modal-profile-email">N/A</p>
-                </div>
-                <div class="p-3 bg-gray-50 rounded-lg border">
-                    <label class="block text-sm font-medium text-gray-500">តួនាទី</label>
-                    <p class="font-semibold text-indigo-700" id="modal-profile-role">N/A</p>
-                </div>
-            </div>
-
-            <div class="flex justify-end space-x-3 pt-6 border-t mt-6">
-                <button type="button" onclick="closeProfileModal()" class="px-6 py-3 bg-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-400 transition">បិទ</button>
-                <button type="button" onclick="customLogout()" class="px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition">ចាកចេញ</button>
-            </div>
-
-            <button onclick="closeProfileModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
-        </div>
+    <div id="mobile-dock" class="bottom-dock lg:hidden hidden">
+        <button onclick="openFilterModal()" class="dock-icon"><i data-lucide="search" class="w-6 h-6"></i><span>Search</span></button>
+        <button onclick="openMobileModal()" class="add-btn-dock"><i data-lucide="plus" class="w-8 h-8"></i></button>
+        <button onclick="openExportModal()" class="dock-icon"><i data-lucide="download" class="w-6 h-6"></i><span>Export</span></button>
     </div>
 
-    <div id="detailModal" class="modal">
-        <div class="bg-white rounded-2xl p-8 w-full max-w-lg relative shadow-2xl transform transition-all">
-            <h3 class="text-2xl font-bold text-blue-700 mb-6 border-b pb-2 flex items-center">
-                <i data-lucide="clipboard-list" class="w-6 h-6 mr-2 text-gray-50"></i> ព័ត៌មានលម្អិតកំណត់ត្រា
-            </h3>
-
-            <div class="space-y-4 text-gray-700">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="p-3 bg-gray-50 rounded-lg border">
-                        <label class="block text-sm font-medium text-gray-500 flex items-center"><i data-lucide="calendar" class="w-4 h-4 mr-1"></i> កាលបរិច្ឆេទ</label>
-                        <p class="font-semibold text-base" id="detail-date">N/A</p>
-                    </div>
-                    <div class="p-3 bg-gray-50 rounded-lg border">
-                        <label class="block text-sm font-medium text-gray-500 flex items-center"><i data-lucide="tag" class="w-4 h-4 mr-1"></i> ប្រភេទប្រតិបត្តិការ</label>
-                        <p class="font-semibold text-base text-red-600" id="detail-type">ចំណាយ 📉</p>
-                    </div>
-                </div>
-
-                <div class="p-4 bg-red-50 rounded-xl border border-red-200 shadow-inner">
-                    <label class="block text-sm font-medium text-red-700">ចំនួនប្រាក់សរុប (Amount)</label>
-                    <p class="text-3xl font-extrabold mt-1 text-red-600" id="detail-amount">-- ៛</p>
-                </div>
-
-                <div class="grid grid-cols-3 gap-3">
-                    <div class="p-3 bg-white rounded-lg border shadow-sm">
-                        <label class="block text-xs font-medium text-gray-500">សាច់</label>
-                        <p class="font-semibold text-base text-orange-600" id="detail-meat">0 ៛</p>
-                    </div>
-                    <div class="p-3 bg-white rounded-lg border shadow-sm">
-                        <label class="block text-xs font-medium text-gray-500">បន្លែ</label>
-                        <p class="font-semibold text-base text-green-600" id="detail-vegetable">0 ៛</p>
-                    </div>
-                    <div class="p-3 bg-white rounded-lg border shadow-sm">
-                        <label class="block text-xs font-medium text-gray-500">ផ្លែឈើ</label>
-                        <p class="font-semibold text-base text-yellow-600" id="detail-fruit">0 ៛</p>
-                    </div>
-                </div>
-
-                <div class="p-3 bg-gray-50 rounded-lg border">
-                    <label class="block text-sm font-medium text-gray-500 flex items-center"><i data-lucide="align-left" class="w-4 h-4 mr-1"></i> ពិពណ៌នាលម្អិត</label>
-                    <p id="detail-desc" class="whitespace-pre-wrap text-sm">N/A</p>
-                </div>
-
-                <div class="text-xs text-gray-500 pt-3 flex justify-between">
-                    <p>កែប្រែចុងក្រោយ: <span id="detail-modified">N/A</span></p>
-                    <p>ស្ថានភាព: <span id="detail-status" class="font-semibold">N/A</span></p>
-                </div>
-            </div>
-
-            <div class="flex justify-end space-x-3 pt-6 border-t mt-6">
-                <button type="button" onclick="editDesktopForm(activeDetailRecord.ID);" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition flex items-center shadow-md">
-                    <i data-lucide="pencil" class="w-5 h-5 mr-2"></i> កែប្រែ
-                </button>
-                <button type="button" onclick="closeDetailModal()" class="px-6 py-3 bg-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-400 transition">បិទ</button>
-            </div>
-
-            <button onclick="closeDetailModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
-        </div>
-    </div>
-
-    <div id="form-template" style="display: none;">
-        <input type="hidden" id="record-id" value="">
-
-        <label for="date" class="block text-sm font-medium text-gray-700">កាលបរិច្ឆេទ</label>
-        <input id="date" type="date" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-600 focus:border-indigo-600 transition" required>
-
-        <div class="grid grid-cols-3 gap-3 border p-3 rounded-lg bg-gray-50">
-            <div class="col-span-3">
-                <label class="block text-base font-semibold text-gray-800 mb-2">ចំនួនប្រាក់សរុប (Amount)</label>
-                <input id="amount-summary" type="text" class="w-full p-3 text-2xl font-extrabold text-red-600 bg-white border border-red-300 rounded-lg" value="0 ៛" readonly>
-                <input type="hidden" id="amount" value="0"> </div>
-
-            <div>
-                <label for="meat" class="block text-sm font-medium text-gray-700">សាច់ ($)</label>
-                <input id="meat" type="number" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-orange-600 focus:border-orange-600 transition expense-input" placeholder="0" min="0">
-            </div>
-            <div>
-                <label for="vegetable" class="block text-sm font-medium text-gray-700">បន្លែ ($)</label>
-                <input id="vegetable" type="number" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-600 focus:border-green-600 transition expense-input" placeholder="0" min="0">
-            </div>
-            <div>
-                <label for="fruit" class="block text-sm font-medium text-gray-700">ផ្លែឈើ ($)</label>
-                <input id="fruit" type="number" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-600 focus:border-yellow-600 transition expense-input" placeholder="0" min="0">
-            </div>
-            
-            <div class="col-span-3 border-t pt-3 mt-3">
-                <h4 class="text-sm font-semibold text-gray-800 mb-2 flex items-center">ចំណាយផ្សេងៗ</h4>
-                
-                <div id="custom-expense-inputs" class="space-y-3">
-                      </div>
-                
-                <button type="button" onclick="addCustomExpenseField(activeFormElement)" id="add-custom-btn" class="w-full mt-3 bg-gray-100 text-gray-600 p-2 rounded-lg font-semibold hover:bg-gray-200 transition duration-150 flex items-center justify-center text-sm">
-                    <i data-lucide="plus" class="w-4 h-4 mr-1"></i> បន្ថែមចំណាយផ្សេង
-                </button>
-            </div>
-            </div>
-
-        <input id="category" type="hidden" value="Grocery">
-        <input id="type" type="hidden" value="Expense">
-
-        <label for="desc" class="block text-sm font-medium text-gray-700">ពិពណ៌នាលម្អិត (ចំណាយសរុប)</label>
-        <textarea id="desc" rows="2" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-600 focus:border-indigo-600 transition" placeholder="ចំណាយលើអ្វីខ្លះ..."></textarea>
-
-        <button type="submit" id="submit-btn" class="w-full bg-green-600 text-white p-3 rounded-lg font-semibold hover:bg-green-700 transition duration-150 flex items-center justify-center shadow-lg mt-6">
-            <i data-lucide="plus" class="w-5 h-5 mr-1"></i> បន្ថែមកំណត់ត្រា
-        </button>
-
-        <button type="button" id="cancel-btn" onclick="resetForm(activeFormElement)" class="w-full bg-gray-300 text-gray-700 p-3 rounded-lg font-semibold hover:bg-gray-400 transition duration-150 hidden mt-2">
-            <i data-lucide="x" class="w-5 h-5 mr-1"></i> បោះបង់ការកែប្រែ
-        </button>
-    </div>
-
-    <div id="mobileFormModal" class="modal">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-md relative shadow-2xl modal-content-mobile max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6 border-b pb-2">
-                <h3 class="text-xl font-bold text-indigo-700" id="mobile-form-title">➕ បញ្ចូលកំណត់ត្រាថ្មី</h3>
-                <button type="button" onclick="closeFormModal()" class="text-gray-400 hover:text-gray-700">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-            <form id="mobile-expense-form" class="space-y-4"></form>
-        </div>
-    </div>
-
-    <div id="mobileExportModal" class="modal items-end sm:items-center">
-        <div class="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-sm relative shadow-2xl modal-content-export">
-            <h3 class="text-xl font-bold text-blue-700 mb-4">ជ្រើសរើសទម្រង់ឯកសារ</h3>
-            <div class="space-y-3">
-                <button onclick="exportData('pdf'); closeExportModal()" class="w-full flex items-center justify-center p-4 bg-red-50 text-red-700 rounded-xl hover:bg-red-100 transition border border-red-200 font-semibold">
-                    <i data-lucide="file-text" class="w-6 h-6 mr-3"></i> ទាញយកជា PDF
-                </button>
-                <button onclick="exportData('excel'); closeExportModal()" class="w-full flex items-center justify-center p-4 bg-green-50 text-green-700 rounded-xl hover:bg-green-100 transition border border-green-200 font-semibold">
-                    <i data-lucide="file-spreadsheet" class="w-6 h-6 mr-3"></i> ទាញយកជា Excel
-                </button>
-            </div>
-            <button onclick="closeExportModal()" class="w-full mt-4 p-3 text-gray-500 font-medium hover:bg-gray-100 rounded-xl transition">
-                បិទ
-            </button>
-        </div>
-    </div>
-
-    <div id="filterModal" class="modal">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-md relative shadow-2xl modal-content-filter">
+    <div id="filterModal" class="modal px-4 items-end sm:items-center">
+        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl p-6 animate-slide-up">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold text-gray-800 flex items-center">
-                    <i data-lucide="filter" class="w-5 h-5 mr-2 text-blue-600"></i> ត្រងទិន្នន័យ
-                </h3>
-                <button onclick="closeFilterModal()" class="text-gray-400 hover:text-gray-600">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i data-lucide="filter" class="w-5 h-5 text-indigo-600"></i> ស្វែងរក</h3>
+                <button onclick="closeModal('filterModal')" class="p-2 bg-slate-100 rounded-full"><i data-lucide="x" class="w-5 h-5 text-slate-500"></i></button>
             </div>
-
             <div class="space-y-4">
                 <div>
-                    <label for="modal-filter-day" class="block text-sm font-medium text-gray-700 mb-1">ត្រងតាមថ្ងៃ</label>
-                    <select id="modal-filter-day" class="w-full p-3 border border-gray-300 rounded-xl bg-gray-50 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="all">ទាំងអស់</option>
-                        <option value="daily">ប្រចាំថ្ងៃ (ថ្ងៃនេះ)</option>
-                        <option value="day_mon">ច័ន្ទ</option>
-                        <option value="day_tue">អង្គារ</option>
-                        <option value="day_wed">ពុធ</option>
-                        <option value="day_thu">ព្រហស្បតិ៍</option>
-                        <option value="day_fri">សុក្រ</option>
-                        <option value="day_sat">សៅរ៍</option>
-                        <option value="day_sun">អាទិត្យ</option>
+                    <label class="text-xs font-bold text-slate-500 uppercase mb-1">ថ្ងៃ (Day)</label>
+                    <select id="m-filter-day" class="w-full p-3 border rounded-xl bg-slate-50">
+                        <option value="">ទាំងអស់</option><option value="1">ច័ន្ទ</option><option value="2">អង្គារ</option><option value="3">ពុធ</option><option value="4">ព្រហស្បតិ៍</option><option value="5">សុក្រ</option><option value="6">សៅរ៍</option><option value="0">អាទិត្យ</option>
                     </select>
                 </div>
-                <div>
-                    <label for="modal-filter-month" class="block text-sm font-medium text-gray-700 mb-1">ត្រងតាមខែ</label>
-                    <select id="modal-filter-month" class="w-full p-3 border border-gray-300 rounded-xl bg-gray-50 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="all">ទាំងអស់</option>
-                        <option value="monthly">ប្រចាំខែ (ខែនេះ)</option>
-                        <option value="month_0">មករា</option>
-                        <option value="month_1">កុម្ភៈ</option>
-                        <option value="month_2">មីនា</option>
-                        <option value="month_3">មេសា</option>
-                        <option value="month_4">ឧសភា</option>
-                        <option value="month_5">មិថុនា</option>
-                        <option value="month_6">កក្កដា</option>
-                        <option value="month_7">សីហា</option>
-                        <option value="month_8">កញ្ញា</option>
-                        <option value="month_9">តុលា</option>
-                        <option value="month_10">វិច្ឆិកា</option>
-                        <option value="month_11">ធ្នូ</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="modal-filter-year" class="block text-sm font-medium text-gray-700 mb-1">ត្រងតាមឆ្នាំ</label>
-                    <select id="modal-filter-year" class="w-full p-3 border border-gray-300 rounded-xl bg-gray-50 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="all">ទាំងអស់</option>
-                        <option value="yearly">ប្រចាំឆ្នាំ (ឆ្នាំនេះ)</option>
-                    </select>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-xs font-bold text-slate-500 uppercase mb-1">ខែ</label><select id="m-filter-month" class="w-full p-3 border rounded-xl bg-slate-50"><option value="">ទាំងអស់</option></select></div>
+                    <div><label class="text-xs font-bold text-slate-500 uppercase mb-1">ឆ្នាំ</label><select id="m-filter-year" class="w-full p-3 border rounded-xl bg-slate-50"><option value="">ទាំងអស់</option></select></div>
                 </div>
             </div>
-
-            <div class="mt-8 pt-4 border-t flex justify-end space-x-3">
-                <button onclick="closeFilterModal()" class="px-5 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition">
-                    បោះបង់
-                </button>
-                <button onclick="applyModalFilters()" class="px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-200">
-                    អនុវត្ត
-                </button>
+            <div class="flex gap-3 mt-8">
+                <button onclick="resetFilters(); closeModal('filterModal')" class="flex-1 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl">Reset</button>
+                <button onclick="syncAndApply('mobile'); closeModal('filterModal')" class="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg">Search</button>
             </div>
         </div>
     </div>
 
+    <div id="exportModal" class="modal px-4 items-end sm:items-center">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Export Report</h3>
+            <div class="space-y-3">
+                <button onclick="exportToPDF()" class="w-full flex items-center p-4 bg-red-50 text-red-700 rounded-xl border border-red-100 hover:bg-red-100 transition"><div class="p-2 bg-white rounded-lg mr-4 shadow-sm"><i data-lucide="file-text" class="w-6 h-6 text-red-600"></i></div><div class="text-left"><p class="font-bold">Save as PDF</p></div></button>
+                <button onclick="exportToExcel()" class="w-full flex items-center p-4 bg-green-50 text-green-700 rounded-xl border border-green-100 hover:bg-green-100 transition"><div class="p-2 bg-white rounded-lg mr-4 shadow-sm"><i data-lucide="table" class="w-6 h-6 text-green-600"></i></div><div class="text-left"><p class="font-bold">Save as Excel</p></div></button>
+            </div>
+            <button onclick="closeModal('exportModal')" class="w-full mt-6 py-3 text-slate-400 font-medium hover:text-slate-600">Cancel</button>
+        </div>
+    </div>
+
+    <div id="mobileModal" class="modal px-4 items-end sm:items-center">
+        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b flex justify-between items-center bg-slate-50">
+                <h3 class="text-lg font-bold text-slate-800 font-khmer-header" id="mobile-modal-title">បន្ថែមចំណាយ</h3>
+                <button onclick="closeMobileModal()" class="text-slate-400"><i data-lucide="x"></i></button>
+            </div>
+            <div class="overflow-y-auto p-4">
+                <form id="mobile-form" onsubmit="handleFormSubmit(event, 'mobile-form')">
+                    <input type="hidden" name="ID" id="mobile-edit-id">
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">កាលបរិច្ឆេទ</label>
+                        <input type="date" name="Date" id="mobile-date" class="w-full p-3 border rounded-xl bg-slate-50 font-medium" required>
+                    </div>
+                    <div id="mobile-dynamic-inputs" class="space-y-4"></div>
+                    <div class="mt-6 pt-4 border-t">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">ពិពណ៌នា</label>
+                        <textarea name="Description" rows="2" class="w-full p-3 border rounded-xl bg-slate-50" placeholder="..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="p-4 border-t bg-slate-50">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-sm text-slate-500">សរុប</span>
+                    <span class="text-2xl font-bold text-indigo-600" id="mobile-total-display">0 ៛</span>
+                </div>
+                <button onclick="document.getElementById('mobile-form').requestSubmit()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg">រក្សាទុក</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="modal px-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative overflow-hidden">
+            <div id="settings-loading" class="loading-overlay hidden flex-col">
+                <i data-lucide="loader-2" class="w-10 h-10 animate-spin text-indigo-600 mb-3"></i>
+                <p class="text-sm font-bold text-slate-700 animate-pulse">Updating Sheet...</p>
+            </div>
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-slate-800 font-khmer-header">កំណត់ប្រភេទចំណាយ</h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400"><i data-lucide="x"></i></button>
+            </div>
+            <div id="category-list" class="space-y-2 max-h-[40vh] overflow-y-auto mb-4 pr-1"></div>
+            <form onsubmit="handleCategorySubmit(event)" class="bg-slate-50 p-4 rounded-xl border border-slate-200 relative">
+                <input type="hidden" id="edit-mode-index" value="-1">
+                <input type="hidden" id="edit-old-key" value="">
+                <p class="text-xs font-bold text-slate-500 mb-3 uppercase" id="form-title">បន្ថែមប្រភេទថ្មី</p>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div><label class="text-[10px] text-slate-400 font-bold">Key (English)</label><input type="text" id="new-cat-en" placeholder="Food" class="w-full p-2 border rounded-lg text-sm" required pattern="[A-Za-z0-9_]+"></div>
+                    <div><label class="text-[10px] text-slate-400 font-bold">Name (Khmer)</label><input type="text" id="new-cat-km" placeholder="អាហារ" class="w-full p-2 border rounded-lg text-sm" required></div>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" id="cancel-edit-btn" onclick="resetCategoryForm()" class="hidden w-1/3 bg-slate-200 text-slate-700 py-2 rounded-lg text-sm font-bold">Cancel</button>
+                    <button type="submit" id="save-cat-btn" class="w-full bg-slate-800 text-white py-2 rounded-lg text-sm font-bold hover:bg-slate-900 flex items-center justify-center"><i data-lucide="plus-circle" class="w-4 h-4 mr-1"></i> Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="infoModal" class="modal px-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl p-6">
+            <h3 class="text-xl font-bold text-indigo-700 mb-4 font-khmer-header">ព័ត៌មានគណនី</h3>
+            <div class="text-center mb-4"><img id="modal-avatar" src="" class="w-24 h-24 rounded-full mx-auto border-4 border-indigo-50 object-cover shadow-sm"></div>
+            <div class="text-center mb-6">
+                <p class="text-slate-800 font-bold text-lg" id="modal-email-display">...</p>
+                <span class="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-medium mt-2 inline-block" id="modal-role-display">...</span>
+            </div>
+            <button onclick="document.getElementById('infoModal').classList.remove('active')" class="w-full bg-slate-100 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-200">បិទ</button>
+        </div>
+    </div>
 
     <script src="config.js"></script>
     <script>
-        // --- GLOBAL STATE ---
-        const user = JSON.parse(localStorage.getItem("user"));
+        // --- AUTH CHECK (MUST BE FIRST) ---
+        const userStr = localStorage.getItem('user');
+        if (!userStr) {
+            window.location.href = 'index.html';
+            throw new Error("User not logged in"); // Stop execution
+        }
+        const user = JSON.parse(userStr); 
+
+        // CONFIG
+        const SHEETDB_URL = "https://sheetdb.io/api/v1/oz77mi92j3l73"; 
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxUMpP0h8poZWkLXQsK1Yl3ZuKi2yEMSU1mjDcxoKlbLyemu1U1PUvNf2CKWQR-HSw2/exec"; 
+
+        // USER STATE
+        let categories = JSON.parse(localStorage.getItem('app_categories')) || []; 
         let allExpenses = [];
+        let filteredExpenses = [];
         let currentView = 'active';
-        let activeTab = 'dashboard';
-        let editingID = null;
-        let activeDetailRecord = null;
-        let customConfirmResolver;
-        let activeFormElement = null;
         
-        // Configuration for dynamic custom fields
-        const MAX_CUSTOM_FIELDS = 4; // Max number of custom expense inputs
-        const CUSTOM_FIELD_PREFIX = 'Custom'; // Maps to SheetDB columns Custom1_Label, Custom1_Amount, etc.
+        // --- CUSTOM UI ALERT / CONFIRM SYSTEM ---
+        let confirmCallback = null;
 
-        const dayNames = ["អាទិត្យ", "ច័ន្ទ", "អង្គារ", "ពុធ", "ព្រហស្បតិ៍", "សុក្រ", "សៅរ៍"];
-        
-        // --- CONFIG ---
-        // UPDATED: Using 'faces/' as the base directory for images
-        const BASE_IMAGE_URL = "faces/"; 
-        const DEFAULT_AVATAR_URL = "https://ui-avatars.com/api/?name=User&background=6366f1&color=fff";
-        const PROFILE_ICON_URL = "data:image/svg+xml;base64," + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>');
+        function customConfirm(title, msg, yesText, colorClass, callback) {
+            // Reset UI to Confirm Mode
+            const iconContainer = document.getElementById('confirm-icon-box');
+            iconContainer.className = 'w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4';
+            iconContainer.innerHTML = '<i data-lucide="alert-triangle" class="w-8 h-8 text-red-500"></i>';
 
-        // --- UTILS (MUST BE DEFINED EARLY) ---
-
-        /**
-         * Converts number to Khmer currency format (e.g., 1,000,000 ៛).
-         */
-        function formatCurrency(amount) {
-            const num = parseFloat(amount) || 0;
-            return `${num.toLocaleString('km-KH', { maximumFractionDigits: 0 })} ៛`;
-        }
-
-        /**
-         * Checks if two date strings are the same day (ignoring time).
-         */
-        function isSameDay(date1, date2) {
-            const d1 = new Date(date1);
-            const d2 = new Date(date2);
-            return d1.getFullYear() === d2.getFullYear() &&
-                   d1.getMonth() === d2.getMonth() &&
-                   d1.getDate() === d2.getDate();
-        }
-
-        // --- NEW: Export Modal Functions ---
-        function openExportModal() {
-            document.getElementById('mobileExportModal').classList.add('active');
-        }
-        function closeExportModal() {
-            document.getElementById('mobileExportModal').classList.remove('active');
-        }
-
-        // --- NEW: Filter Modal Functions (for FAB) ---
-        function openFilterModal() {
-             // Sync desktop filter states to the modal filters before opening
-            document.getElementById('modal-filter-day').value = document.getElementById('filter-day').value;
-            document.getElementById('modal-filter-month').value = document.getElementById('filter-month').value;
-            document.getElementById('modal-filter-year').value = document.getElementById('filter-year').value;
-
-            document.getElementById('filterModal').classList.add('active');
-            lucide.createIcons();
-        }
-        function closeFilterModal() {
-            document.getElementById('filterModal').classList.remove('active');
-        }
-
-        function applyModalFilters() {
-            // Apply modal filter states back to the original filter elements
-            document.getElementById('filter-day').value = document.getElementById('modal-filter-day').value;
-            document.getElementById('filter-month').value = document.getElementById('modal-filter-month').value;
-            document.getElementById('filter-year').value = document.getElementById('modal-filter-year').value;
-
-            closeFilterModal();
-            filterRecords();
-        }
-
-        // --- NEW: TAB SWITCHING FUNCTION (UNCHANGED) ---
-        function setActiveTab(tabName) {
-            activeTab = tabName;
-
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.style.display = 'none';
-            });
-            document.getElementById(`${tabName}-tab`).style.display = 'block';
-
-            document.querySelectorAll('#report-tabs button').forEach(btn => {
-                btn.classList.remove('text-indigo-600', 'border-indigo-600');
-                btn.classList.add('text-gray-500', 'border-transparent', 'hover:border-gray-300', 'hover:text-gray-700');
-            });
-
-            const activeBtn = document.getElementById(`tab-${tabName}-btn`);
-            activeBtn.classList.remove('text-gray-500', 'border-transparent', 'hover:border-gray-300', 'hover:text-gray-700');
-            activeBtn.classList.add('text-indigo-600', 'border-indigo-600');
-
-            // Handle FAB visibility 
-            const fabBtnAdd = document.getElementById('fab-add-btn');
-            const fabBtnExport = document.getElementById('fab-export-btn');
-            const fabBtnFilter = document.getElementById('fab-filter-btn');
-            const isDesktop = window.innerWidth >= 1024;
+            document.getElementById('confirm-title').innerText = title;
+            document.getElementById('confirm-msg').innerText = msg;
             
-            if (isDesktop) {
-                fabBtnAdd.style.display = 'none';
-                fabBtnExport.style.display = 'none';
-                fabBtnFilter.style.display = 'none';
-            } else if (tabName === 'report') {
-                fabBtnAdd.style.display = 'inline-flex';
-                fabBtnExport.style.display = 'inline-flex';
-                fabBtnFilter.style.display = 'inline-flex';
-            } else {
-                fabBtnAdd.style.display = 'inline-flex';
-                fabBtnExport.style.display = 'none';
-                fabBtnFilter.style.display = 'none';
-            }
+            // Show Cancel
+            document.getElementById('confirm-cancel-btn').classList.remove('hidden');
 
-            // Ensure forms are reset and data loaded when switching to Report tab
-            if (tabName === 'report') {
-                const reportForm = document.getElementById('report-form');
-                if (reportForm) {
-                    resetForm(reportForm);
-                    if (isDesktop) activeFormElement = reportForm; 
-                }
-                
-                // Reset all filters to default 'all'
-                if(document.getElementById('filter-day')) document.getElementById('filter-day').value = 'all';
-                if(document.getElementById('filter-month')) document.getElementById('filter-month').value = 'all';
-                if(document.getElementById('filter-year')) document.getElementById('filter-year').value = 'all';
-                
-                filterRecords();
-            } else {
-                if (document.getElementById('mobile-expense-form')) resetForm(document.getElementById('mobile-expense-form'));
-            }
-
+            const btn = document.getElementById('confirm-yes-btn');
+            btn.innerText = yesText;
+            btn.className = `flex-1 py-3 text-white font-bold rounded-xl shadow-lg transition ${colorClass}`;
+            
+            document.getElementById('customConfirmModal').classList.add('active');
+            confirmCallback = callback;
             lucide.createIcons();
         }
 
-        // --- TOAST NOTIFICATION FUNCTION (UNCHANGED) ---
-        function showToast(message, type = 'info', duration = 4000) {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-            let bgColor, icon, iconColor;
-            switch (type) {
-                case 'success': bgColor = 'bg-green-600'; icon = 'check-circle'; iconColor = 'text-green-200'; break;
-                case 'error': bgColor = 'bg-red-600'; icon = 'x-circle'; iconColor = 'text-red-200'; break;
-                case 'warning': bgColor = 'bg-yellow-500'; icon = 'alert-triangle'; iconColor = 'text-yellow-200'; break;
-                case 'info': default: bgColor = 'bg-blue-600'; icon = 'info'; iconColor = 'text-blue-200'; break;
-            }
-            const toast = document.createElement('div');
-            toast.className = `p-4 max-w-sm w-full rounded-lg shadow-xl text-white flex items-center space-x-3 transform transition-all ease-in-out duration-300 opacity-0 translate-x-full pointer-events-auto ${bgColor}`;
-            toast.style.minWidth = '250px';
-            toast.innerHTML = `
-                <i data-lucide="${icon}" class="w-6 h-6 ${iconColor} flex-shrink-0"></i>
-                <p class="font-medium text-sm flex-1">${message}</p>
-                <button onclick="this.closest('div').remove()" class="p-1 -mr-1 rounded-full hover:bg-white/20 transition-all flex-shrink-0">
-                    <i data-lucide="x" class="w-4 h-4 text-white"></i>
-                </button>`;
-            container.appendChild(toast);
+        function customAlert(title, msg, type = 'info') {
+            // Types: info, warning, error, success
+            let icon = 'info';
+            let color = 'text-blue-500';
+            let bg = 'bg-blue-50';
+            let btnBg = 'bg-blue-600 hover:bg-blue-700 shadow-blue-200';
+
+            if(type === 'error') { icon = 'x-circle'; color = 'text-red-500'; bg = 'bg-red-50'; btnBg = 'bg-red-600 hover:bg-red-700 shadow-red-200'; }
+            if(type === 'warning') { icon = 'alert-triangle'; color = 'text-amber-500'; bg = 'bg-amber-50'; btnBg = 'bg-amber-600 hover:bg-amber-700 shadow-amber-200'; }
+            if(type === 'success') { icon = 'check-circle'; color = 'text-emerald-500'; bg = 'bg-emerald-50'; btnBg = 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200'; }
+
+            document.getElementById('confirm-title').innerText = title;
+            document.getElementById('confirm-msg').innerText = msg;
+            
+            // Update Icon
+            const iconContainer = document.getElementById('confirm-icon-box');
+            iconContainer.className = `w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${bg}`;
+            iconContainer.innerHTML = `<i data-lucide="${icon}" class="w-8 h-8 ${color}"></i>`;
+
+            // Hide Cancel Button
+            document.getElementById('confirm-cancel-btn').classList.add('hidden');
+            
+            // Update OK Button
+            const btn = document.getElementById('confirm-yes-btn');
+            btn.innerText = "OK";
+            btn.className = `flex-1 py-3 text-white font-bold rounded-xl shadow-lg transition ${btnBg}`;
+            
+            document.getElementById('customConfirmModal').classList.add('active');
+            
+            // Alert just closes on Yes click
+            confirmCallback = null;
             lucide.createIcons();
-            setTimeout(() => {
-                toast.classList.remove('opacity-0', 'translate-x-full');
-                toast.classList.add('opacity-100', 'translate-x-0');
-            }, 50);
-            setTimeout(() => {
-                toast.classList.remove('opacity-100', 'translate-x-0');
-                toast.classList.add('opacity-0', 'translate-x-full');
-                setTimeout(() => toast.remove(), 300);
-            }, duration);
         }
 
-        // --- CUSTOM CONFIRMATION MODAL FUNCTION (UNCHANGED) ---
-        function customConfirm(title, message, actionText, type = 'delete') {
-            return new Promise((resolve) => {
-                const modal = document.getElementById('customConfirmModal');
-                const titleEl = document.getElementById('confirm-title');
-                const messageEl = document.getElementById('confirm-message');
-                const actionBtn = document.getElementById('confirm-action-btn');
-                const iconBox = document.getElementById('confirm-icon-box');
-                actionBtn.classList.remove('bg-red-600', 'hover:bg-red-700', 'bg-green-600', 'hover:bg-green-700', 'bg-red-800', 'hover:bg-red-900', 'bg-indigo-600', 'hover:bg-indigo-700', 'bg-blue-600', 'hover:bg-blue-700');
-                iconBox.className = 'w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center';
-
-                let iconHtml = '';
-                if (type === 'delete') { actionBtn.classList.add('bg-red-600', 'hover:bg-red-700'); iconBox.classList.add('bg-red-100'); iconHtml = '<i data-lucide="trash-2" class="w-6 h-6 text-red-600"></i>';
-                } else if (type === 'permanent_delete') { actionBtn.classList.add('bg-red-800', 'hover:bg-red-900'); iconBox.classList.add('bg-red-200'); iconHtml = '<i data-lucide="skull" class="w-6 h-6 text-red-800"></i>';
-                } else if (type === 'restore') { actionBtn.classList.add('bg-green-600', 'hover:bg-green-700'); iconBox.classList.add('bg-green-100'); iconHtml = '<i data-lucide="rotate-ccw" class="w-6 h-6 text-green-600"></i>';
-                } else if (type === 'logout') { actionBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700'); iconBox.classList.add('bg-indigo-100'); iconHtml = '<i data-lucide="log-out" class="w-6 h-6 text-indigo-600"></i>';
-                } else { actionBtn.classList.add('bg-blue-600', 'hover:bg-blue-700'); iconBox.classList.add('bg-blue-100'); iconHtml = '<i data-lucide="help-circle" class="w-6 h-6 text-blue-600"></i>';
-                }
-
-                titleEl.textContent = title;
-                messageEl.textContent = message;
-                actionBtn.textContent = actionText;
-                iconBox.innerHTML = iconHtml;
-                lucide.createIcons();
-                customConfirmResolver = resolve;
-                modal.classList.add('active');
-            });
-        }
-
-        function resolveCustomConfirm(result) {
+        function closeConfirm(val) {
             document.getElementById('customConfirmModal').classList.remove('active');
-            if (customConfirmResolver) {
-                customConfirmResolver(result);
-                customConfirmResolver = null;
-            }
+            if(val && confirmCallback) confirmCallback();
         }
+        document.getElementById('confirm-yes-btn').onclick = () => closeConfirm(true);
 
-        async function customLogout() {
-            const confirmed = await customConfirm(
-                "ចាកចេញពីគណនី",
-                "តើអ្នកប្រាកដថាចង់ចាកចេញពីប្រព័ន្ធគ្រប់គ្រងចំណាយមែនទេ?",
-                "ចាកចេញ",
-                "logout"
-            );
+        // Standard Actions using Custom UI
+        function confirmLogout() { customConfirm("Logout?", "Are you sure you want to logout?", "Logout", "bg-red-600 hover:bg-red-700 shadow-red-200", () => { localStorage.removeItem('user'); window.location.href="index.html"; }); }
+        function askTrash(id) { customConfirm("Move to Trash?", "This item will be moved to trash.", "Move to Trash", "bg-orange-500 hover:bg-orange-600 shadow-orange-200", () => moveToTrash(id)); }
+        function askRestore(id) { customConfirm("Restore Item?", "This item will be restored to the list.", "Restore", "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200", () => restoreItem(id)); }
+        function askDeleteForever(id) { customConfirm("Delete Forever?", "This cannot be undone!", "Delete Forever", "bg-red-600 hover:bg-red-700 shadow-red-200", () => deleteForever(id)); }
 
-            if (confirmed) {
-                localStorage.removeItem("user");
-                localStorage.clear();
-                window.location.href = "index.html";
-            }
-        }
-        function logout() { customLogout(); }
 
-        // --- INIT & AUTH (UPDATED for Avatar) ---
-        if (!user) {
-            showToast("⚠️ សូមចូលប្រព័ន្ធជាមុនសិន។", 'warning');
-            window.location.href = "index.html";
-        } else {
-            document.getElementById("dropdown-email").textContent = user.Email || 'N/A';
-            document.getElementById("dropdown-role").textContent = user.Role || 'User';
-            
-            // NEW: Set the profile avatar
-            updateProfileAvatar();
+        // INIT
+        window.onload = () => { 
+            initProfile(); renderForms(); renderCategorySettings(); loadData(); populateDropdowns(); lucide.createIcons(); 
+        };
 
-            if (user.Role === 'Owner') {
-                document.getElementById('user-management-link').classList.remove('hidden');
-                document.getElementById('user-management-link').classList.add('flex');
-            }
-        }
-        
-        // NEW: Avatar Logic
-        function updateProfileAvatar() {
-            const avatarImg = document.getElementById('profile-avatar');
-            let avatarSource = PROFILE_ICON_URL;
-            
-            if (user && user.FaceImageFile && user.FaceImageFile !== 'N/A' && user.FaceImageFile.toLowerCase().endsWith('.jpg')) {
-                // Use relative path for local images
-                avatarSource = BASE_IMAGE_URL + user.FaceImageFile;
-            } else if (user && user.Email) {
-                // Fallback to UI Avatars based on email name
-                const userName = user.Email.split('@')[0].toUpperCase();
-                avatarSource = DEFAULT_AVATAR_URL.replace('User', userName);
+        function initProfile() {
+            const avatarUrl = user.FaceImageFile ? `faces/${user.FaceImageFile}` : `https://ui-avatars.com/api/?name=${user.Email}&background=random`;
+            document.getElementById('header-avatar').src = avatarUrl;
+            document.getElementById('menu-email').innerText = user.Email;
+            document.getElementById('menu-role').innerText = user.Role;
+            document.getElementById('modal-avatar').src = avatarUrl;
+            document.getElementById('modal-email-display').innerText = user.Email;
+            document.getElementById('modal-role-display').innerText = user.Role;
+
+            if(user.Role !== 'Owner') {
+                const manageBtn = document.getElementById('btn-manage-users');
+                if(manageBtn) manageBtn.remove();
             } else {
-                avatarSource = PROFILE_ICON_URL;
+                document.getElementById('btn-manage-users').classList.remove('hidden');
             }
+        }
+
+        function formatCurrency(amount) { return (parseFloat(amount) || 0).toLocaleString('km-KH') + ' ៛'; }
+
+        // TAB & DOCK
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            if(tabName === 'dashboard') {
+                document.getElementById('view-dashboard').classList.remove('hidden');
+                document.getElementById('view-report').classList.add('hidden');
+                document.getElementById('mobile-dock').classList.add('hidden');
+            } else {
+                document.getElementById('view-dashboard').classList.add('hidden');
+                document.getElementById('view-report').classList.remove('hidden');
+                if(window.innerWidth < 1024) document.getElementById('mobile-dock').classList.remove('hidden');
+                populateYearFilter();
+            }
+        }
+
+        // DATA & FILTERS
+        async function loadData() {
+            const list = document.getElementById('expense-list');
+            list.innerHTML = '<div class="text-center py-10"><i data-lucide="loader-2" class="w-8 h-8 animate-spin mx-auto text-indigo-500"></i><p class="text-gray-500 mt-2">Loading data...</p></div>';
+            lucide.createIcons();
+
+            try { 
+                const res = await fetch(`${SHEETDB_URL}?sheet=Expenses`); 
+                if (!res.ok) throw new Error("Failed to fetch");
+                const rawData = await res.json();
+                allExpenses = rawData.filter(item => item.ID && !isNaN(item.ID)); 
+                allExpenses.sort((a,b)=>new Date(b.Date)-new Date(a.Date)); 
+                applyFilters();
+            } catch(e){
+                console.error(e);
+                list.innerHTML = `<div class="text-center py-10 text-red-500 p-4 bg-red-50 rounded-xl border border-red-100"><p class="font-bold">Error Loading Data</p><button onclick="loadData()" class="mt-3 px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-medium">Retry</button></div>`;
+            }
+        }
+
+        // --- FILTERS ---
+        function populateDropdowns() {
+            const months = ["មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា", "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ"];
+            ['d','m'].forEach(p => {
+                const mSel = document.getElementById(`${p}-filter-month`);
+                mSel.innerHTML = '<option value="">ទាំងអស់</option>' + months.map((m,i) => `<option value="${i}">${m}</option>`).join('');
+            });
+        }
+        function populateYearFilter() {
+            const years = [...new Set(allExpenses.map(x => x.Date.substring(0, 4)))].sort().reverse();
+            ['d','m'].forEach(p => { const s = document.getElementById(`${p}-filter-year`); while(s.options.length > 1) s.remove(1); years.forEach(y => s.add(new Option(y, y))); });
+        }
+
+        function safeVal(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+        function syncAndApply(source) {
+            ['day','month','year'].forEach(f => {
+                const val = safeVal(`${source.charAt(0)}-filter-${f}`);
+                const target = source === 'desktop' ? 'm' : 'd';
+                const targetEl = document.getElementById(`${target}-filter-${f}`);
+                if(targetEl) targetEl.value = val;
+            });
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const fDay = safeVal('d-filter-day');
+            const fMonth = safeVal('d-filter-month');
+            const fYear = safeVal('d-filter-year');
+            const fDate = safeVal('d-filter-date');
+            const fSearch = document.getElementById('d-search-input').value.toLowerCase();
+
+            filteredExpenses = allExpenses.filter(x => {
+                if(currentView === 'active' && x.Status === 'Deleted') return false;
+                if(currentView === 'trash' && x.Status !== 'Deleted') return false;
+                
+                if (fDate && x.Date !== fDate) return false;
+                if (fDay !== "" && new Date(x.Date).getDay().toString() !== fDay) return false;
+                if (fMonth !== "" && new Date(x.Date).getMonth().toString() !== fMonth) return false;
+                if (fYear !== "" && x.Date.substring(0,4) !== fYear) return false;
+                
+                if (fSearch && !x.Description.toLowerCase().includes(fSearch)) return false;
+
+                return true;
+            });
+
+            renderList(filteredExpenses);
             
-            if (avatarImg) {
-                avatarImg.src = avatarSource;
-                // Use white background if profile icon is loaded, otherwise transparent (for API images)
-                if (avatarSource === PROFILE_ICON_URL) {
-                    avatarImg.style.backgroundColor = '#6366f1'; 
+            const badge = document.getElementById('active-filter-badge');
+            if(badge) badge.classList.toggle('hidden', !fDate && !fDay && !fMonth && !fYear);
+            
+            const activeAll = allExpenses.filter(x => x.Status !== 'Deleted');
+            updateSummary(activeAll);
+        }
+
+        function resetFilters() {
+            ['d','m'].forEach(p => { 
+                if(document.getElementById(`${p}-filter-day`)) document.getElementById(`${p}-filter-day`).value='';
+                if(document.getElementById(`${p}-filter-month`)) document.getElementById(`${p}-filter-month`).value=''; 
+                if(document.getElementById(`${p}-filter-year`)) document.getElementById(`${p}-filter-year`).value='';
+                if(document.getElementById(`${p}-filter-date`)) document.getElementById(`${p}-filter-date`).value='';
+            });
+            document.getElementById('d-search-input').value = '';
+            applyFilters();
+        }
+
+        // RENDER LIST
+        function renderList(data) {
+            const list = document.getElementById('expense-list'); list.innerHTML = '';
+            if (data.length === 0) { list.innerHTML = `<div class="text-center py-10 text-slate-400"><i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 opacity-50"></i><p>No ${currentView} items</p></div>`; lucide.createIcons(); return; }
+            
+            data.forEach(item => {
+                let breakdownHtml = '', itemTotal = 0;
+                categories.forEach(cat => { 
+                    const val = parseFloat(item[cat.key]) || 0; 
+                    if (val > 0) { 
+                        itemTotal += val; 
+                        breakdownHtml += `<span class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-600 border border-slate-200">${cat.label}: ${formatCurrency(val)}</span> `; 
+                    } 
+                });
+                
+                let btns = '';
+                if(currentView === 'active') {
+                    btns = `
+                        <button onclick="editItem('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold border border-blue-200 hover:bg-blue-100 transition"><i data-lucide="pencil" class="w-3 h-3"></i> Edit</button>
+                        <button onclick="askTrash('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-lg font-bold border border-orange-200 hover:bg-orange-100 transition"><i data-lucide="trash-2" class="w-3 h-3"></i> Trash</button>
+                    `;
                 } else {
-                    avatarImg.style.backgroundColor = 'transparent'; 
+                    btns = `
+                        <button onclick="askRestore('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg font-bold border border-emerald-200 hover:bg-emerald-100 transition"><i data-lucide="rotate-ccw" class="w-3 h-3"></i> Restore</button>
+                        <button onclick="askDeleteForever('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg font-bold border border-red-200 hover:bg-red-100 transition"><i data-lucide="x" class="w-3 h-3"></i> Delete</button>
+                    `;
                 }
                 
-                // Add a simple error handler in case the dynamic image fails to load
-                avatarImg.onerror = () => {
-                    avatarImg.src = PROFILE_ICON_URL;  
-                    avatarImg.style.backgroundColor = '#6366f1';
-                };
-            }
-        }
-
-
-        // --- PROFILE/DROPDOWN/MODALS (UNCHANGED) ---
-        function toggleDropdown(event) {
-            const menu = document.getElementById('profile-dropdown-menu');
-            document.querySelectorAll('.dropdown-menu.active').forEach(m => {
-                if (m !== menu) m.classList.remove('active');
-            });
-            menu.classList.toggle('active');
-            event.stopPropagation();
-        }
-
-        document.addEventListener('click', function(event) {
-            const dropdown = document.getElementById('profile-dropdown-menu');
-            if (dropdown.classList.contains('active') && !event.target.closest('.dropdown')) {
-                dropdown.classList.remove('active');
-            }
-        });
-
-        function closeDropdown() { document.getElementById('profile-dropdown-menu').classList.remove('active'); }
-        function openProfileModal() {
-            closeDropdown();
-            document.getElementById('modal-profile-email').textContent = user.Email;
-            document.getElementById('modal-profile-role').textContent = user.Role;
-            document.getElementById('profileModal').classList.add('active');
-        }
-        function closeProfileModal() { document.getElementById('profileModal').classList.remove('active'); }
-
-        // --- DETAIL MODAL (UNCHANGED logic) ---
-        function openDetailModal(record) {
-            // FIX: Close edit/add form before opening detail modal
-            if (window.innerWidth >= 1024 && editingID) {
-                resetForm(document.getElementById('report-form'));
-            } else if (window.innerWidth < 1024) {
-                 closeFormModal();
-            }
-
-            activeDetailRecord = record;
-
-            document.getElementById('detail-date').textContent = record.Date;
-            document.getElementById('detail-amount').textContent = formatCurrency(parseFloat(record.Amount));
-            document.getElementById('detail-amount').className = 'text-3xl font-extrabold mt-1 text-red-600';
-
-            // NEW: Populate Breakdown
-            document.getElementById('detail-meat').textContent = formatCurrency(parseFloat(record.Meat));
-            document.getElementById('detail-vegetable').textContent = formatCurrency(parseFloat(record.Vegetable));
-            document.getElementById('detail-fruit').textContent = formatCurrency(parseFloat(record.Fruit));
-
-            // Use Description
-            document.getElementById('detail-desc').textContent = record.Description || 'គ្មានពិពណ៌នា';
-
-            document.getElementById('detail-modified').textContent = record.ModifiedDate ? new Date(record.ModifiedDate).toLocaleString('km-KH') : 'N/A';
-            document.getElementById('detail-status').textContent = record.Status === 'Deleted' ? 'លុបបណ្ដោះអាសន្ន' : 'សកម្ម';
-
-            document.getElementById('detailModal').classList.add('active');
-            lucide.createIcons();
-        }
-
-        function closeDetailModal() {
-            document.getElementById('detailModal').classList.remove('active');
-            activeDetailRecord = null;
-        }
-
-        // --- FORM LOGIC (MODIFIED to handle two forms) ---
-
-        function updateAmountSummary(formElement) {
-            const meat = parseFloat(formElement.querySelector("#meat").value) || 0;
-            const vegetable = parseFloat(formElement.querySelector("#vegetable").value) || 0;
-            const fruit = parseFloat(formElement.querySelector("#fruit").value) || 0;
-
-            // NEW: Sum all dynamically added custom amounts
-            let customTotal = 0;
-            formElement.querySelectorAll('.custom-input-amount').forEach(input => {
-                customTotal += parseFloat(input.value) || 0;
-            });
-
-            const total = meat + vegetable + fruit + customTotal; // UPDATED TOTAL CALCULATION
-
-            // Update the display field
-            formElement.querySelector("#amount-summary").value = formatCurrency(total);
-
-            // Update the hidden field used for data submission (We use the hidden field with ID 'amount' for submission)
-            formElement.querySelector("#amount").value = total;
-
-            // Apply visual cue if total is zero
-            const summaryInput = formElement.querySelector("#amount-summary");
-            if (total === 0) {
-                summaryInput.classList.remove('text-red-600');
-                summaryInput.classList.add('text-gray-500');
-            } else {
-                summaryInput.classList.remove('text-gray-500');
-                summaryInput.classList.add('text-red-600');
-            }
-        }
-        
-        /**
-         * Generates the HTML string for a single Custom Expense input row.
-         */
-        function createCustomExpenseFieldHTML(index, label = '', amount = 0, formId) {
-            const inputId = `custom-amount-${index}-${formId}`;
-            const labelId = `custom-label-${index}-${formId}`;
-            
-            return `
-                <div id="custom-row-${index}-${formId}" class="custom-expense-row grid grid-cols-5 gap-2 border-b border-gray-200 pb-2 relative">
-                    <div class="col-span-3">
-                         <label for="${labelId}" class="block text-xs font-medium text-gray-500">ប្រភព #${index}</label>
-                         <input id="${labelId}" type="text" class="w-full p-2 border border-gray-300 rounded-lg text-sm" placeholder="ឧ. ថ្លៃសាលា" value="${label}" maxlength="50" data-index="${index}" data-type="label">
-                    </div>
-                    <div class="col-span-2 relative">
-                         <label for="${inputId}" class="block text-xs font-medium text-gray-500">តម្លៃ (៛)</label>
-                         <input id="${inputId}" type="number" class="w-full p-2 border border-gray-300 rounded-lg text-sm expense-input custom-input-amount" placeholder="0" value="${amount}" min="0" data-index="${index}" data-type="amount">
-                    </div>
-                    <button type="button" onclick="removeCustomExpenseField(this, '${formId}')" class="absolute top-0 right-0 p-1 text-red-500 hover:text-red-700 transition">
-                         <i data-lucide="x" class="w-4 h-4"></i>
-                    </button>
-                </div>
-            `;
-        }
-
-        /**
-         * Adds a new custom expense row to the specified form.
-         */
-        function addCustomExpenseField(element, data = {label: '', amount: 0}) {
-            const formElement = element ? element.closest('form') : document.getElementById('report-form');
-            if (!formElement) return;
-
-            const container = formElement.querySelector('#custom-expense-inputs');
-            if (!container) return;
-
-            const formId = formElement.id;
-            const existingRows = container.querySelectorAll('.custom-expense-row').length;
-
-            if (existingRows >= MAX_CUSTOM_FIELDS) {
-                // Hide the add button if max reached
-                formElement.querySelector('#add-custom-btn').style.display = 'none';
-                return;
-            }
-
-            const newIndex = existingRows + 1;
-            const html = createCustomExpenseFieldHTML(newIndex, data.label, data.amount, formId);
-            container.insertAdjacentHTML('beforeend', html);
-            lucide.createIcons();
-            
-            // Re-check button visibility
-            if (newIndex >= MAX_CUSTOM_FIELDS) {
-                formElement.querySelector('#add-custom-btn').style.display = 'none';
-            }
-        }
-
-        /**
-         * Removes a custom expense row and re-updates the total.
-         */
-        function removeCustomExpenseField(button, formId) {
-            const row = button.closest('.custom-expense-row');
-            if (row) {
-                row.remove();
-                
-                const formElement = document.getElementById(formId);
-                const container = formElement.querySelector('#custom-expense-inputs');
-                
-                // Re-index remaining fields (Important for SheetDB mapping)
-                container.querySelectorAll('.custom-expense-row').forEach((row, i) => {
-                    const index = i + 1;
-                    const amountInput = row.querySelector('.custom-input-amount');
-                    const labelInput = row.querySelector('input[data-type="label"]');
-                    
-                    if (amountInput) {
-                        amountInput.id = `custom-amount-${index}-${formId}`;
-                        amountInput.dataset.index = index;
-                    }
-                    if (labelInput) {
-                        labelInput.id = `custom-label-${index}-${formId}`;
-                        labelInput.dataset.index = index;
-                    }
-                    row.id = `custom-row-${index}-${formId}`;
-                    row.querySelector('.block.text-xs.font-medium.text-gray-500').textContent = `ប្រភព #${index}`;
-                });
-                
-                updateAmountSummary(formElement);
-                // Ensure add button is visible again if capacity allows
-                formElement.querySelector('#add-custom-btn').style.display = 'flex';
-                lucide.createIcons();
-            }
-        }
-
-
-        // Global setup for custom fields and delegated events
-        function initCustomFields(formElement) {
-            const container = formElement.querySelector('#custom-expense-inputs');
-            if (container) {
-                // Clear any existing content
-                container.innerHTML = '';
-                
-                // Add initial listeners (delegated)
-                formElement.addEventListener('input', (e) => {
-                    if (e.target.classList.contains('expense-input')) {
-                        updateAmountSummary(formElement);
-                    }
-                });
-            }
-            // Add one initial empty custom field when initializing (if not editing)
-            if (!editingID) {
-               addCustomExpenseField(formElement);
-            }
-        }
-
-        function setupForms() {
-            const formTemplate = document.getElementById('form-template').innerHTML;
-
-            // Setup Report Form (Desktop Only)
-            const reportForm = document.getElementById('report-form');
-            if (reportForm) {
-                reportForm.innerHTML = formTemplate;
-                reportForm.addEventListener('submit', (e) => handleFormSubmission(e, 'report-desktop'));
-                initCustomFields(reportForm);
-            }
-            
-            // Setup Mobile Form (Used for FAB/Mobile Modal)
-            const mobileForm = document.getElementById('mobile-expense-form');
-            if (mobileForm) {
-                mobileForm.innerHTML = formTemplate;
-                mobileForm.addEventListener('submit', (e) => handleFormSubmission(e, 'mobile'));
-                initCustomFields(mobileForm);
-            }
-        }
-
-        function openFormModal() {
-            activeFormElement = document.getElementById('mobile-expense-form');
-            resetForm(activeFormElement);
-            document.getElementById('mobile-form-title').textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
-            document.getElementById('mobileFormModal').classList.add('active');
-            lucide.createIcons();
-        }
-
-        function closeFormModal() {
-            resetForm(document.getElementById('mobile-expense-form'));
-            document.getElementById('mobileFormModal').classList.remove('active');
-            activeFormElement = null;
-        }
-
-        function populateForm(formElement, record) {
-            // Re-initialize custom fields container
-            const container = formElement.querySelector('#custom-expense-inputs');
-            container.innerHTML = ''; // Clear previous fields
-            
-            // Populate fixed fields
-            formElement.querySelector("#date").value = record.Date;
-            formElement.querySelector("#meat").value = parseFloat(record.Meat) || 0;
-            formElement.querySelector("#vegetable").value = parseFloat(record.Vegetable) || 0;
-            formElement.querySelector("#fruit").value = parseFloat(record.Fruit) || 0;
-            formElement.querySelector("#desc").value = record.Description;
-            
-            // Populate Dynamic/Custom fields from record
-            let customFieldsFound = 0;
-            for(let i = 1; i <= MAX_CUSTOM_FIELDS; i++) {
-                const labelKey = `${CUSTOM_FIELD_PREFIX}${i}_Label`;
-                const amountKey = `${CUSTOM_FIELD_PREFIX}${i}_Amount`;
-                
-                const label = record[labelKey] || '';
-                const amount = parseFloat(record[amountKey]) || 0;
-
-                // Only add fields if they have data (label or amount > 0)
-                if (label || amount > 0) {
-                    addCustomExpenseField(formElement, { label: label, amount: amount });
-                    customFieldsFound++;
-                }
-            }
-
-            // If no custom fields were found, ensure at least one empty field exists
-            if (customFieldsFound === 0) {
-                addCustomExpenseField(formElement);
-            }
-            
-            // Show/Hide Add button based on total fields added
-            const addBtn = formElement.querySelector('#add-custom-btn');
-            if (addBtn) {
-                const currentRows = container.querySelectorAll('.custom-expense-row').length;
-                 addBtn.style.display = currentRows < MAX_CUSTOM_FIELDS ? 'flex' : 'none';
-            }
-
-
-            updateAmountSummary(formElement);
-
-            const isEditing = record !== null;
-            const submitBtn = formElement.querySelector('#submit-btn');
-            const cancelBtn = formElement.querySelector('#cancel-btn');
-            
-            const reportTitle = document.getElementById('report-form-title');
-            const mobileTitle = document.getElementById('mobile-form-title');
-
-
-            if (isEditing) {
-                submitBtn.innerHTML = '<i data-lucide="save" class="w-5 h-5 mr-1"></i> រក្សាទុកការកែប្រែ';
-                submitBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-                submitBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
-                cancelBtn.classList.remove('hidden');
-
-                if (reportTitle) reportTitle.textContent = "📝 កែប្រែកំណត់ត្រា";
-                if (mobileTitle) mobileTitle.textContent = "📝 កែប្រែកំណត់ត្រា";
-                
-            } else {
-                resetFormUI(formElement);
-            }
-            lucide.createIcons();
-        }
-
-        function resetFormUI(formElement) {
-            const submitBtn = formElement.querySelector('#submit-btn');
-            const cancelBtn = formElement.querySelector('#cancel-btn');
-
-            submitBtn.innerHTML = '<i data-lucide="plus" class="w-5 h-5 mr-1"></i> បន្ថែមកំណត់ត្រា';
-            submitBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
-            submitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-            cancelBtn.classList.add('hidden');
-
-            const reportTitle = document.getElementById('report-form-title');
-            const mobileTitle = document.getElementById('mobile-form-title');
-
-            if (reportTitle) reportTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
-            if (mobileTitle) mobileTitle.textContent = "➕ បញ្ចូលកំណត់ត្រាថ្មី";
-
-            updateAmountSummary(formElement);
-            
-            // Ensure fields are reset correctly for dynamic inputs
-            const container = formElement.querySelector('#custom-expense-inputs');
-            if (container) {
-                 container.innerHTML = ''; 
-                 const addBtn = formElement.querySelector('#add-custom-btn');
-                 if (addBtn) addBtn.style.display = 'flex'; // Ensure add button is visible
-                 addCustomExpenseField(formElement); // Add one empty field
-            }
-        }
-
-        function resetForm(formToReset = null) {
-            editingID = null;
-            
-            if (formToReset) {
-                formToReset.reset();
-                resetFormUI(formToReset);
-            } else {
-                const reportForm = document.getElementById('report-form');
-                const mobileForm = document.getElementById('mobile-expense-form');
-                
-                if(reportForm) { reportForm.reset(); resetFormUI(reportForm); }
-                if(mobileForm) { mobileForm.reset(); resetFormUI(mobileForm); }
-            }
-            
-            activeFormElement = formToReset; 
-            lucide.createIcons();
-        }
-
-        /**
-         * CRITICAL CHANGE: Handles click on expense item.
-         * On ANY screen, opens the Detail Modal.
-         */
-        function handleCardClick(record) {
-            // FIX: Ensure detail modal opens on click regardless of device type,
-            // but first, close any open forms to prevent conflicts.
-            closeFormModal();
-            if (window.innerWidth >= 1024 && editingID) {
-                resetForm(document.getElementById('report-form')); // Reset desktop form if editing
-            }
-            openDetailModal(record);
-        }
-        
-        // Function specifically for Desktop Edit Button (in detail modal)
-        function editDesktopForm(id) {
-            const record = allExpenses.find(x => x.ID.toString() === id.toString());
-            if (!record) return showToast("❌ មិនអាចរកកំណត់ត្រាបានទេ។", 'error');
-            
-            closeDetailModal(); // Close detail modal
-            editingID = id;
-            
-            const reportForm = document.getElementById('report-form');
-            if (reportForm) {
-                activeFormElement = reportForm;
-                populateForm(reportForm, record); // Populate the visible desktop form
-                document.getElementById("report-expense-form-container").scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }
-
-
-        async function editExpense(id, scrollToForm=true) {
-            const record = allExpenses.find(x => x.ID.toString() === id.toString());
-            if (!record) {
-                showToast("❌ មិនអាចរកកំណត់ត្រាបានទេ។", 'error');
-                return;
-            }
-
-            closeDetailModal();
-            editingID = id;
-
-            const isMobile = window.innerWidth < 1024;
-
-            if (isMobile) {
-                // If on mobile, open the form modal for editing
-                openFormModal();
-                activeFormElement = document.getElementById('mobile-expense-form');
-                populateForm(activeFormElement, record);
-            } else {
-                // If on desktop, populate the desktop form directly
-                const reportForm = document.getElementById('report-form');
-                if (reportForm) {
-                    activeFormElement = reportForm;
-                    populateForm(reportForm, record);
-                    if (scrollToForm) {
-                        document.getElementById("report-expense-form-container").scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                }
-            }
-        }
-
-        // --- UTILS (REVERTED to standard formatCurrency) ---
-        function formatCurrency(amount) {
-            const num = parseFloat(amount) || 0;
-            // Reverted to standard locale formatting for numbers, using comma separation
-            return `${num.toLocaleString('km-KH', { maximumFractionDigits: 0 })} ៛`;
-        }
-        
-        /**
-         * Checks if two date strings are the same day (ignoring time).
-         */
-        function isSameDay(date1, date2) {
-            const d1 = new Date(date1);
-            const d2 = new Date(date2);
-            return d1.getFullYear() === d2.getFullYear() &&
-                   d1.getMonth() === d2.getMonth() &&
-                   d1.getDate() === d2.getDate();
-        }
-
-        // --- SUMMARY & FILTERING LOGIC (UPDATED) ---
-        let filteredDataForReport = [];
-
-        function calculateSummary(data) {
-            const today = new Date();
-            const currentYear = today.getFullYear();
-            const currentMonth = today.getMonth();
-
-            const activeExpenses = data.filter(x => x.Status === "Active");
-            let totalExpense = 0;
-            let todayExpense = 0;
-            let monthlyExpense = 0;
-            let totalMeat = 0;
-            let totalVegetable = 0;
-            let totalFruit = 0;
-            let totalCount = activeExpenses.length;
-
-            activeExpenses.forEach(x => {
-                const amount = parseFloat(x.Amount) || 0;
-                const recordDate = new Date(x.Date);
-
-                // --- Breakdown Sums ---
-                const meat = parseFloat(x.Meat) || 0;
-                const vegetable = parseFloat(x.Vegetable) || 0;
-                const fruit = parseFloat(x.Fruit) || 0;
-                totalMeat += meat;
-                totalVegetable += vegetable;
-                totalFruit += fruit;
-
-                // --- Time-based Sums (Uses the Amount from the Sheet's formula) ---
-                totalExpense += amount;
-
-                if (isSameDay(x.Date, today)) {
-                    todayExpense += amount;
-                }
-
-                if (recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear) {
-                    monthlyExpense += amount;
-                }
-            });
-
-            // --- Rendering Summary Cards ---
-            document.getElementById('total-expense-summary').textContent = formatCurrency(totalExpense);
-            document.getElementById('today-expense-summary').textContent = formatCurrency(todayExpense);
-            document.getElementById('monthly-expense-summary').textContent = formatCurrency(monthlyExpense);
-
-            document.getElementById('meat-total-summary').textContent = formatCurrency(totalMeat);
-            document.getElementById('vegetable-total-summary').textContent = formatCurrency(totalVegetable);
-            document.getElementById('fruit-total-summary').textContent = formatCurrency(totalFruit);
-
-            document.getElementById('total-count-summary').textContent = `${totalCount} កំណត់ត្រា`;
-            
-            // Set the filtered total to the overall total initially
-            const filteredSummaryElement = document.getElementById('filtered-expense-summary');
-            if (filteredSummaryElement) {
-                filteredSummaryElement.textContent = formatCurrency(totalExpense);
-            }
-        }
-
-        // NEW: Populate years dynamically for filtering
-        function populateYearOptions(data) {
-            const selectDesktop = document.getElementById('filter-year');
-            const selectModal = document.getElementById('modal-filter-year');
-            
-            if (!selectDesktop || !selectModal) return;
-
-            // Clear existing custom year options (keep default 'all' and 'yearly')
-            const clearOptions = (select) => {
-                let existingYearOptions = select.querySelectorAll('option:not([value="all"]):not([value="yearly"])');
-                existingYearOptions.forEach(opt => opt.remove());
-            };
-
-            clearOptions(selectDesktop);
-            clearOptions(selectModal);
-
-            const uniqueYears = new Set();
-            data.filter(x => x.Status === "Active").forEach(x => {
-                const year = new Date(x.Date).getFullYear();
-                uniqueYears.add(year);
-            });
-            
-            const sortedYears = Array.from(uniqueYears).sort((a, b) => b - a);
-
-            const createYearOptions = (selectElement) => {
-                sortedYears.forEach(year => {
-                    const option = document.createElement('option');
-                    option.value = `year_${year}`;
-                    option.textContent = year;
-                    selectElement.appendChild(option.cloneNode(true));
-                });
-            };
-            
-            createYearOptions(selectDesktop);
-            createYearOptions(selectModal);
-        }
-
-        function filterRecords() {
-            // Get filter values (filters are always present in the DOM, even if hidden by CSS)
-            const filterDay = document.getElementById('filter-day').value;
-            const filterMonth = document.getElementById('filter-month').value;
-            const filterYear = document.getElementById('filter-year').value;
-
-            const expenseOnlyData = allExpenses.filter(x => x.Type === "Expense" || x.Status === "Deleted");
-
-            const dataToFilter = currentView === 'active' ?
-                                 expenseOnlyData.filter(x => x.Status === "Active") :
-                                 expenseOnlyData.filter(x => x.Status === "Deleted");
-
-            let filtered = dataToFilter;
-
-            const today = new Date();
-            const currentYear = today.getFullYear();
-            const currentMonth = today.getMonth();
-            let filteredTotal = 0;
-
-
-            filtered = filtered.filter(x => {
-                const recordDate = new Date(x.Date + 'T00:00:00'); 
-                const recordYear = recordDate.getFullYear();
-                const recordMonth = recordDate.getMonth();
-                const recordDay = recordDate.getDay();
-                
-                let matchesDay = true;
-                let matchesMonth = true;
-                let matchesYear = true;
-
-                // 1. Day Filter
-                if (filterDay === 'daily') {
-                    matchesDay = isSameDay(x.Date, today);
-                } else if (filterDay.startsWith('day_')) {
-                    const targetDayIndex = filterDay === 'day_sun' ? 0 : (filterDay === 'day_mon' ? 1 : (filterDay === 'day_tue' ? 2 : (filterDay === 'day_wed' ? 3 : (filterDay === 'day_thu' ? 4 : (filterDay === 'day_fri' ? 5 : (filterDay === 'day_sat' ? 6 : -1))))));
-                    matchesDay = recordDay === targetDayIndex;
-                }
-
-                // 2. Month Filter
-                if (filterMonth === 'monthly') {
-                    matchesMonth = recordMonth === currentMonth && recordYear === currentYear;
-                } else if (filterMonth.startsWith('month_')) {
-                    const targetMonth = parseInt(filterMonth.split('_')[1]);
-                    
-                    if (filterYear === 'all') { 
-                        matchesMonth = recordMonth === targetMonth;
-                    } else if (filterYear === 'yearly') { 
-                        matchesMonth = recordMonth === targetMonth && recordYear === currentYear;
-                    } else if (filterYear.startsWith('year_')) { 
-                        const targetYear = parseInt(filterYear.split('_')[1]);
-                        matchesMonth = recordMonth === targetMonth && recordYear === targetYear;
-                    }
-                }
-
-                // 3. Year Filter
-                if (filterYear === 'yearly') {
-                    matchesYear = recordYear === currentYear;
-                } else if (filterYear.startsWith('year_')) {
-                    const targetYear = parseInt(filterYear.split('_')[1]);
-                    matchesYear = recordYear === targetYear;
-                }
-                
-                const matchesAll = matchesDay && matchesMonth && matchesYear;
-
-                if(matchesAll && x.Status === "Active") {
-                    filteredTotal += parseFloat(x.Amount) || 0;
-                }
-
-                return matchesAll;
-            }).sort((a, b) => new Date(b.Date) - new Date(a.Date));
-
-            filteredDataForReport = filtered;
-            
-            // NEW: Update the filtered total summary card
-            document.getElementById('filtered-expense-summary').textContent = formatCurrency(filteredTotal);
-            
-            renderExpenseList(filtered);
-        }
-
-        function switchView(view) {
-            currentView = view;
-            const trashBtn = document.getElementById('trash-btn');
-            trashBtn.innerHTML = view === 'active' ?
-                '<i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> កំណត់ត្រាដែលបានលុប' :
-                '<i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> មើលកំណត់ត្រាសកម្ម';
-            trashBtn.onclick = view === 'active' ? () => switchView('trash') : () => switchView('active');
-            trashBtn.classList.toggle('bg-gray-100', view === 'active');
-            trashBtn.classList.toggle('bg-indigo-500', view === 'trash');
-            trashBtn.classList.toggle('text-white', view === 'trash');
-            trashBtn.classList.toggle('text-gray-600', view === 'active');
-
-            // Reset all filters to default 'all'
-            if(document.getElementById('filter-day')) document.getElementById('filter-day').value = 'all';
-            if(document.getElementById('filter-month')) document.getElementById('filter-month').value = 'all';
-            if(document.getElementById('filter-year')) document.getElementById('filter-year').value = 'all';
-
-            filterRecords();
-            lucide.createIcons();
-        }
-
-        // --- RENDER LIST (UPDATED UX/UI for mobile) ---
-        function renderExpenseList(data) {
-            const list = document.getElementById("expense-list");
-            const isTrashView = currentView === 'trash';
-            const today = new Date().toISOString().slice(0, 10);
-            
-            if (data.length === 0) {
-                list.innerHTML = `<p class="text-center text-gray-500 py-10 text-xl border-dashed border-2 border-gray-300 rounded-lg m-4 bg-gray-50">
-                    ${isTrashView ? '🗑️ មិនមានទិន្នន័យក្នុងធុងសំរាមទេ។' : '✅ មិនមានកំណត់ត្រាចំណាយសកម្មទេ។'}
-                </p>`;
-                lucide.createIcons();
-                return;
-            }
-
-            list.innerHTML = data.map(x => {
-                const isDeleted = x.Status === 'Deleted';
-                const badgeClass = isDeleted ? 'badge-deleted' : 'badge-expense';
-                const amountTextClass = isDeleted ? 'text-gray-500 line-through' : 'text-red-600';
-                const icon = 'arrow-down-left';
-
-                const recordDate = new Date(x.Date + 'T00:00:00'); 
-                const dayName = dayNames[recordDate.getDay()];
-                const isToday = x.Date === today;
-                
-                // UX/UI Improvement: Place date on the right of the badge row
-                const dateDisplay = `<span class="text-xs text-gray-500 text-right">${dayName} | ${x.Date}</span>${isToday ? ' <span class="font-bold text-red-500 text-xs">(ថ្ងៃនេះ)</span>' : ''}`;
-
-                const recordJson = JSON.stringify(x).split("'").join("\\'");
-
-                // Compact Breakdown (SHOWN ON MOBILE AND DESKTOP)
-                const breakdown = `
-                    <div class="mobile-description-and-breakdown">
-                        <p class="text-xs text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
-                        <div class="mobile-breakdown">
-                            <span>សាច់: <span class="text-orange-600 font-medium">${formatCurrency(x.Meat)}</span></span>
-                            <span>បន្លែ: <span class="text-green-600 font-medium">${formatCurrency(x.Vegetable)}</span></span>
-                            <span>ផ្លែឈើ: <span class="text-yellow-600 font-medium">${formatCurrency(x.Fruit)}</span></span>
+                list.innerHTML += `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-3 animate-fade-in ${currentView==='trash'?'opacity-80 bg-red-50/30':''}">
+                        <div class="flex justify-between mb-1">
+                            <div><p class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md inline-block mb-1">${item.Date}</p></div>
+                            <p class="text-lg font-bold text-indigo-600">${formatCurrency(item.Amount||itemTotal)}</p>
                         </div>
-                    </div>
-                `;
-
-                // CRITICAL FIX: Ensure mobile action buttons prevent opening the detail modal when clicked
-                const actionButtons = isDeleted ? `
-                    <button onclick="event.stopPropagation(); restoreExpense('${x.ID}')" class="text-green-600 hover:text-green-800 p-2 rounded-full hover:bg-green-50 transition" title="ទាញយកមកវិញ">
-                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
-                    </button>
-                    <button onclick="event.stopPropagation(); permanentDeleteExpense('${x.ID}')" class="text-gray-600 hover:text-red-800 p-2 rounded-full hover:bg-red-50 transition" title="លុបជាអចិន្ត្រៃយ៍">
-                        <i data-lucide="x-circle" class="w-5 h-5"></i>
-                    </button>
-                ` : `
-                    <button onclick="event.stopPropagation(); editExpense('${x.ID}')" class="text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50 transition" title="កែប្រែ">
-                        <i data-lucide="pencil" class="w-5 h-5"></i>
-                    </button>
-                    <button onclick="event.stopPropagation(); deleteExpense('${x.ID}')" class="text-red-600 hover:text-red-800 p-2 rounded-full hover:bg-red-50 transition" title="លុប">
-                        <i data-lucide="trash-2" class="w-5 h-5"></i>
-                    </button>
-                `;
-
-                return `
-                    <div onclick="handleCardClick(${recordJson})" class="expense-item bg-white p-4 rounded-xl shadow-md border-l-4 ${isDeleted ? 'border-gray-500' : 'border-red-500'} flex justify-between items-start">
-                        <div class="flex-main-content">
-                            <div class="header-row">
-                                <span class="text-xs font-medium px-2 py-0.5 rounded-full ${badgeClass}">${x.Type === 'Expense' ? 'ចំណាយ' : 'ចំណូល'}</span>
-                                ${dateDisplay}
-                            </div>
-                            
-                            <p class="mobile-title">ចំណាយគ្រឿងទេស</p>
-                            
-                            <div class="mobile-description-and-breakdown">
-                                <p class="text-xs text-gray-600 truncate">${x.Description || 'មិនមានពិពណ៌នា'}</p>
-                                <div class="mobile-breakdown">
-                                    <span>សាច់: <span class="text-orange-600 font-medium">${formatCurrency(x.Meat)}</span></span>
-                                    <span>បន្លែ: <span class="text-green-600 font-medium">${formatCurrency(x.Vegetable)}</span></span>
-                                    <span>ផ្លែឈើ: <span class="text-yellow-600 font-medium">${formatCurrency(x.Fruit)}</span></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="text-right ml-4 flex flex-col justify-between items-end">
-                            <p class="mobile-amount font-extrabold ${amountTextClass} flex items-center justify-end whitespace-nowrap">
-                                ${!isDeleted ? `<i data-lucide="${icon}" class="w-4 h-4 mr-1"></i>` : ''}
-                                ${formatCurrency(parseFloat(x.Amount))}
-                            </p>
-                            <div class="item-actions flex space-x-1 mt-2 flex-shrink-0">
-                                ${actionButtons}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join("");
-
-            lucide.createIcons();
-        }
-
-        // --- CRUD/DATA OPERATIONS (CRITICAL UPDATE) ---
-
-        async function handleFormSubmission(e, source) {
-            e.preventDefault();
-            // Determine which form submitted the data
-            const formElement = source === 'mobile' ? document.getElementById('mobile-expense-form') : document.getElementById('report-form');
-
-            const date = formElement.querySelector("#date").value;
-            const meat = parseFloat(formElement.querySelector("#meat").value) || 0;
-            const vegetable = parseFloat(formElement.querySelector("#vegetable").value) || 0;
-            const fruit = parseFloat(formElement.querySelector("#fruit").value) || 0;
-            const desc = formElement.querySelector("#desc").value;
-
-            // CAPTURE ALL CUSTOM INPUTS
-            const customRows = formElement.querySelectorAll('.custom-expense-row');
-            let customData = {};
-            let totalOtherAmount = 0;
-
-            customRows.forEach((row, i) => {
-                const index = i + 1;
-                const amountInput = row.querySelector('.custom-input-amount');
-                const labelInput = row.querySelector('input[data-type="label"]');
-                
-                const amount = parseFloat(amountInput.value) || 0;
-                const label = labelInput.value.trim();
-
-                if (amount > 0 || label) {
-                    customData[`${CUSTOM_FIELD_PREFIX}${index}_Label`] = label || `Custom #${index}`;
-                    customData[`${CUSTOM_FIELD_PREFIX}${index}_Amount`] = amount;
-                    totalOtherAmount += amount;
-                } else {
-                    customData[`${CUSTOM_FIELD_PREFIX}${index}_Label`] = '';
-                    customData[`${CUSTOM_FIELD_PREFIX}${index}_Amount`] = 0;
-                }
+                        <p class="text-slate-700 text-sm font-medium line-clamp-1 mb-2">${item.Description||'No Description'}</p>
+                        <div class="flex flex-wrap gap-1 mt-2 border-t pt-2 border-dashed border-slate-200">${breakdownHtml}</div>
+                        <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-50">${btns}</div>
+                    </div>`;
             });
-            
-            // IMPORTANT: Ensure unused fields up to MAX are explicitly sent as empty/0
-            for(let i = customRows.length + 1; i <= MAX_CUSTOM_FIELDS; i++) {
-                customData[`${CUSTOM_FIELD_PREFIX}${i}_Label`] = '';
-                customData[`${CUSTOM_FIELD_PREFIX}${i}_Amount`] = 0;
-            }
-
-
-            const totalAmount = meat + vegetable + fruit + totalOtherAmount; // Re-verify total
-            const type = 'Expense';
-
-            const submitBtn = formElement.querySelector("#submit-btn");
-
-            if (!date || totalAmount <= 0) { // UPDATED CHECK
-                showToast("⚠️ សូមបំពេញកាលបរិច្ឆេទ និងត្រូវតែមានចំនួនប្រាក់ចំណាយសរុប!", 'warning');
-                return;
-            }
-
-            const originalText = submitBtn.textContent;
-            submitBtn.innerHTML = editingID ? '<i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-1"></i> កំពុងកែប្រែ...' : '<i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-1"></i> កំពុងបន្ថែម...';
-            lucide.createIcons();
-            submitBtn.disabled = true;
-
-            let recordData = {
-                Date: date,
-                Type: type,
-                Meat: meat,
-                Vegetable: vegetable,
-                Fruit: fruit,
-                Description: desc,
-                ModifiedDate: new Date().toISOString()
-            };
-            
-            // Merge custom data into the main record payload
-            recordData = {...recordData, ...customData};
-
-
-            let res;
-            if (editingID) {
-                // PATCH request
-                const url = `${SHEETDB_BASE_URL}/ID/${editingID}?sheet=${SHEET_EXPENSES}`;
-                res = await fetch(url, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ data: [recordData] })
-                });
-                if (res.ok) showToast("✅ កំណត់ត្រាត្រូវបានកែប្រែដោយជោគជ័យ!", 'success');
-            } else {
-                // POST request (Add new record)
-                const payload = {
-                    data: [{
-                        ID: Date.now(),
-                        UserEmail: user.Email,
-                        Status: "Active",
-                        ...recordData
-                    }]
-                };
-                res = await fetch(sheetUrl(SHEET_EXPENSES), {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                });
-                if (res.ok) showToast("✅ កំណត់ត្រាត្រូវបានបន្ថែមដោយជោគជ័យ!", 'success');
-            }
-
-            if (res.ok) {
-                if(source === 'mobile') closeFormModal();
-                
-                resetForm(formElement);
-                setTimeout(loadAllData, 1500);
-            } else {
-                showToast("❌ ប្រតិបត្តិការបរាជ័យ។", 'error');
-            }
-
-            submitBtn.textContent = originalText;
-            submitBtn.disabled = false;
             lucide.createIcons();
         }
 
-        // --- Soft Delete/Restore/Permanent Delete functions (UNCHANGED logic) ---
-        async function deleteExpense(id) {
-            const confirmed = await customConfirm(
-                "បញ្ជាក់ការលុបបណ្ដោះអាសន្ន",
-                "កំណត់ត្រានេះនឹងត្រូវបានផ្លាស់ទៅកាន់ធុងសំរាម។ តើអ្នកប្រាកដទេ?",
-                "ផ្លាស់ទៅធុងសំរាម",
-                "delete"
-            );
-            if (confirmed) { await updateStatus(id, "Deleted", "លុបបណ្ដោះអាសន្ន"); }
-        }
-
-        async function restoreExpense(id) {
-            const confirmed = await customConfirm(
-                "បញ្ជាក់ការទាញយកមកវិញ",
-                "តើអ្នកប្រាកដថាចង់ទាញយកកំណត់ត្រានេះត្រឡប់មកវិញទេ?",
-                "ទាញយកមកវិញ",
-                "restore"
-            );
-            if (confirmed) { await updateStatus(id, "Active", "ទាញយកមកវិញ"); }
-        }
-
-        async function permanentDeleteExpense(id) {
-            const confirmed = await customConfirm(
-                "⚠️ លុបជាអចិន្ត្រៃយ៍",
-                "កំណត់ត្រានេះនឹងត្រូវលុបចេញពីប្រព័ន្ធទាំងស្រុង ហើយមិនអាចយកមកវិញបានទេ។ តើអ្នកប្រាកដទេ?",
-                "លុបជាអចិន្ត្រៃយ៍",
-                "permanent_delete"
-            );
-
-            if (!confirmed) return;
-            const url = `${SHEETDB_BASE_URL}/ID/${id}?sheet=${SHEET_EXPENSES}`;
-            const res = await fetch(url, { method: "DELETE" });
-
-            if (res.ok) {
-                showToast("🗑️ កំណត់ត្រាត្រូវបានលុបជាអចិន្ត្រៃយ៍ដោយជោគជ័យ។", 'success');
-                loadAllData();
-            } else {
-                showToast("❌ ការលុបបរាជ័យ។", 'error');
-            }
-        }
-
-        async function updateStatus(id, newStatus, actionName) {
-            const url = `${SHEETDB_BASE_URL}/ID/${id}?sheet=${SHEET_EXPENSES}`;
-            const res = await fetch(url, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ data: [{ Status: newStatus, ModifiedDate: new Date().toISOString() }] })
+        function updateSummary(data) {
+            let t=0, td=0, tm=0, ty=0; 
+            const today=new Date().toISOString().split('T')[0], d=new Date(), m=d.getMonth(), y=d.getFullYear();
+            data.forEach(x=>{ 
+                const v=parseFloat(x.Amount)||0; t+=v; 
+                if(x.Date===today) td+=v; 
+                const xD = new Date(x.Date);
+                if(xD.getMonth()===m && xD.getFullYear()===y) tm+=v; 
+                if(xD.getFullYear()===y) ty+=v;
             });
-
-            if (res.ok) {
-                showToast(`✅ កំណត់ត្រាត្រូវបាន${actionName}ដោយជោគជ័យ។`, 'success');
-                // Delay loading data briefly to allow Google Sheet's formula to update
-                setTimeout(loadAllData, 1500);
-            } else {
-                showToast("❌ ប្រតិបត្តិការបរាជ័យ។", 'error');
-            }
+            document.getElementById('total-summary').innerText=formatCurrency(t); 
+            document.getElementById('today-summary').innerText=formatCurrency(td); 
+            document.getElementById('month-summary').innerText=formatCurrency(tm);
+            document.getElementById('year-summary').innerText=formatCurrency(ty);
+            document.getElementById('count-summary').innerText = data.length;
         }
 
-        // --- DATA EXPORT (UPDATED logic) ---
-        async function exportData(format) {
-            const dataToExport = filteredDataForReport;
+        // --- VIEW TOGGLE ---
+        function toggleTrashView() { 
+            currentView = currentView === 'active' ? 'trash' : 'active'; 
+            const btn = document.getElementById('trash-toggle-btn'); 
+            const title = currentView === 'trash' ? 'ធុងសំរាម (Trash)' : 'បញ្ជីចំណាយ';
             
-            // Reconstruct report name from individual filters (Use current filter states, even if hidden)
-            const filterDayElement = document.getElementById('filter-day');
-            const filterMonthElement = document.getElementById('filter-month');
-            const filterYearElement = document.getElementById('filter-year');
+            const mobileTitle = document.getElementById('list-header-title-mobile');
+            if(mobileTitle) mobileTitle.innerText = title;
             
-            const dayText = filterDayElement.options[filterDayElement.selectedIndex].text;
-            const monthText = filterMonthElement.options[filterMonthElement.selectedIndex].text;
-            const yearText = filterYearElement.options[filterYearElement.selectedIndex].text;
-            const reportName = `Report_${dayText}_${monthText}_${yearText}`;
-            
-            if (dataToExport.length === 0) {
-                showToast("⚠️ មិនមានទិន្នន័យសម្រាប់ទាញយកទេ។ សូមជ្រើសរើសរបាយការណ៍ផ្សេងទៀត។", 'warning', 6000);
-                return;
-            }
+            const desktopTitle = document.getElementById('list-header-title');
+            if(desktopTitle) desktopTitle.innerText = title;
 
-            // --- EXCEL EXPORT ---
-            if (format === 'excel') {
-                // IMPORTANT: Ensure you include all Custom columns here for export!
-                const exportColumns = ['កាលបរិច្ឆេទ', 'ប្រភេទ', 'សរុបប្រាក់ (៛)', 'សាច់ (៛)', 'បន្លែ (៛)', 'ផ្លែឈើ (៛)'];
-                
-                // Add dynamic custom columns to the header row for export
-                for(let i=1; i<=MAX_CUSTOM_FIELDS; i++) {
-                    exportColumns.push(`Custom${i}_Label`);
-                    exportColumns.push(`Custom${i}_Amount`);
-                }
-                exportColumns.push('ពិពណ៌នា', 'ស្ថានភាព');
-
-                const structuredData = dataToExport.map(x => {
-                    let row = {
-                        'កាលបរិច្ឆេទ': x.Date,
-                        'ប្រភេទ': x.Type,
-                        'សរុបប្រាក់ (៛)': parseFloat(x.Amount) || 0,
-                        'សាច់ (៛)': parseFloat(x.Meat) || 0,
-                        'បន្លែ (៛)': parseFloat(x.Vegetable) || 0,
-                        'ផ្លែឈើ (៛)': parseFloat(x.Fruit) || 0,
-                    };
-                    
-                    for(let i=1; i<=MAX_CUSTOM_FIELDS; i++) {
-                         row[`Custom${i}_Label`] = x[`Custom${i}_Label`] || '';
-                         row[`Custom${i}_Amount`] = parseFloat(x[`Custom${i}_Amount`]) || 0;
-                    }
-                    
-                    row['ពិពណ៌នា'] = x.Description || '';
-                    row['ស្ថានភាព'] = x.Status;
-                    return row;
-                });
-
-
-                if (typeof XLSX === 'undefined') {
-                    showToast("❌ កំហុស! SheetJS (XLSX) library មិនត្រូវបានផ្ទុកទេ។", 'error');
-                    return;
-                }
-
-                try {
-                    const workbook = XLSX.utils.book_new();
-                    const worksheet = XLSX.utils.json_to_sheet(structuredData, {header: exportColumns});
-                    XLSX.utils.book_append_sheet(workbook, worksheet, reportName);
-                    XLSX.writeFile(workbook, `${reportName}_ExpenseReport_${new Date().toISOString().slice(0,10)}.xlsx`);
-                    showToast(`✅ ឯកសារ Excel (.xlsx) ត្រូវបានទាញយកដោយជោគជ័យ!`, 'success');
-                } catch (error) {
-                    console.error("Excel Export Failed:", error);
-                    showToast("❌ ការទាញយកឯកសារ Excel បរាជ័យ។", 'error');
-                }
-
+            if(currentView === 'trash') { 
+                btn.classList.add('text-red-600','bg-red-50'); 
+                btn.classList.remove('text-gray-500');
+                btn.innerHTML = `<i data-lucide="arrow-left" class="w-4 h-4"></i> Back`; 
+            } else { 
+                btn.classList.remove('text-red-600','bg-red-50'); 
+                btn.classList.add('text-gray-500');
+                btn.innerHTML = `<i data-lucide="trash-2" class="w-4 h-4"></i> Trash`; 
             } 
-            // --- PDF EXPORT (UNCHANGED Logic) ---
-            else if (format === 'pdf') {
-                const { jsPDF } = window.jspdf;
-                const inputElement = document.getElementById('data-view-section');
-
-                document.querySelectorAll('.item-actions').forEach(el => el.style.display = 'none');
-
-                const pdfBtn = document.querySelector('button[onclick="exportData(\'pdf\')"]');
-                if (window.innerWidth >= 1024) { // Only update desktop button state
-                    pdfBtn.innerHTML = '<i data-lucide="loader-2" class="animate-spin w-4 h-4 mr-1"></i> កំពុងរៀបចំ PDF...';
-                    pdfBtn.disabled = true;
-                }
-
-
-                try {
-                    const canvas = await html2canvas(inputElement, {
-                        scale: 2,
-                        useCORS: true,
-                        windowWidth: inputElement.scrollWidth,
-                        windowHeight: inputElement.scrollHeight
-                    });
-
-                    const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                    const pdf = new jsPDF('p', 'mm', 'a4');
-
-                    const pdfWidth = pdf.internal.pageSize.getWidth();
-                    const pdfHeight = pdf.internal.pageSize.getHeight();
-
-                    const imgHeight = canvas.height * pdfWidth / canvas.width;
-                    let heightLeft = imgHeight;
-                    let position = 0;
-
-                    pdf.setFontSize(16);
-                    pdf.text(`របាយការណ៍ចំណាយ: ${reportName}`, 10, 10);
-                    pdf.setFontSize(10);
-                    pdf.text(`កាលបរិច្ឆេទ: ${new Date().toLocaleDateString('km-KH')}`, 10, 17);
-
-                    position = 25;
-
-                    while (heightLeft >= 0) {
-                        if (position > 25) {
-                            pdf.addPage();
-                        }
-
-                        pdf.addImage(imgData, 'JPEG', 0, position - imgHeight, pdfWidth, imgHeight);
-
-                        heightLeft -= pdfHeight - 15;
-
-                        position -= pdfHeight - 15;
-                    }
-
-                    pdf.save(`${reportName}_Report_${new Date().toISOString().slice(0,10)}.pdf`);
-                    showToast(`✅ ឯកសារ PDF ត្រូវបានទាញយកដោយជោគជ័យ!`, 'success');
-
-                } catch(error) {
-                    console.error("PDF Export failed:", error);
-                    showToast("❌ ការទាញយក PDF បរាជ័យ។", 'error');
-                } finally {
-                    document.querySelectorAll('.item-actions').forEach(el => el.style.display = 'flex');
-                    if (window.innerWidth >= 1024) {
-                        pdfBtn.innerHTML = '<i data-lucide="file-text" class="w-4 h-4 mr-1"></i> ទាញយក PDF';
-                        pdfBtn.disabled = false;
-                    }
-                    
-                    lucide.createIcons();
-                }
-            }
+            applyFilters(); 
         }
 
-        // --- Initialization ---
-        async function loadAllData() {
-            // Only show loading text if we're on the report tab
-            if (activeTab === 'report') {
-                document.getElementById("expense-list").innerHTML = '<p class="text-center text-gray-500 py-10 flex items-center justify-center"><i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-3"></i> កំពុងទាញទិន្នន័យ...</p>';
-            }
+        // --- CRUD ACTIONS ---
+        async function moveToTrash(id) {
+            await fetch(`${SHEETDB_URL}/ID/${id}?sheet=Expenses`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: { Status: 'Deleted' } }) });
+            loadData();
+            showActionToast("Moved to Trash", "View Trash", () => toggleTrashView());
+        }
 
+        async function restoreItem(id) {
+            await fetch(`${SHEETDB_URL}/ID/${id}?sheet=Expenses`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: { Status: 'Active' } }) });
+            loadData(); showToast('Restored Successfully!', 'success');
+        }
+
+        async function deleteForever(id) {
+            showToast('Deleting...', 'info');
+            await callScript({ action: "DELETE_ROW_FOREVER", id: id });
+            setTimeout(loadData, 2000);
+        }
+
+        // --- HELPERS ---
+        function showToast(msg, type) { 
+            const d=document.createElement('div'); 
+            const color=type==='success'?'bg-green-600 border-l-4 border-green-800':(type==='info'?'bg-blue-600 border-l-4 border-blue-800':'bg-red-600 border-l-4 border-red-800');
+            d.className=`${color} text-white px-4 py-3 rounded-lg shadow-lg flex gap-2 pointer-events-auto toast-box`; 
+            d.innerHTML=`<i data-lucide="check-circle" class="w-4"></i> ${msg}`; 
+            document.getElementById('toast-container').appendChild(d); 
+            setTimeout(()=>d.remove(),3000); lucide.createIcons(); 
+        }
+
+        function showActionToast(msg, actionText, callback) { 
+            const d=document.createElement('div'); 
+            d.className=`bg-slate-800 text-white px-4 py-3 rounded-lg shadow-xl flex items-center justify-between gap-4 pointer-events-auto toast-box w-full max-w-sm`; 
+            d.innerHTML=`<div class="flex items-center gap-2 text-sm font-medium"><i data-lucide="trash-2" class="w-4 h-4 text-gray-400"></i> ${msg}</div><button id="toast-action-btn" class="text-indigo-400 hover:text-white font-bold text-sm uppercase tracking-wide">${actionText}</button>`; 
+            document.getElementById('toast-container').appendChild(d); 
+            d.querySelector('#toast-action-btn').onclick=()=>{callback();d.remove();}; 
+            setTimeout(()=>{if(d.isConnected)d.remove();},5000); lucide.createIcons(); 
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        function openSettingsModal() { renderCategorySettings(); document.getElementById('settingsModal').classList.add('active'); }
+        function closeSettingsModal() { document.getElementById('settingsModal').classList.remove('active'); resetCategoryForm(); }
+        function openMobileModal() { document.getElementById('mobileModal').classList.add('active'); document.getElementById('mobile-date').value=new Date().toISOString().split('T')[0]; document.querySelectorAll('.dock-icon').forEach(i => i.blur()); }
+        function closeMobileModal() { document.getElementById('mobileModal').classList.remove('active'); resetForm('mobile-form'); }
+        function toggleProfileMenu() { document.getElementById('profile-menu').classList.toggle('hidden'); }
+        document.addEventListener('click', e => { if(!e.target.closest('.relative')) document.getElementById('profile-menu').classList.add('hidden'); });
+        function openInfoModal() { document.getElementById('infoModal').classList.add('active'); }
+        function openFilterModal() { ['day','month'].forEach(f => document.getElementById(`m-filter-${f}`).value = document.getElementById(`d-filter-${f}`).value); const mY=document.getElementById('m-filter-year'), dY=document.getElementById('d-filter-year'); mY.innerHTML=dY.innerHTML; mY.value=dY.value; document.getElementById('filterModal').classList.add('active'); }
+        function openExportModal() { document.getElementById('exportModal').classList.add('active'); }
+        
+        // --- SETTINGS & FORMS (Standard) ---
+        async function handleCategorySubmit(e) {
+            e.preventDefault();
+            const key=document.getElementById('new-cat-en').value.trim(), label=document.getElementById('new-cat-km').value.trim(), idx=parseInt(document.getElementById('edit-mode-index').value), oldKey=document.getElementById('edit-old-key').value;
+            if(idx===-1 && categories.some(c=>c.key.toLowerCase()===key.toLowerCase())) { customAlert("Attention", "This category key already exists!", "warning"); return; }
+            document.getElementById('settings-loading').classList.remove('hidden');
             try {
-                const res = await fetch(sheetUrl(SHEET_EXPENSES));
-                const data = await res.json();
+                if(idx===-1) { await callScript({ action: "ADD", key, label }); categories.push({ key, label }); } 
+                else { if(oldKey!==key || categories[idx].label!==label) await callScript({ action: "EDIT", oldKey, key, label }); categories[idx] = { key, label }; }
+                saveAndRefresh(); resetCategoryForm(); showToast('Success', 'success');
+            } catch(e){} finally { document.getElementById('settings-loading').classList.add('hidden'); }
+        }
+        async function removeCategory(i) { 
+            customConfirm("Delete Category?", "Are you sure you want to remove this category? It will affect your sheet.", "Delete", "bg-red-600 hover:bg-red-700 shadow-red-200", async () => {
+                document.getElementById('settings-loading').classList.remove('hidden'); 
+                try { await callScript({ action: "DELETE_COLUMN", key: categories[i].key }); categories.splice(i,1); saveAndRefresh(); } catch(e){} finally { document.getElementById('settings-loading').classList.add('hidden'); }
+            });
+        }
+        function saveAndRefresh() { localStorage.setItem('app_categories', JSON.stringify(categories)); renderForms(); renderCategorySettings(); }
+        function renderForms() { const gen = (cid, p) => { const c = document.getElementById(cid); c.innerHTML = ''; if(p==='desktop') c.innerHTML += `<div class="mb-4"><label class="text-xs font-bold text-slate-500 uppercase mb-1">កាលបរិច្ឆេទ</label><input type="date" name="Date" class="w-full p-3 border rounded-xl bg-slate-50" required value="${new Date().toISOString().split('T')[0]}"></div>`; if(categories.length===0) c.innerHTML=`<div class="text-center p-4 bg-amber-50 text-amber-700 text-sm rounded-xl">Please add categories in Settings.</div>`; else categories.forEach(cat => c.innerHTML+=`<div class="relative mb-3"><label class="block text-xs font-medium text-slate-600 mb-1">${cat.label}</label><div class="relative"><input type="number" name="${cat.key}" class="w-full p-3 pl-3 pr-12 border rounded-xl" placeholder="0" oninput="calculateTotal('${p}')"><span class="absolute right-4 top-3 text-slate-400 text-sm">៛</span></div></div>`); }; gen('desktop-dynamic-inputs', 'desktop'); gen('mobile-dynamic-inputs', 'mobile'); }
+        function calculateTotal(p) { let t=0; categories.forEach(c => t += parseFloat(document.getElementById(p+'-form').querySelector(`[name="${c.key}"]`)?.value)||0); document.getElementById(p+'-total-display').innerText = formatCurrency(t); }
+        function renderCategorySettings() { const l = document.getElementById('category-list'); l.innerHTML = categories.length ? categories.map((c,i)=>`<div class="flex justify-between p-3 bg-slate-50 border rounded-lg mb-2"><div><p class="text-sm font-bold">${c.label}</p><p class="text-xs text-slate-400">${c.key}</p></div><div class="flex gap-1"><button onclick="prepareEditCategory(${i})" class="p-2 text-blue-600"><i data-lucide="pencil" class="w-4"></i></button><button onclick="removeCategory(${i})" class="p-2 text-red-600"><i data-lucide="trash" class="w-4"></i></button></div></div>`).join('') : '<div class="text-center py-4 text-slate-400 text-sm">No categories</div>'; lucide.createIcons(); }
+        function prepareEditCategory(i) { const c=categories[i]; document.getElementById('new-cat-en').value=c.key; document.getElementById('new-cat-km').value=c.label; document.getElementById('edit-mode-index').value=i; document.getElementById('edit-old-key').value=c.key; document.getElementById('form-title').innerText="Edit"; document.getElementById('save-cat-btn').innerText='Update'; document.getElementById('cancel-edit-btn').classList.remove('hidden'); }
+        function resetCategoryForm() { document.getElementById('new-cat-en').value=''; document.getElementById('new-cat-km').value=''; document.getElementById('edit-mode-index').value='-1'; document.getElementById('save-cat-btn').innerHTML='<i data-lucide="plus" class="w-4 mr-1"></i> Add'; document.getElementById('cancel-edit-btn').classList.add('hidden'); document.getElementById('form-title').innerText="Add New"; }
+        function resetForm(fid) { document.getElementById(fid).reset(); document.getElementById(fid.replace('-form','-total-display')).innerText='0 ៛'; if(fid==='desktop-form') { document.getElementById('desktop-edit-id').value=''; document.getElementById('desktop-submit-btn').innerText='Save'; document.getElementById('desktop-cancel-btn').classList.add('hidden'); } }
+        
+        // EDIT
+        window.editItem = function(id) {
+            const item = allExpenses.find(x => x.ID == id);
+            if (!item) return;
+            const fid = window.innerWidth < 1024 ? 'mobile-form' : 'desktop-form';
+            if (fid === 'mobile-form') openMobileModal();
+            populateForm(fid, item);
+            if (fid === 'desktop-form') { document.getElementById('desktop-submit-btn').innerText = 'Update'; document.getElementById('desktop-cancel-btn').classList.remove('hidden'); }
+        };
 
-                // CRITICAL: Filter records and ensure the necessary fields exist
-                allExpenses = data.filter(x => x.ID && (x.Type === 'Expense' || x.Status === 'Deleted') && x.Amount !== undefined);
-
-                populateYearOptions(allExpenses); // NEW: Populate year options
-                calculateSummary(allExpenses);
-                filterRecords();
-            } catch (error) {
-                // Only update error state for the list if we'll viewing the list
-                if (activeTab === 'report') {
-                    document.getElementById("expense-list").innerHTML = '<p class="text-center text-red-500 py-10 text-lg">❌ មានបញ្ហាក្នុងការទាញទិន្នន័យ។ សូមពិនិត្យមើល Column headers ក្នុង SheetDB</p>';
-                }
-                console.error("Error loading expenses:", error);
-                showToast("❌ កំហុសក្នុងការផ្ទុកទិន្នន័យចំណាយ! (ពិនិត្យ Column names ក្នុង SheetDB)", 'error', 6000);
-            }
+        function populateForm(fid, item) {
+            const idField = document.getElementById(fid === 'mobile-form' ? 'mobile-edit-id' : 'desktop-edit-id');
+            if (idField) idField.value = item.ID;
+            const actualDateField = fid === 'mobile-form' ? document.getElementById('mobile-date') : document.querySelector('#desktop-form input[name="Date"]');
+            if (actualDateField) actualDateField.value = item.Date;
+            const descField = document.getElementById(fid).querySelector('[name="Description"]');
+            if (descField) descField.value = item.Description;
+            categories.forEach(c => { const input = document.getElementById(fid).querySelector(`[name="${c.key}"]`); if (input) { input.value = item[c.key] || 0; } });
+            calculateTotal(fid.replace('-form', ''));
         }
 
-        // Execute setup and data loading
-        setupForms();
-        loadAllData();
-        setActiveTab('dashboard'); // NEW: Set initial view to Dashboard
+        async function handleFormSubmit(e, fid) {
+            e.preventDefault(); if(categories.length===0) return customAlert("Setup Required", "Please add expense categories in Settings first.", "info");
+            const form=document.getElementById(fid), data=new FormData(form), btn=form.querySelector('button[type="submit"]'), id=data.get('ID');
+            let payload={Date:data.get('Date'), Description:data.get('Description'), ModifiedDate:new Date().toISOString()}, total=0;
+            categories.forEach(c=>{ const v=parseFloat(data.get(c.key))||0; payload[c.key]=v; total+=v; });
+            payload.Amount=total; if(total===0) return customAlert("Missing Data", "Please enter a valid amount.", "warning");
+            btn.disabled=true; btn.innerHTML='Saving...';
+            try {
+                if(id) await fetch(`${SHEETDB_URL}/ID/${id}?sheet=Expenses`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:payload})});
+                else { payload.ID=Date.now(); payload.Status='Active'; payload.Type='Expense'; payload.UserEmail=user.Email; await fetch(`${SHEETDB_URL}?sheet=Expenses`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:payload})}); }
+                showToast('Saved Successfully!', 'success'); resetForm(fid); if(fid==='mobile-form') closeMobileModal(); loadData();
+            } catch(e){ customAlert("Error", "Something went wrong saving data.", "error"); } finally{btn.disabled=false; btn.innerText='Save';}
+        }
+        async function callScript(payload) { try { await fetch(APPS_SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); return true; } catch (e) { return false; } }
+        function exportToExcel() { if(filteredExpenses.length === 0) return; const exportData = filteredExpenses.map(item => { let row = { 'Date': item.Date, 'Description': item.Description, 'Total': parseFloat(item.Amount)||0 }; categories.forEach(cat => { row[cat.label] = parseFloat(item[cat.key])||0; }); return row; }); const ws = XLSX.utils.json_to_sheet(exportData); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Expenses"); XLSX.writeFile(wb, "Expenses.xlsx"); closeModal('exportModal'); }
+        function exportToPDF() { if(filteredExpenses.length === 0) return; const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.setFontSize(18); doc.text("Expense Report", 14, 20); const head = [['Date', 'Desc', ...categories.map(c => c.key), 'Total']]; const body = filteredExpenses.map(item => [item.Date, item.Description, ...categories.map(cat => (parseFloat(item[cat.key])||0).toLocaleString()), (parseFloat(item.Amount)||0).toLocaleString()]); doc.autoTable({ startY: 35, head: head, body: body, theme: 'grid', headStyles: { fillColor: [79, 70, 229] } }); doc.save("Expenses.pdf"); closeModal('exportModal'); }
     </script>
 </body>
 </html>
