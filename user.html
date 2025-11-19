@@ -5,11 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>គ្រប់គ្រងអ្នកប្រើប្រាស់ - Admin</title>
 
-<!-- Tailwind CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
-<!-- Lucide icons -->
 <script src="https://unpkg.com/lucide@latest"></script>
-<!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
@@ -42,7 +39,7 @@ body{ font-family:'Khmer OS Battambang', sans-serif; background:linear-gradient(
 .capture-btn:active{ transform: scale(.98); box-shadow: 0 6px 12px rgba(11,16,28,0.08); }
 
 /* Minimal video wrapper */
-.video-wrapper { background:#000; border-radius:10px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+.video-wrapper { background:#000; border-radius:10px; overflow:hidden; display:flex; align-items:center; justify-content:center; position:relative; }
 
 /* Small muted text */
 .small-muted { color:var(--muted); font-size:0.87rem; }
@@ -85,7 +82,6 @@ body{ font-family:'Khmer OS Battambang', sans-serif; background:linear-gradient(
   </section>
 </main>
 
-<!-- Main user modal (Create/Edit) -->
 <div id="userModal" class="modal" role="dialog" aria-modal="true">
   <div class="card-min camera-card p-5">
     <div class="flex justify-between items-center mb-4">
@@ -114,7 +110,6 @@ body{ font-family:'Khmer OS Battambang', sans-serif; background:linear-gradient(
         </select>
       </div>
 
-      <!-- Face image area: upload or camera -->
       <div>
         <label class="block text-gray-700 text-sm mb-1">រូបថតមុខ (Face image)</label>
         <div class="flex items-center gap-3">
@@ -134,7 +129,7 @@ body{ font-family:'Khmer OS Battambang', sans-serif; background:linear-gradient(
                 <span>ថតដោយកាមេរ៉ា</span>
               </button>
             </div>
-            <p id="faceSourceNote" class="mt-2 small-muted">អនុញ្ញាតឬជ្រើសរើសរូបថតសម្រាប់បញ្ចូលក្នុងប្រព័ន្ធ។</p>
+            <p id="faceSourceNote" class="mt-2 small-muted">ជ្រើសរើសឯកសារ ឬ ថតរូបសម្រាប់គណនី</p>
           </div>
         </div>
       </div>
@@ -147,7 +142,6 @@ body{ font-family:'Khmer OS Battambang', sans-serif; background:linear-gradient(
   </div>
 </div>
 
-<!-- Minimal Camera Modal (Apple Photos-style minimal) -->
 <div id="cameraModal" class="modal" aria-modal="true" role="dialog">
   <div class="card-min p-4 camera-card">
     <div class="flex justify-between items-center mb-3">
@@ -156,27 +150,24 @@ body{ font-family:'Khmer OS Battambang', sans-serif; background:linear-gradient(
         <p class="small-muted text-xs">សូមផ្ទុកមុខក្នុងកណ្ដាល និងមានពន្លឺល្អ</p>
       </div>
       <div class="flex items-center gap-2">
-        <!-- camera select is minimal -- hidden if not available -->
         <select id="cameraSelect" class="text-sm p-2 border rounded-md small-muted hidden"></select>
         <button id="switchCamBtn" class="icon-btn" title="បម្លែងកាមេរ៉ា"><i data-lucide="repeat" class="w-4 h-4"></i></button>
+        <button id="openBackCamBtn" class="icon-btn" title="Open Back Camera"><i data-lucide="camera-off" class="w-4 h-4"></i></button>
         <button id="closeCamera" class="icon-btn" title="បិទ"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
     </div>
 
     <div class="video-wrapper mb-3" style="height:360px;">
       <video id="cameraVideo" autoplay playsinline class="w-full h-full object-cover"></video>
-      <!-- overlay guide: thin circle to help center face (very subtle) -->
       <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
         <div style="width:52%; height:52%; border-radius:9999px; border:1px dashed rgba(255,255,255,0.12);"></div>
       </div>
     </div>
 
-    <!-- Capture controls: minimal — capture button centered, small actions -->
     <div class="flex flex-col items-center gap-3">
       <div class="flex items-center gap-6">
         <button id="retakeBtn" class="text-sm small-muted hidden">Retake</button>
         <div id="captureBtn" class="capture-btn" role="button" title="Capture">
-          <!-- simple camera dot -->
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path d="M12 7a5 5 0 100 10 5 5 0 000-10z" stroke="#0f172a" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path>
             <path d="M20 7h-3.2l-1.4-1.7A2 2 0 0013.8 4H10.2a2 2 0 00-1.6.3L7.2 6H4" stroke="#0f172a" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -187,13 +178,14 @@ body{ font-family:'Khmer OS Battambang', sans-serif; background:linear-gradient(
 
       <p id="cameraInstructions" class="small-muted text-xs">ចុចប៊ូតុងមធ្យមដើម្បីថត។</p>
 
-      <!-- preview shown after capture -->
       <div id="cameraPreviewContainer" class="w-full" style="display:none;">
         <img id="cameraPreview" class="capture-preview" src="" alt="preview" />
       </div>
     </div>
   </div>
 </div>
+
+<canvas id="captureCanvas" style="display:none;"></canvas>
 
 <script>
 /* Initialize icons */
@@ -227,6 +219,7 @@ const cameraPreviewContainer = document.getElementById('cameraPreviewContainer')
 const cameraPreview = document.getElementById('cameraPreview');
 const closeCamera = document.getElementById('closeCamera');
 const faceSourceNote = document.getElementById('faceSourceNote');
+const captureCanvas = document.getElementById('captureCanvas');
 
 let editingUserEmail = null;
 let currentUserEmail = '';
@@ -239,7 +232,8 @@ try {
 let stream = null;
 let devices = [];
 let currentDeviceId = null;
-let capturedBlob = null; // captured image blob
+let isFront = true;
+let capturedBlob = null;
 let capturedDataUrl = null;
 
 /* Modal open/close */
@@ -248,6 +242,8 @@ function openModal(user = null){
   modalForm.reset();
   imgPreview.style.display='none'; imgPreview.src='';
   capturedBlob = null; capturedDataUrl = null; faceSourceNote.textContent='';
+  currentDeviceId = null;
+  isFront = true;
 
   if(user){
     editingUserEmail = (user.Email||user['អ៊ីម៉េល']||user['អ៊ីម៉ែល'])||'';
@@ -263,7 +259,7 @@ function openModal(user = null){
       imgPreview.style.display='block';
       faceSourceNote.textContent = 'ប្រើរូបថត​នៅក្នុង​ប្រព័ន្ធ';
     } else {
-      faceSourceNote.textContent = 'មិនមានរូបថត នៅក្នុងប្រព័ន្ធ';
+      faceSourceNote.textContent = 'មិនមានរូបថត​នៅក្នុង​ប្រព័ន្ធ';
     }
   } else {
     editingUserEmail = null;
@@ -289,16 +285,20 @@ modalImage.addEventListener('change', (e)=>{
   const f = e.target.files[0];
   if(!f){ imgPreview.style.display='none'; imgPreview.src=''; faceSourceNote.textContent=''; return; }
   if(!f.type.startsWith('image/')){ Swal.fire({icon:'error', title:'ទម្ងន់ឯកសារ​មិនត្រឹមត្រូវ', text:'សូមជ្រើសរើសរូបភាព។'}); modalImage.value=''; return; }
-  capturedBlob = null; capturedDataUrl = null; // prefer file over previous capture only until user captures again
+  capturedBlob = null; capturedDataUrl = null;
   imgPreview.src = URL.createObjectURL(f);
   imgPreview.style.display = 'block';
   faceSourceNote.textContent = 'ប្រើរូបភាពដែលបានជ្រើសពីឧបករណ៍';
 });
 
-/* Camera modal handlers */
+/* Camera handlers */
 openCameraBtn.addEventListener('click', openCameraModal);
 closeCamera.addEventListener('click', closeCameraModal);
 switchCamBtn.addEventListener('click', switchCamera);
+cameraSelect.addEventListener('change', async (e)=>{
+  currentDeviceId = e.target.value || null;
+  await startStream();
+});
 
 async function openCameraModal(){
   cameraModal.classList.add('active');
@@ -313,28 +313,28 @@ function closeCameraModal(){
   stopStream();
 }
 
-/* enumerate devices and fill select (if available) */
 async function enumerateCameras(){
   try{
     const list = await navigator.mediaDevices.enumerateDevices();
     devices = list.filter(d=>d.kind === 'videoinput');
     cameraSelect.innerHTML = '';
     if(devices.length > 1){
-      cameraSelect.classList.remove('hidden');
-      devices.forEach((d, i)=>{
-        const opt = document.createElement('option');
-        opt.value = d.deviceId;
-        opt.textContent = d.label || `Camera ${i+1}`;
-        cameraSelect.appendChild(opt);
-      });
-      currentDeviceId = devices[0].deviceId;
-      cameraSelect.value = currentDeviceId;
-      cameraSelect.onchange = async (e)=>{
-        currentDeviceId = e.target.value;
-        await startStream();
-      };
+      const hasLabels = devices.some(d => d.label && d.label.trim().length > 0);
+      if(hasLabels){
+        cameraSelect.classList.remove('hidden');
+        devices.forEach((d, i)=>{
+          const opt = document.createElement('option');
+          opt.value = d.deviceId;
+          opt.textContent = d.label || `Camera ${i+1}`;
+          cameraSelect.appendChild(opt);
+        });
+        currentDeviceId = devices[0].deviceId;
+        cameraSelect.value = currentDeviceId;
+      } else {
+        cameraSelect.classList.add('hidden');
+        currentDeviceId = null;
+      }
     } else {
-      // hide select if only one or labels unavailable
       cameraSelect.classList.add('hidden');
       currentDeviceId = null;
     }
@@ -345,18 +345,20 @@ async function enumerateCameras(){
   }
 }
 
-/* start stream using currentDeviceId if available; else flip facingMode fallback */
 async function startStream(){
   try{
     stopStream();
-    let constraints = { video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio:false };
+    const constraints = { audio: false, video: { width: { ideal: 1280 }, height: { ideal: 720 } } };
     if(currentDeviceId){
       constraints.video.deviceId = { exact: currentDeviceId };
+      const match = devices.find(d => d.deviceId === currentDeviceId);
+      isFront = match && /front|selfie/i.test(match.label || '') ? true : false;
     } else {
-      constraints.video.facingMode = { ideal: 'user' };
+      constraints.video.facingMode = isFront ? "user" : "environment";
     }
     stream = await navigator.mediaDevices.getUserMedia(constraints);
     cameraVideo.srcObject = stream;
+    cameraVideo.style.transform = isFront ? "scaleX(-1)" : "scaleX(1)";
     await cameraVideo.play();
   } catch (err){
     console.error('startStream error', err);
@@ -365,36 +367,41 @@ async function startStream(){
 }
 
 function stopStream(){
-  if(stream){
-    stream.getTracks().forEach(t=>t.stop());
-    stream = null;
-  }
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream = null; }
   cameraVideo.pause();
   cameraVideo.srcObject = null;
 }
 
-/* switch camera: cycle devices if possible; else try toggle facingMode by restarting without deviceId */
 async function switchCamera(){
-  if(devices && devices.length > 1){
-    const idx = devices.findIndex(d=>d.deviceId === currentDeviceId);
-    const next = devices[(idx + 1) % devices.length];
-    currentDeviceId = next.deviceId;
-    cameraSelect.value = currentDeviceId;
-    await startStream();
-  } else {
-    // toggle simple state then restart with facingMode fallback
-    if(!currentDeviceId) {
-      currentDeviceId = 'environment';
-    } else if(currentDeviceId === 'environment'){
-      currentDeviceId = 'user';
-    } else {
-      currentDeviceId = null;
+  try {
+    if(devices.length > 1 && cameraSelect.classList.contains('hidden') === false){
+      const idx = devices.findIndex(d => d.deviceId === currentDeviceId);
+      const next = devices[(idx + 1) % devices.length];
+      currentDeviceId = next.deviceId;
+      cameraSelect.value = currentDeviceId;
+      isFront = /front|selfie/i.test(next.label || '') ? true : false;
+      await startStream();
+      return;
     }
+    if(devices.length > 1 && cameraSelect.classList.contains('hidden')){
+      let idx = devices.findIndex(d => d.deviceId === currentDeviceId);
+      if(idx === -1) idx = 0;
+      const next = devices[(idx + 1) % devices.length];
+      currentDeviceId = next.deviceId;
+      isFront = /front|selfie/i.test(next.label || '') ? true : false;
+      await startStream();
+      return;
+    }
+    isFront = !isFront;
+    currentDeviceId = null;
+    await startStream();
+  } catch (err) {
+    isFront = !isFront;
+    currentDeviceId = null;
     await startStream();
   }
 }
 
-/* Capture flow */
 captureBtn.addEventListener('click', capturePhoto);
 retakeBtn.addEventListener('click', retakeCapture);
 acceptBtn.addEventListener('click', acceptCapture);
@@ -404,53 +411,45 @@ function capturePhoto(){
   const video = cameraVideo;
   const w = video.videoWidth || 1280;
   const h = video.videoHeight || 720;
-  // scale down if too large
-  const maxDim = 1200;
-  let cw = w, ch = h;
-  if(Math.max(w,h) > maxDim){
-    const scale = maxDim / Math.max(w,h);
-    cw = Math.round(w * scale);
-    ch = Math.round(h * scale);
-  }
-  const canvas = document.createElement('canvas');
-  canvas.width = cw; canvas.height = ch;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, cw, ch);
-
-  canvas.toBlob((blob)=>{
+  captureCanvas.width = w;
+  captureCanvas.height = h;
+  const ctx = captureCanvas.getContext('2d');
+  if(isFront){ ctx.translate(w, 0); ctx.scale(-1, 1); }
+  ctx.drawImage(video, 0, 0, w, h);
+  captureCanvas.toBlob((blob)=>{
     if(!blob){ Swal.fire({icon:'error', title:'ថតបរាជ័យ', text:'សូមព្យាយាមម្តងទៀត'}); return; }
     capturedBlob = blob;
+    if(capturedDataUrl) URL.revokeObjectURL(capturedDataUrl);
     capturedDataUrl = URL.createObjectURL(blob);
     cameraPreview.src = capturedDataUrl;
     cameraPreviewContainer.style.display = 'block';
-    // show small actions
     retakeBtn.classList.remove('hidden');
     acceptBtn.classList.remove('hidden');
     captureBtn.classList.add('hidden');
+    stopStream();
   }, 'image/jpeg', 0.92);
 }
 
 function retakeCapture(){
-  capturedBlob = null; capturedDataUrl = null;
+  capturedBlob = null;
+  if(capturedDataUrl){ URL.revokeObjectURL(capturedDataUrl); capturedDataUrl = null; }
   cameraPreview.src = '';
   cameraPreviewContainer.style.display = 'none';
   retakeBtn.classList.add('hidden');
   acceptBtn.classList.add('hidden');
   captureBtn.classList.remove('hidden');
+  startStream();
 }
 
 function acceptCapture(){
   if(!capturedBlob){ Swal.fire({icon:'error', title:'គ្មានរូបភាព', text:'សូមថតរូបម្តងទៀត'}); return; }
-  // set main modal preview and close camera
   imgPreview.src = capturedDataUrl;
   imgPreview.style.display = 'block';
   faceSourceNote.textContent = 'ប្រើរូបថតដែលបានថតពីកាមេរ៉ា';
-  // clear any file input value to indicate capturedBlob is preferred
   modalImage.value = '';
   closeCameraModal();
 }
 
-/* Load users (keeps existing SheetDB logic) */
 async function loadUsers(){
   userList.innerHTML = '<p class="col-span-full text-center text-gray-500 py-10">កំពុងទាញទិន្នន័យ...</p>';
   lucide.createIcons();
@@ -458,9 +457,8 @@ async function loadUsers(){
     const res = await fetch(`${SHEETDB_BASE_URL}?sheet=${SHEET_USERS}`);
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     let data = await res.json();
-    if(Array.isArray(data) && data.length>0) data = data.slice(1); // remove header
+    if(Array.isArray(data) && data.length>0) data = data.slice(1);
     const users = Array.isArray(data)? data : [];
-    // filter current user
     if(currentUserEmail){
       const filtered = users.filter(u => ((u.Email||u['អ៊ីម៉ែល']||'').toLowerCase() !== currentUserEmail.toLowerCase()));
       users.length = 0; users.push(...filtered);
@@ -490,7 +488,9 @@ async function loadUsers(){
           </div>
           <div class="flex items-center gap-2">
             <button onclick='openModal(${JSON.stringify(u)})' class="text-sm px-3 py-1 border rounded-md small-muted flex items-center gap-2"><i data-lucide="square-pen" class="w-4 h-4"></i> កែប្រែ</button>
-            <button onclick='toggleBlockSwal("${email}","${blocked}")' class="text-sm px-3 py-1 border rounded-md small-muted flex items-center gap-2">${blocked?'<i data-lucide=\"unlock\" class=\"w-4 h-4\"></i>':'<i data-lucide=\"lock\" class=\"w-4 h-4\"></i>'}</button>
+            <button onclick='toggleBlockSwal("${email}","${blocked}")' class="text-sm px-3 py-1 border rounded-md small-muted flex items-center gap-2" title="${blocked ? 'Unblock' : 'Block'}">
+              ${blocked ? '<i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>' : '<i data-lucide="ban" class="w-4 h-4 text-orange-600"></i>'}
+            </button>
             <button onclick='deleteUserSwal("${email}")' class="text-sm px-3 py-1 border rounded-md text-red-600 flex items-center gap-2"><i data-lucide="trash-2" class="w-4 h-4"></i> លុប</button>
           </div>
         </div>
@@ -503,40 +503,27 @@ async function loadUsers(){
   }
 }
 
-/* Form submit: prefer capturedBlob over uploaded file */
 modalForm.addEventListener('submit', async (e)=>{
   e.preventDefault();
   modalSaveBtn.disabled = true;
   modalSaveBtn.textContent = 'កំពុងរក្សាទុក...';
-
   const email = modalEmail.value.trim();
   const password = modalPassword.value.trim();
   const role = modalRole.value;
   const file = modalImage.files[0];
-
   try{
     if(!editingUserEmail){
       if(!email || !password){ Swal.fire({icon:'warning',title:'ទិន្នន័យមិនពេញលេញ', text:'សូមបញ្ចូលអ៊ីម៉ែល និងពាក្យសម្ងាត់'}); modalSaveBtn.disabled=false; modalSaveBtn.textContent='រក្សាទុក'; return; }
       if(!file && !capturedBlob){ Swal.fire({icon:'warning',title:'ទិន្នន័យមិនពេញលេញ', text:'សូមជ្រើសរើសរូបភាព ឬ ថតរូប'}); modalSaveBtn.disabled=false; modalSaveBtn.textContent='រក្សាទុក'; return; }
-
       const fd = new FormData();
       fd.append('email', email);
       fd.append('password', password);
       fd.append('role', role);
-      if(capturedBlob){
-        fd.append('faceImage', capturedBlob, `captured_${email.replace(/[@.]/g,'_')}.jpg`);
-      } else if(file){
-        fd.append('faceImage', file);
-      }
-
+      if(capturedBlob){ fd.append('faceImage', capturedBlob, `captured_${email.replace(/[@.]/g,'_')}.jpg`); } else if(file){ fd.append('faceImage', file); }
       const res = await fetch(`${NODE_API_BASE}/api/register`, { method:'POST', body:fd });
-      if(!res.ok){
-        const txt = await res.text().catch(()=>null);
-        throw new Error(txt || 'Server error');
-      }
+      if(!res.ok){ const txt = await res.text().catch(()=>null); throw new Error(txt || 'Server error'); }
       Swal.fire({icon:'success', title:'បានបង្កើត', text:`គណនី ${email} ត្រូវបានបង្កើត`});
     } else {
-      // editing
       if(capturedBlob){
         const fd = new FormData();
         fd.append('email', editingUserEmail);
@@ -550,7 +537,6 @@ modalForm.addEventListener('submit', async (e)=>{
         const r = await fetch(`${NODE_API_BASE}/api/update-face`, { method:'POST', body:fd });
         if(!r.ok) throw new Error('Failed to update face image');
       }
-
       const patchData = { Role: role };
       if(password) patchData.Password = password;
       await fetch(`${SHEETDB_BASE_URL}/Email/${encodeURIComponent(editingUserEmail)}`, {
@@ -571,7 +557,6 @@ modalForm.addEventListener('submit', async (e)=>{
   }
 });
 
-/* Block/unblock and delete (kept same behavior) */
 async function toggleBlockSwal(email,currentStatus){
   const isBlocked = String(currentStatus).toUpperCase() === 'TRUE';
   const action = isBlocked ? 'ដោះ Block' : 'ដាក់ Block';
@@ -603,10 +588,20 @@ async function deleteUserSwal(email){
   } catch(err){ console.error(err); Swal.fire({icon:'error', title:'មានបញ្ហា', text: err.message || String(err)}); }
 }
 
-/* init */
-loadUsers();
+const openBackCamBtn = document.getElementById('openBackCamBtn');
+openBackCamBtn.addEventListener('click', async () => {
+  try {
+    stopStream();
+    isFront = false;
+    currentDeviceId = null;
+    await startStream();
+  } catch(err){
+    console.error('Back camera failed', err);
+    Swal.fire({icon:'error', title:'មិនអាចបើកកាមេរ៉ា​ក្រោយ', text:'សូមពិនិត្យឧបករណ៍'});  
+  }
+});
 
-/* cleanup */
+loadUsers();
 window.addEventListener('beforeunload', ()=> { if(stream) stream.getTracks().forEach(t=>t.stop()); });
 </script>
 
