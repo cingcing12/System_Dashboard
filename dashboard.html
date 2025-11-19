@@ -90,6 +90,10 @@
             background-size: 1.5em 1.5em;
             padding-right: 2.5rem;
         }
+
+        /* Toggle Switch */
+        .toggle-checkbox:checked { right: 0; border-color: #4f46e5; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #4f46e5; }
     </style>
 </head>
 <body>
@@ -109,6 +113,45 @@
             </div>
         </div>
     </div>
+
+    <div id="detailModal" class="modal px-4 items-end sm:items-center" style="z-index: 55;">
+        <div class="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-2xl shadow-2xl p-6 animate-slide-up">
+            <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
+                <div>
+                    <p class="text-xs text-slate-400 uppercase font-bold mb-1">Details</p>
+                    <h3 class="text-xl font-bold text-slate-800 font-khmer-header" id="detail-date">...</h3>
+                </div>
+                <button onclick="closeModal('detailModal')" class="p-2 bg-slate-100 rounded-full hover:bg-slate-200 text-slate-500">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-6">
+                <div class="text-center py-2">
+                     <p class="text-sm text-slate-500 mb-1">Total Amount</p>
+                     <p class="text-3xl font-bold text-indigo-600" id="detail-amount">0 ៛</p>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <p class="text-xs font-bold text-slate-400 uppercase mb-2">Description</p>
+                    <p class="text-slate-700 font-medium leading-relaxed" id="detail-desc">...</p>
+                </div>
+
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase mb-3">Breakdown</p>
+                    <div id="detail-breakdown" class="space-y-2"></div>
+                </div>
+                
+                <div class="flex items-center justify-between text-xs text-slate-400 border-t pt-4 mt-4">
+                    <span id="detail-user" class="flex items-center gap-1"><i data-lucide="user" class="w-3"></i> ...</span>
+                    <span id="detail-status" class="px-2 py-1 rounded bg-emerald-100 text-emerald-700 font-bold">Active</span>
+                </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-100 flex gap-2" id="detail-actions"></div>
+        </div>
+    </div>
+
 
     <header class="bg-white shadow-sm sticky top-0 z-40 border-b border-slate-200">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
@@ -170,71 +213,42 @@
         </div>
 
         <div id="view-report" class="hidden">
-            
-            <div class="hidden lg:flex bg-white p-3 rounded-2xl shadow-sm border border-slate-200 items-center gap-3 mb-6">
-                
+             <div class="hidden lg:flex bg-white p-3 rounded-2xl shadow-sm border border-slate-200 items-center gap-3 mb-6">
                 <div class="relative flex-grow max-w-sm">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <i data-lucide="search" class="h-4 w-4 text-slate-400"></i>
                     </div>
                     <input type="text" id="d-search-input" class="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-xl leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 sm:text-sm transition" placeholder="Search description..." oninput="applyFilters()">
                 </div>
-
                 <div class="h-8 w-px bg-slate-200 mx-2"></div>
-
                 <div class="flex items-center gap-2">
-                    <div class="relative">
-                         <input type="date" id="d-filter-date" class="pl-3 pr-2 py-2 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 text-slate-600" onchange="syncAndApply('desktop')">
-                    </div>
-
-                    <div class="relative">
-                        <select id="d-filter-day" class="custom-select pl-3 pr-8 py-2 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 text-slate-600 cursor-pointer hover:bg-white transition" onchange="syncAndApply('desktop')">
-                            <option value="">Day</option><option value="1">Mon</option><option value="2">Tue</option><option value="3">Wed</option><option value="4">Thu</option><option value="5">Fri</option><option value="6">Sat</option><option value="0">Sun</option>
-                        </select>
-                    </div>
-
-                    <select id="d-filter-month" class="custom-select pl-3 pr-8 py-2 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 text-slate-600 cursor-pointer hover:bg-white transition" onchange="syncAndApply('desktop')">
-                        <option value="">Month</option>
-                    </select>
-
-                    <select id="d-filter-year" class="custom-select pl-3 pr-8 py-2 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 text-slate-600 cursor-pointer hover:bg-white transition" onchange="syncAndApply('desktop')">
-                        <option value="">Year</option>
-                    </select>
+                    <div class="relative"><input type="date" id="d-filter-date" class="pl-3 pr-2 py-2 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 text-slate-600" onchange="syncAndApply('desktop')"></div>
+                    <div class="relative"><select id="d-filter-day" class="custom-select pl-3 pr-8 py-2 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 text-slate-600 cursor-pointer hover:bg-white transition" onchange="syncAndApply('desktop')"><option value="">Day</option><option value="1">Mon</option><option value="2">Tue</option><option value="3">Wed</option><option value="4">Thu</option><option value="5">Fri</option><option value="6">Sat</option><option value="0">Sun</option></select></div>
+                    <select id="d-filter-month" class="custom-select pl-3 pr-8 py-2 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 text-slate-600 cursor-pointer hover:bg-white transition" onchange="syncAndApply('desktop')"><option value="">Month</option></select>
+                    <select id="d-filter-year" class="custom-select pl-3 pr-8 py-2 border border-slate-200 rounded-xl bg-slate-50 text-sm focus:ring-2 focus:ring-indigo-500 text-slate-600 cursor-pointer hover:bg-white transition" onchange="syncAndApply('desktop')"><option value="">Year</option></select>
                 </div>
-
                 <div class="flex-grow"></div>
-
                 <div class="flex items-center gap-2">
-                    <button onclick="resetFilters()" class="p-2.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition" title="Reset Filters">
-                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-                    </button>
-                    <button onclick="openExportModal()" class="flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white text-sm font-medium rounded-xl hover:bg-slate-800 transition shadow-md">
-                        <i data-lucide="download" class="w-4 h-4"></i> Export
-                    </button>
+                    <button onclick="resetFilters()" class="p-2.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition" title="Reset Filters"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
+                    <button onclick="openExportModal()" class="flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white text-sm font-medium rounded-xl hover:bg-slate-800 transition shadow-md"><i data-lucide="download" class="w-4 h-4"></i> Export</button>
                 </div>
             </div>
-
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-lg font-bold text-slate-800 font-khmer-header" id="list-header-title">បញ្ជីចំណាយ</h2>
                         <div class="flex gap-2">
-                            <button onclick="toggleTrashView()" id="trash-toggle-btn" class="text-sm text-gray-500 flex items-center gap-1 hover:text-red-500 transition px-3 py-1 rounded-lg border border-gray-200 bg-white shadow-sm">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i> Trash
-                            </button>
-                            <button onclick="loadData()" class="text-sm text-indigo-600 flex items-center gap-1 px-3 py-1 rounded-lg border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 transition">
-                                <i data-lucide="refresh-ccw" class="w-4 h-4"></i>
-                            </button>
+                            <button onclick="toggleTrashView()" id="trash-toggle-btn" class="text-sm text-gray-500 flex items-center gap-1 hover:text-red-500 transition px-3 py-1 rounded-lg border border-gray-200 bg-white shadow-sm"><i data-lucide="trash-2" class="w-4 h-4"></i> Trash</button>
+                            <button onclick="loadData()" class="text-sm text-indigo-600 flex items-center gap-1 px-3 py-1 rounded-lg border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 transition"><i data-lucide="refresh-ccw" class="w-4 h-4"></i></button>
                         </div>
                     </div>
                     <div id="expense-list" class="space-y-3 pb-20 lg:pb-0"></div>
                 </div>
-
                 <div class="hidden lg:block bg-white p-6 rounded-2xl shadow-md h-fit sticky top-24 border border-slate-100">
                     <h2 class="text-xl font-bold text-indigo-700 mb-4 font-khmer-header" id="desktop-form-title">➕ បន្ថែមកំណត់ត្រា</h2>
                     <form id="desktop-form" onsubmit="handleFormSubmit(event, 'desktop-form')">
                         <input type="hidden" name="ID" id="desktop-edit-id">
-                        <div id="desktop-dynamic-inputs" class="space-y-4"></div>
+                        <div id="desktop-dynamic-inputs" class="space-y-4"><div class="text-center p-4"><i data-lucide="loader-2" class="w-6 h-6 animate-spin mx-auto text-indigo-500"></i><p class="text-xs text-gray-400 mt-2">Loading categories...</p></div></div>
                         <div class="mt-4 pt-4 border-t">
                             <label class="block text-sm font-medium text-slate-600 mb-1">ពិពណ៌នា</label>
                             <textarea name="Description" rows="2" class="w-full p-3 border rounded-xl bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none transition"></textarea>
@@ -266,12 +280,7 @@
                 <button onclick="closeModal('filterModal')" class="p-2 bg-slate-100 rounded-full"><i data-lucide="x" class="w-5 h-5 text-slate-500"></i></button>
             </div>
             <div class="space-y-4">
-                <div>
-                    <label class="text-xs font-bold text-slate-500 uppercase mb-1">ថ្ងៃ (Day)</label>
-                    <select id="m-filter-day" class="w-full p-3 border rounded-xl bg-slate-50">
-                        <option value="">ទាំងអស់</option><option value="1">ច័ន្ទ</option><option value="2">អង្គារ</option><option value="3">ពុធ</option><option value="4">ព្រហស្បតិ៍</option><option value="5">សុក្រ</option><option value="6">សៅរ៍</option><option value="0">អាទិត្យ</option>
-                    </select>
-                </div>
+                <div><label class="text-xs font-bold text-slate-500 uppercase mb-1">ថ្ងៃ (Day)</label><select id="m-filter-day" class="w-full p-3 border rounded-xl bg-slate-50"><option value="">ទាំងអស់</option><option value="1">ច័ន្ទ</option><option value="2">អង្គារ</option><option value="3">ពុធ</option><option value="4">ព្រហស្បតិ៍</option><option value="5">សុក្រ</option><option value="6">សៅរ៍</option><option value="0">អាទិត្យ</option></select></div>
                 <div class="grid grid-cols-2 gap-4">
                     <div><label class="text-xs font-bold text-slate-500 uppercase mb-1">ខែ</label><select id="m-filter-month" class="w-full p-3 border rounded-xl bg-slate-50"><option value="">ទាំងអស់</option></select></div>
                     <div><label class="text-xs font-bold text-slate-500 uppercase mb-1">ឆ្នាំ</label><select id="m-filter-year" class="w-full p-3 border rounded-xl bg-slate-50"><option value="">ទាំងអស់</option></select></div>
@@ -308,7 +317,7 @@
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">កាលបរិច្ឆេទ</label>
                         <input type="date" name="Date" id="mobile-date" class="w-full p-3 border rounded-xl bg-slate-50 font-medium" required>
                     </div>
-                    <div id="mobile-dynamic-inputs" class="space-y-4"></div>
+                    <div id="mobile-dynamic-inputs" class="space-y-4"><div class="text-center p-4"><i data-lucide="loader-2" class="w-6 h-6 animate-spin mx-auto text-indigo-500"></i><p class="text-xs text-gray-400 mt-2">Loading categories...</p></div></div>
                     <div class="mt-6 pt-4 border-t">
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">ពិពណ៌នា</label>
                         <textarea name="Description" rows="2" class="w-full p-3 border rounded-xl bg-slate-50" placeholder="..."></textarea>
@@ -320,7 +329,7 @@
                     <span class="text-sm text-slate-500">សរុប</span>
                     <span class="text-2xl font-bold text-indigo-600" id="mobile-total-display">0 ៛</span>
                 </div>
-                <button onclick="document.getElementById('mobile-form').requestSubmit()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg">រក្សាទុក</button>
+                <button id="mobile-submit-btn" onclick="document.getElementById('mobile-form').requestSubmit()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-lg">រក្សាទុក</button>
             </div>
         </div>
     </div>
@@ -329,13 +338,22 @@
         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative overflow-hidden">
             <div id="settings-loading" class="loading-overlay hidden flex-col">
                 <i data-lucide="loader-2" class="w-10 h-10 animate-spin text-indigo-600 mb-3"></i>
-                <p class="text-sm font-bold text-slate-700 animate-pulse">Updating Sheet...</p>
+                <p class="text-sm font-bold text-slate-700 animate-pulse">Syncing with Cloud...</p>
             </div>
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-xl font-bold text-slate-800 font-khmer-header">កំណត់ប្រភេទចំណាយ</h3>
                 <button onclick="closeSettingsModal()" class="text-slate-400"><i data-lucide="x"></i></button>
             </div>
-            <div id="category-list" class="space-y-2 max-h-[40vh] overflow-y-auto mb-4 pr-1"></div>
+            
+            <div class="flex justify-between text-xs font-bold text-slate-400 uppercase mb-2 px-2">
+                <span>Category</span>
+                <span>Actions / Show</span>
+            </div>
+
+            <div id="category-list" class="space-y-2 max-h-[40vh] overflow-y-auto mb-4 pr-1">
+                <div class="text-center py-4 text-slate-400 text-sm"><i data-lucide="loader-2" class="w-6 h-6 animate-spin mx-auto mb-2"></i>Loading from Cloud...</div>
+            </div>
+
             <form onsubmit="handleCategorySubmit(event)" class="bg-slate-50 p-4 rounded-xl border border-slate-200 relative">
                 <input type="hidden" id="edit-mode-index" value="-1">
                 <input type="hidden" id="edit-old-key" value="">
@@ -366,78 +384,53 @@
 
     <script src="config.js"></script>
     <script>
-        // --- AUTH CHECK (MUST BE FIRST) ---
+        // --- AUTH CHECK ---
         const userStr = localStorage.getItem('user');
-        if (!userStr) {
-            window.location.href = 'index.html';
-            throw new Error("User not logged in"); // Stop execution
-        }
+        if (!userStr) { window.location.href = 'index.html'; throw new Error("User not logged in"); }
         const user = JSON.parse(userStr); 
 
         // CONFIG
         const SHEETDB_URL = "https://sheetdb.io/api/v1/2qesrzmr4nggw"; 
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxUMpP0h8poZWkLXQsK1Yl3ZuKi2yEMSU1mjDcxoKlbLyemu1U1PUvNf2CKWQR-HSw2/exec"; 
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-Ouo1sIXoBgVR1W_GKuo73_uEJCXDcxo4EiGWcBa9QgAc1QQhalFfNMmcet9pTDkB/exec"; 
 
         // USER STATE
-        let categories = JSON.parse(localStorage.getItem('app_categories')) || []; 
+        let categories = []; 
         let allExpenses = [];
         let filteredExpenses = [];
         let currentView = 'active';
         
-        // --- CUSTOM UI ALERT / CONFIRM SYSTEM ---
+        // --- CUSTOM CONFIRM/ALERT ---
         let confirmCallback = null;
-
         function customConfirm(title, msg, yesText, colorClass, callback) {
-            // Reset UI to Confirm Mode
             const iconContainer = document.getElementById('confirm-icon-box');
             iconContainer.className = 'w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4';
             iconContainer.innerHTML = '<i data-lucide="alert-triangle" class="w-8 h-8 text-red-500"></i>';
-
             document.getElementById('confirm-title').innerText = title;
             document.getElementById('confirm-msg').innerText = msg;
-            
-            // Show Cancel
             document.getElementById('confirm-cancel-btn').classList.remove('hidden');
-
             const btn = document.getElementById('confirm-yes-btn');
             btn.innerText = yesText;
             btn.className = `flex-1 py-3 text-white font-bold rounded-xl shadow-lg transition ${colorClass}`;
-            
             document.getElementById('customConfirmModal').classList.add('active');
             confirmCallback = callback;
             lucide.createIcons();
         }
 
         function customAlert(title, msg, type = 'info') {
-            // Types: info, warning, error, success
-            let icon = 'info';
-            let color = 'text-blue-500';
-            let bg = 'bg-blue-50';
-            let btnBg = 'bg-blue-600 hover:bg-blue-700 shadow-blue-200';
-
+            let icon = 'info'; let color = 'text-blue-500'; let bg = 'bg-blue-50'; let btnBg = 'bg-blue-600 hover:bg-blue-700 shadow-blue-200';
             if(type === 'error') { icon = 'x-circle'; color = 'text-red-500'; bg = 'bg-red-50'; btnBg = 'bg-red-600 hover:bg-red-700 shadow-red-200'; }
             if(type === 'warning') { icon = 'alert-triangle'; color = 'text-amber-500'; bg = 'bg-amber-50'; btnBg = 'bg-amber-600 hover:bg-amber-700 shadow-amber-200'; }
             if(type === 'success') { icon = 'check-circle'; color = 'text-emerald-500'; bg = 'bg-emerald-50'; btnBg = 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200'; }
-
             document.getElementById('confirm-title').innerText = title;
             document.getElementById('confirm-msg').innerText = msg;
-            
-            // Update Icon
             const iconContainer = document.getElementById('confirm-icon-box');
             iconContainer.className = `w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${bg}`;
             iconContainer.innerHTML = `<i data-lucide="${icon}" class="w-8 h-8 ${color}"></i>`;
-
-            // Hide Cancel Button
             document.getElementById('confirm-cancel-btn').classList.add('hidden');
-            
-            // Update OK Button
             const btn = document.getElementById('confirm-yes-btn');
             btn.innerText = "OK";
             btn.className = `flex-1 py-3 text-white font-bold rounded-xl shadow-lg transition ${btnBg}`;
-            
             document.getElementById('customConfirmModal').classList.add('active');
-            
-            // Alert just closes on Yes click
             confirmCallback = null;
             lucide.createIcons();
         }
@@ -448,7 +441,7 @@
         }
         document.getElementById('confirm-yes-btn').onclick = () => closeConfirm(true);
 
-        // Standard Actions using Custom UI
+        // Standard Actions
         function confirmLogout() { customConfirm("Logout?", "Are you sure you want to logout?", "Logout", "bg-red-600 hover:bg-red-700 shadow-red-200", () => { localStorage.removeItem('user'); window.location.href="index.html"; }); }
         function askTrash(id) { customConfirm("Move to Trash?", "This item will be moved to trash.", "Move to Trash", "bg-orange-500 hover:bg-orange-600 shadow-orange-200", () => moveToTrash(id)); }
         function askRestore(id) { customConfirm("Restore Item?", "This item will be restored to the list.", "Restore", "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200", () => restoreItem(id)); }
@@ -456,8 +449,12 @@
 
 
         // INIT
-        window.onload = () => { 
-            initProfile(); renderForms(); renderCategorySettings(); loadData(); populateDropdowns(); lucide.createIcons(); 
+        window.onload = async () => { 
+            initProfile(); 
+            await loadCategories(); 
+            loadData(); 
+            populateDropdowns(); 
+            lucide.createIcons(); 
         };
 
         function initProfile() {
@@ -477,9 +474,54 @@
             }
         }
 
+        // --- UPDATED: LOAD CATEGORIES + VISIBILITY ---
+        async function loadCategories() {
+            try {
+                const res = await fetch(`${SHEETDB_URL}?sheet=Categories`);
+                if(res.ok) {
+                    const data = await res.json();
+                    // Map to format, assume Visible is true if missing
+                    categories = data.map(item => ({ 
+                        key: item.Key, 
+                        label: item.Label,
+                        visible: item.Visible !== 'false' // Default to true
+                    }));
+                    renderForms(); 
+                    renderCategorySettings();
+                }
+            } catch (e) { console.error("Failed to load categories", e); }
+        }
+
+        // --- UPDATED: TOGGLE VISIBILITY FUNCTION ---
+        async function toggleCategoryVisibility(index) {
+            const cat = categories[index];
+            const newStatus = !cat.visible;
+            
+            // UI Optimistic Update
+            cat.visible = newStatus;
+            renderCategorySettings(); // Refresh switch UI
+            renderForms(); // Refresh input forms
+
+            // Save to Cloud
+            try {
+                await fetch(`${SHEETDB_URL}/Key/${cat.key}?sheet=Categories`, { 
+                    method: 'PATCH', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ data: { Visible: newStatus.toString() } }) 
+                });
+            } catch(e) {
+                console.error("Failed to save visibility", e);
+                // Revert if failed
+                cat.visible = !newStatus;
+                renderCategorySettings();
+                renderForms();
+                showToast("Failed to update settings", "error");
+            }
+        }
+
+
         function formatCurrency(amount) { return (parseFloat(amount) || 0).toLocaleString('km-KH') + ' ៛'; }
 
-        // TAB & DOCK
         function switchTab(tabName) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`tab-${tabName}`).classList.add('active');
@@ -495,12 +537,10 @@
             }
         }
 
-        // DATA & FILTERS
         async function loadData() {
             const list = document.getElementById('expense-list');
             list.innerHTML = '<div class="text-center py-10"><i data-lucide="loader-2" class="w-8 h-8 animate-spin mx-auto text-indigo-500"></i><p class="text-gray-500 mt-2">Loading data...</p></div>';
             lucide.createIcons();
-
             try { 
                 const res = await fetch(`${SHEETDB_URL}?sheet=Expenses`); 
                 if (!res.ok) throw new Error("Failed to fetch");
@@ -508,13 +548,9 @@
                 allExpenses = rawData.filter(item => item.ID && !isNaN(item.ID)); 
                 allExpenses.sort((a,b)=>new Date(b.Date)-new Date(a.Date)); 
                 applyFilters();
-            } catch(e){
-                console.error(e);
-                list.innerHTML = `<div class="text-center py-10 text-red-500 p-4 bg-red-50 rounded-xl border border-red-100"><p class="font-bold">Error Loading Data</p><button onclick="loadData()" class="mt-3 px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-medium">Retry</button></div>`;
-            }
+            } catch(e){ console.error(e); list.innerHTML = `<div class="text-center py-10 text-red-500 p-4 bg-red-50 rounded-xl border border-red-100"><p class="font-bold">Error Loading Data</p><button onclick="loadData()" class="mt-3 px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-medium">Retry</button></div>`; }
         }
 
-        // --- FILTERS ---
         function populateDropdowns() {
             const months = ["មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា", "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ"];
             ['d','m'].forEach(p => {
@@ -544,26 +580,19 @@
             const fYear = safeVal('d-filter-year');
             const fDate = safeVal('d-filter-date');
             const fSearch = document.getElementById('d-search-input').value.toLowerCase();
-
             filteredExpenses = allExpenses.filter(x => {
                 if(currentView === 'active' && x.Status === 'Deleted') return false;
                 if(currentView === 'trash' && x.Status !== 'Deleted') return false;
-                
                 if (fDate && x.Date !== fDate) return false;
                 if (fDay !== "" && new Date(x.Date).getDay().toString() !== fDay) return false;
                 if (fMonth !== "" && new Date(x.Date).getMonth().toString() !== fMonth) return false;
                 if (fYear !== "" && x.Date.substring(0,4) !== fYear) return false;
-                
                 if (fSearch && !x.Description.toLowerCase().includes(fSearch)) return false;
-
                 return true;
             });
-
             renderList(filteredExpenses);
-            
             const badge = document.getElementById('active-filter-badge');
             if(badge) badge.classList.toggle('hidden', !fDate && !fDay && !fMonth && !fYear);
-            
             const activeAll = allExpenses.filter(x => x.Status !== 'Deleted');
             updateSummary(activeAll);
         }
@@ -579,66 +608,59 @@
             applyFilters();
         }
 
-        // RENDER LIST
-        function renderList(data) {
-            const list = document.getElementById('expense-list'); list.innerHTML = '';
-            if (data.length === 0) { list.innerHTML = `<div class="text-center py-10 text-slate-400"><i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 opacity-50"></i><p>No ${currentView} items</p></div>`; lucide.createIcons(); return; }
-            
-            data.forEach(item => {
-                let breakdownHtml = '', itemTotal = 0;
-                categories.forEach(cat => { 
-                    const val = parseFloat(item[cat.key]) || 0; 
-                    if (val > 0) { 
-                        itemTotal += val; 
-                        breakdownHtml += `<span class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-600 border border-slate-200">${cat.label}: ${formatCurrency(val)}</span> `; 
-                    } 
-                });
-                
-                let btns = '';
-                if(currentView === 'active') {
-                    btns = `
-                        <button onclick="editItem('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold border border-blue-200 hover:bg-blue-100 transition"><i data-lucide="pencil" class="w-3 h-3"></i> Edit</button>
-                        <button onclick="askTrash('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-lg font-bold border border-orange-200 hover:bg-orange-100 transition"><i data-lucide="trash-2" class="w-3 h-3"></i> Trash</button>
-                    `;
-                } else {
-                    btns = `
-                        <button onclick="askRestore('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg font-bold border border-emerald-200 hover:bg-emerald-100 transition"><i data-lucide="rotate-ccw" class="w-3 h-3"></i> Restore</button>
-                        <button onclick="askDeleteForever('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg font-bold border border-red-200 hover:bg-red-100 transition"><i data-lucide="x" class="w-3 h-3"></i> Delete</button>
-                    `;
+        function viewItem(id) {
+            const item = allExpenses.find(x => x.ID == id);
+            if (!item) return;
+            document.getElementById('detail-date').innerText = item.Date;
+            document.getElementById('detail-amount').innerText = formatCurrency(item.Amount);
+            document.getElementById('detail-desc').innerText = item.Description || "No description provided.";
+            document.getElementById('detail-user').innerHTML = `<i data-lucide="user" class="w-3"></i> ${item.UserEmail || 'Unknown'}`;
+            document.getElementById('detail-status').innerText = item.Status;
+            document.getElementById('detail-status').className = item.Status === 'Active' ? "px-2 py-1 rounded bg-emerald-100 text-emerald-700 font-bold" : "px-2 py-1 rounded bg-red-100 text-red-700 font-bold";
+
+            const breakdown = document.getElementById('detail-breakdown');
+            breakdown.innerHTML = '';
+            categories.forEach(cat => {
+                const val = parseFloat(item[cat.key]) || 0;
+                if (val > 0) {
+                    breakdown.innerHTML += `<div class="flex justify-between items-center p-2 bg-slate-50 rounded border border-slate-100"><span class="text-sm font-medium text-slate-600">${cat.label}</span><span class="text-sm font-bold text-indigo-600">${formatCurrency(val)}</span></div>`;
                 }
-                
-                list.innerHTML += `
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-3 animate-fade-in ${currentView==='trash'?'opacity-80 bg-red-50/30':''}">
-                        <div class="flex justify-between mb-1">
-                            <div><p class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md inline-block mb-1">${item.Date}</p></div>
-                            <p class="text-lg font-bold text-indigo-600">${formatCurrency(item.Amount||itemTotal)}</p>
-                        </div>
-                        <p class="text-slate-700 text-sm font-medium line-clamp-1 mb-2">${item.Description||'No Description'}</p>
-                        <div class="flex flex-wrap gap-1 mt-2 border-t pt-2 border-dashed border-slate-200">${breakdownHtml}</div>
-                        <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-50">${btns}</div>
-                    </div>`;
             });
+            
+            const actions = document.getElementById('detail-actions');
+            if(item.Status === 'Active') {
+                actions.innerHTML = `
+                    <button onclick="editItem('${item.ID}'); closeModal('detailModal')" class="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition">Edit</button>
+                    <button onclick="askTrash('${item.ID}'); closeModal('detailModal')" class="flex-1 py-3 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition">Trash</button>
+                `;
+            } else {
+                actions.innerHTML = `
+                    <button onclick="askRestore('${item.ID}'); closeModal('detailModal')" class="flex-1 py-3 bg-emerald-50 text-emerald-600 font-bold rounded-xl hover:bg-emerald-100 transition">Restore</button>
+                    <button onclick="askDeleteForever('${item.ID}'); closeModal('detailModal')" class="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition">Delete</button>
+                `;
+            }
+            document.getElementById('detailModal').classList.add('active');
             lucide.createIcons();
         }
 
         function updateSummary(data) {
-            let t=0, td=0, tm=0, ty=0; 
+            let t=0, td=0, tm=0, ty=0;
             const today=new Date().toISOString().split('T')[0], d=new Date(), m=d.getMonth(), y=d.getFullYear();
-            data.forEach(x=>{ 
-                const v=parseFloat(x.Amount)||0; t+=v; 
-                if(x.Date===today) td+=v; 
+            data.forEach(x=>{
+                const v=parseFloat(x.Amount)||0; t+=v;
+                if(x.Date===today) td+=v;
                 const xD = new Date(x.Date);
-                if(xD.getMonth()===m && xD.getFullYear()===y) tm+=v; 
+                if(xD.getMonth()===m && xD.getFullYear()===y) tm+=v;
                 if(xD.getFullYear()===y) ty+=v;
             });
-            document.getElementById('total-summary').innerText=formatCurrency(t); 
-            document.getElementById('today-summary').innerText=formatCurrency(td); 
+            document.getElementById('total-summary').innerText=formatCurrency(t);
+            document.getElementById('today-summary').innerText=formatCurrency(td);
             document.getElementById('month-summary').innerText=formatCurrency(tm);
             document.getElementById('year-summary').innerText=formatCurrency(ty);
             document.getElementById('count-summary').innerText = data.length;
         }
 
-        // --- VIEW TOGGLE ---
+        // --- RESTORED CRUD FUNCTIONS ---
         function toggleTrashView() { 
             currentView = currentView === 'active' ? 'trash' : 'active'; 
             const btn = document.getElementById('trash-toggle-btn'); 
@@ -662,7 +684,6 @@
             applyFilters(); 
         }
 
-        // --- CRUD ACTIONS ---
         async function moveToTrash(id) {
             await fetch(`${SHEETDB_URL}/ID/${id}?sheet=Expenses`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: { Status: 'Deleted' } }) });
             loadData();
@@ -679,26 +700,51 @@
             await callScript({ action: "DELETE_ROW_FOREVER", id: id });
             setTimeout(loadData, 2000);
         }
+        // -------------------------------
+
+        function renderList(data) {
+            const list = document.getElementById('expense-list'); list.innerHTML = '';
+            if (data.length === 0) { list.innerHTML = `<div class="text-center py-10 text-slate-400"><i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 opacity-50"></i><p>No ${currentView} items</p></div>`; lucide.createIcons(); return; }
+            
+            data.forEach(item => {
+                let breakdownHtml = '', itemTotal = 0;
+                categories.forEach(cat => { 
+                    const val = parseFloat(item[cat.key]) || 0; 
+                    if (val > 0) { 
+                        itemTotal += val; 
+                        breakdownHtml += `<span class="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-600 border border-slate-200">${cat.label}: ${formatCurrency(val)}</span> `; 
+                    } 
+                });
+                let btns = '';
+                if(currentView === 'active') {
+                    btns = `
+                        <button onclick="event.stopPropagation(); editItem('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold border border-blue-200 hover:bg-blue-100 transition"><i data-lucide="pencil" class="w-3 h-3"></i> Edit</button>
+                        <button onclick="event.stopPropagation(); askTrash('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-lg font-bold border border-orange-200 hover:bg-orange-100 transition"><i data-lucide="trash-2" class="w-3 h-3"></i> Trash</button>
+                    `;
+                } else {
+                    btns = `
+                        <button onclick="event.stopPropagation(); askRestore('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg font-bold border border-emerald-200 hover:bg-emerald-100 transition"><i data-lucide="rotate-ccw" class="w-3 h-3"></i> Restore</button>
+                        <button onclick="event.stopPropagation(); askDeleteForever('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg font-bold border border-red-200 hover:bg-red-100 transition"><i data-lucide="x" class="w-3 h-3"></i> Delete</button>
+                    `;
+                }
+                
+                list.innerHTML += `
+                    <div onclick="viewItem('${item.ID}')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-3 animate-fade-in cursor-pointer hover:bg-slate-50 transition ${currentView==='trash'?'opacity-80 bg-red-50/30':''}">
+                        <div class="flex justify-between mb-1">
+                            <div><p class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md inline-block mb-1">${item.Date}</p></div>
+                            <p class="text-lg font-bold text-indigo-600">${formatCurrency(item.Amount||itemTotal)}</p>
+                        </div>
+                        <p class="text-slate-700 text-sm font-medium line-clamp-1 mb-2">${item.Description||'No Description'}</p>
+                        <div class="flex flex-wrap gap-1 mt-2 border-t pt-2 border-dashed border-slate-200">${breakdownHtml}</div>
+                        <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-50">${btns}</div>
+                    </div>`;
+            });
+            lucide.createIcons();
+        }
 
         // --- HELPERS ---
-        function showToast(msg, type) { 
-            const d=document.createElement('div'); 
-            const color=type==='success'?'bg-green-600 border-l-4 border-green-800':(type==='info'?'bg-blue-600 border-l-4 border-blue-800':'bg-red-600 border-l-4 border-red-800');
-            d.className=`${color} text-white px-4 py-3 rounded-lg shadow-lg flex gap-2 pointer-events-auto toast-box`; 
-            d.innerHTML=`<i data-lucide="check-circle" class="w-4"></i> ${msg}`; 
-            document.getElementById('toast-container').appendChild(d); 
-            setTimeout(()=>d.remove(),3000); lucide.createIcons(); 
-        }
-
-        function showActionToast(msg, actionText, callback) { 
-            const d=document.createElement('div'); 
-            d.className=`bg-slate-800 text-white px-4 py-3 rounded-lg shadow-xl flex items-center justify-between gap-4 pointer-events-auto toast-box w-full max-w-sm`; 
-            d.innerHTML=`<div class="flex items-center gap-2 text-sm font-medium"><i data-lucide="trash-2" class="w-4 h-4 text-gray-400"></i> ${msg}</div><button id="toast-action-btn" class="text-indigo-400 hover:text-white font-bold text-sm uppercase tracking-wide">${actionText}</button>`; 
-            document.getElementById('toast-container').appendChild(d); 
-            d.querySelector('#toast-action-btn').onclick=()=>{callback();d.remove();}; 
-            setTimeout(()=>{if(d.isConnected)d.remove();},5000); lucide.createIcons(); 
-        }
-
+        function showToast(msg, type) { const d=document.createElement('div'); const color=type==='success'?'bg-green-600 border-l-4 border-green-800':(type==='info'?'bg-blue-600 border-l-4 border-blue-800':'bg-red-600 border-l-4 border-red-800'); d.className=`${color} text-white px-4 py-3 rounded-lg shadow-lg flex gap-2 pointer-events-auto toast-box`; d.innerHTML=`<i data-lucide="check-circle" class="w-4"></i> ${msg}`; document.getElementById('toast-container').appendChild(d); setTimeout(()=>d.remove(),3000); lucide.createIcons(); }
+        function showActionToast(msg, actionText, callback) { const d=document.createElement('div'); d.className=`bg-slate-800 text-white px-4 py-3 rounded-lg shadow-xl flex items-center justify-between gap-4 pointer-events-auto toast-box w-full max-w-sm`; d.innerHTML=`<div class="flex items-center gap-2 text-sm font-medium"><i data-lucide="trash-2" class="w-4 h-4 text-gray-400"></i> ${msg}</div><button id="toast-action-btn" class="text-indigo-400 hover:text-white font-bold text-sm uppercase tracking-wide">${actionText}</button>`; document.getElementById('toast-container').appendChild(d); d.querySelector('#toast-action-btn').onclick=()=>{callback();d.remove();}; setTimeout(()=>{if(d.isConnected)d.remove();},5000); lucide.createIcons(); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
         function openSettingsModal() { renderCategorySettings(); document.getElementById('settingsModal').classList.add('active'); }
         function closeSettingsModal() { document.getElementById('settingsModal').classList.remove('active'); resetCategoryForm(); }
@@ -710,28 +756,81 @@
         function openFilterModal() { ['day','month'].forEach(f => document.getElementById(`m-filter-${f}`).value = document.getElementById(`d-filter-${f}`).value); const mY=document.getElementById('m-filter-year'), dY=document.getElementById('d-filter-year'); mY.innerHTML=dY.innerHTML; mY.value=dY.value; document.getElementById('filterModal').classList.add('active'); }
         function openExportModal() { document.getElementById('exportModal').classList.add('active'); }
         
-        // --- SETTINGS & FORMS (Standard) ---
+        // --- SETTINGS & FORMS: VISIBILITY ---
         async function handleCategorySubmit(e) {
             e.preventDefault();
             const key=document.getElementById('new-cat-en').value.trim(), label=document.getElementById('new-cat-km').value.trim(), idx=parseInt(document.getElementById('edit-mode-index').value), oldKey=document.getElementById('edit-old-key').value;
             if(idx===-1 && categories.some(c=>c.key.toLowerCase()===key.toLowerCase())) { customAlert("Attention", "This category key already exists!", "warning"); return; }
             document.getElementById('settings-loading').classList.remove('hidden');
             try {
-                if(idx===-1) { await callScript({ action: "ADD", key, label }); categories.push({ key, label }); } 
-                else { if(oldKey!==key || categories[idx].label!==label) await callScript({ action: "EDIT", oldKey, key, label }); categories[idx] = { key, label }; }
-                saveAndRefresh(); resetCategoryForm(); showToast('Success', 'success');
-            } catch(e){} finally { document.getElementById('settings-loading').classList.add('hidden'); }
+                if(idx===-1) { 
+                    await callScript({ action: "ADD", key, label }); 
+                    await fetch(`${SHEETDB_URL}?sheet=Categories`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ data: { Key: key, Label: label, Visible: 'true' } }) });
+                } else { 
+                    if(oldKey!==key || categories[idx].label!==label) {
+                        await callScript({ action: "EDIT", oldKey, key, label }); 
+                        await fetch(`${SHEETDB_URL}/Key/${oldKey}?sheet=Categories`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ data: { Key: key, Label: label } }) });
+                    }
+                }
+                await loadCategories(); resetCategoryForm(); showToast('Success', 'success');
+            } catch(e){ customAlert("Error", "Failed to sync category.", "error"); } finally { document.getElementById('settings-loading').classList.add('hidden'); }
         }
         async function removeCategory(i) { 
-            customConfirm("Delete Category?", "Are you sure you want to remove this category? It will affect your sheet.", "Delete", "bg-red-600 hover:bg-red-700 shadow-red-200", async () => {
+            customConfirm("Delete Category?", "Are you sure? This removes it for EVERYONE.", "Delete", "bg-red-600 hover:bg-red-700 shadow-red-200", async () => {
                 document.getElementById('settings-loading').classList.remove('hidden'); 
-                try { await callScript({ action: "DELETE_COLUMN", key: categories[i].key }); categories.splice(i,1); saveAndRefresh(); } catch(e){} finally { document.getElementById('settings-loading').classList.add('hidden'); }
+                try { 
+                    const keyToRemove = categories[i].key;
+                    await callScript({ action: "DELETE_COLUMN", key: keyToRemove }); 
+                    await fetch(`${SHEETDB_URL}/Key/${keyToRemove}?sheet=Categories`, { method: 'DELETE' });
+                    await loadCategories(); 
+                } catch(e){ customAlert("Error", "Failed to delete category.", "error"); } finally { document.getElementById('settings-loading').classList.add('hidden'); }
             });
         }
-        function saveAndRefresh() { localStorage.setItem('app_categories', JSON.stringify(categories)); renderForms(); renderCategorySettings(); }
-        function renderForms() { const gen = (cid, p) => { const c = document.getElementById(cid); c.innerHTML = ''; if(p==='desktop') c.innerHTML += `<div class="mb-4"><label class="text-xs font-bold text-slate-500 uppercase mb-1">កាលបរិច្ឆេទ</label><input type="date" name="Date" class="w-full p-3 border rounded-xl bg-slate-50" required value="${new Date().toISOString().split('T')[0]}"></div>`; if(categories.length===0) c.innerHTML=`<div class="text-center p-4 bg-amber-50 text-amber-700 text-sm rounded-xl">Please add categories in Settings.</div>`; else categories.forEach(cat => c.innerHTML+=`<div class="relative mb-3"><label class="block text-xs font-medium text-slate-600 mb-1">${cat.label}</label><div class="relative"><input type="number" name="${cat.key}" class="w-full p-3 pl-3 pr-12 border rounded-xl" placeholder="0" oninput="calculateTotal('${p}')"><span class="absolute right-4 top-3 text-slate-400 text-sm">៛</span></div></div>`); }; gen('desktop-dynamic-inputs', 'desktop'); gen('mobile-dynamic-inputs', 'mobile'); }
-        function calculateTotal(p) { let t=0; categories.forEach(c => t += parseFloat(document.getElementById(p+'-form').querySelector(`[name="${c.key}"]`)?.value)||0); document.getElementById(p+'-total-display').innerText = formatCurrency(t); }
-        function renderCategorySettings() { const l = document.getElementById('category-list'); l.innerHTML = categories.length ? categories.map((c,i)=>`<div class="flex justify-between p-3 bg-slate-50 border rounded-lg mb-2"><div><p class="text-sm font-bold">${c.label}</p><p class="text-xs text-slate-400">${c.key}</p></div><div class="flex gap-1"><button onclick="prepareEditCategory(${i})" class="p-2 text-blue-600"><i data-lucide="pencil" class="w-4"></i></button><button onclick="removeCategory(${i})" class="p-2 text-red-600"><i data-lucide="trash" class="w-4"></i></button></div></div>`).join('') : '<div class="text-center py-4 text-slate-400 text-sm">No categories</div>'; lucide.createIcons(); }
+
+        // --- RENDER FORMS ---
+        function renderForms() { 
+            const gen = (cid, p) => { 
+                const c = document.getElementById(cid); 
+                c.innerHTML = ''; 
+                if(p==='desktop') c.innerHTML += `<div class="mb-4"><label class="text-xs font-bold text-slate-500 uppercase mb-1">កាលបរិច្ឆេទ</label><input type="date" name="Date" class="w-full p-3 border rounded-xl bg-slate-50" required value="${new Date().toISOString().split('T')[0]}"></div>`; 
+                if(categories.length===0) c.innerHTML=`<div class="text-center p-4 bg-amber-50 text-amber-700 text-sm rounded-xl">Please add categories in Settings.</div>`; 
+                else {
+                    categories.forEach(cat => { 
+                        if (cat.visible !== false) { 
+                            c.innerHTML+=`<div class="relative mb-3"><label class="block text-xs font-medium text-slate-600 mb-1">${cat.label}</label><div class="relative"><input type="number" name="${cat.key}" class="w-full p-3 pl-3 pr-12 border rounded-xl" placeholder="0" oninput="calculateTotal('${p}')"><span class="absolute right-4 top-3 text-slate-400 text-sm">៛</span></div></div>`;
+                        }
+                    }); 
+                }
+            }; 
+            gen('desktop-dynamic-inputs', 'desktop'); 
+            gen('mobile-dynamic-inputs', 'mobile'); 
+        }
+
+        // --- SETTINGS RENDER ---
+        function renderCategorySettings() { 
+            const l = document.getElementById('category-list'); 
+            l.innerHTML = categories.length ? categories.map((c,i)=>`
+                <div class="flex justify-between items-center p-3 bg-slate-50 border rounded-lg mb-2">
+                    <div>
+                        <p class="text-sm font-bold ${c.visible === false ? 'text-slate-400' : 'text-slate-800'}">${c.label}</p>
+                        <p class="text-xs text-slate-400">${c.key}</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" class="sr-only peer" onchange="toggleCategoryVisibility(${i})" ${c.visible !== false ? 'checked' : ''}>
+                            <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
+                        <div class="h-4 w-px bg-slate-300 mx-1"></div>
+                        <button onclick="prepareEditCategory(${i})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                        <button onclick="removeCategory(${i})" class="p-1.5 text-red-600 hover:bg-red-50 rounded"><i data-lucide="trash" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            `).join('') : '<div class="text-center py-4 text-slate-400 text-sm">No categories</div>'; 
+            lucide.createIcons(); 
+        }
+
+        function calculateTotal(p) { let t=0; categories.forEach(c => { if(c.visible !== false) t += parseFloat(document.getElementById(p+'-form').querySelector(`[name="${c.key}"]`)?.value)||0; }); document.getElementById(p+'-total-display').innerText = formatCurrency(t); }
+        
         function prepareEditCategory(i) { const c=categories[i]; document.getElementById('new-cat-en').value=c.key; document.getElementById('new-cat-km').value=c.label; document.getElementById('edit-mode-index').value=i; document.getElementById('edit-old-key').value=c.key; document.getElementById('form-title').innerText="Edit"; document.getElementById('save-cat-btn').innerText='Update'; document.getElementById('cancel-edit-btn').classList.remove('hidden'); }
         function resetCategoryForm() { document.getElementById('new-cat-en').value=''; document.getElementById('new-cat-km').value=''; document.getElementById('edit-mode-index').value='-1'; document.getElementById('save-cat-btn').innerHTML='<i data-lucide="plus" class="w-4 mr-1"></i> Add'; document.getElementById('cancel-edit-btn').classList.add('hidden'); document.getElementById('form-title').innerText="Add New"; }
         function resetForm(fid) { document.getElementById(fid).reset(); document.getElementById(fid.replace('-form','-total-display')).innerText='0 ៛'; if(fid==='desktop-form') { document.getElementById('desktop-edit-id').value=''; document.getElementById('desktop-submit-btn').innerText='Save'; document.getElementById('desktop-cancel-btn').classList.add('hidden'); } }
@@ -753,23 +852,44 @@
             if (actualDateField) actualDateField.value = item.Date;
             const descField = document.getElementById(fid).querySelector('[name="Description"]');
             if (descField) descField.value = item.Description;
-            categories.forEach(c => { const input = document.getElementById(fid).querySelector(`[name="${c.key}"]`); if (input) { input.value = item[c.key] || 0; } });
+            categories.forEach(c => { 
+                if (c.visible !== false) {
+                    const input = document.getElementById(fid).querySelector(`[name="${c.key}"]`); 
+                    if (input) { input.value = item[c.key] || 0; } 
+                }
+            });
             calculateTotal(fid.replace('-form', ''));
         }
 
         async function handleFormSubmit(e, fid) {
-            e.preventDefault(); if(categories.length===0) return customAlert("Setup Required", "Please add expense categories in Settings first.", "info");
-            const form=document.getElementById(fid), data=new FormData(form), btn=form.querySelector('button[type="submit"]'), id=data.get('ID');
-            let payload={Date:data.get('Date'), Description:data.get('Description'), ModifiedDate:new Date().toISOString()}, total=0;
-            categories.forEach(c=>{ const v=parseFloat(data.get(c.key))||0; payload[c.key]=v; total+=v; });
-            payload.Amount=total; if(total===0) return customAlert("Missing Data", "Please enter a valid amount.", "warning");
-            btn.disabled=true; btn.innerHTML='Saving...';
+            e.preventDefault(); 
+            if(categories.length === 0) return customAlert("Setup Required", "Please add expense categories in Settings first.", "info");
+            const form = document.getElementById(fid);
+            const data = new FormData(form);
+            let btn;
+            if (fid === 'desktop-form') { btn = document.getElementById('desktop-submit-btn'); } else { btn = document.getElementById('mobile-submit-btn'); }
+            const id = data.get('ID');
+            let payload = { Date: data.get('Date'), Description: data.get('Description'), ModifiedDate: new Date().toISOString() };
+            let total = 0;
+            categories.forEach(c => { 
+                if(c.visible !== false) {
+                    const v = parseFloat(data.get(c.key)) || 0; 
+                    payload[c.key] = v; 
+                    total += v; 
+                }
+            });
+            payload.Amount = total; 
+            if(total === 0) return customAlert("Missing Data", "Please enter a valid amount.", "warning");
+            if (btn) { btn.disabled = true; btn.innerHTML = 'Saving...'; }
             try {
                 if(id) await fetch(`${SHEETDB_URL}/ID/${id}?sheet=Expenses`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:payload})});
                 else { payload.ID=Date.now(); payload.Status='Active'; payload.Type='Expense'; payload.UserEmail=user.Email; await fetch(`${SHEETDB_URL}?sheet=Expenses`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:payload})}); }
-                showToast('Saved Successfully!', 'success'); resetForm(fid); if(fid==='mobile-form') closeMobileModal(); loadData();
-            } catch(e){ customAlert("Error", "Something went wrong saving data.", "error"); } finally{btn.disabled=false; btn.innerText='Save';}
+                showToast('Saved Successfully!', 'success'); resetForm(fid); 
+                if(fid === 'mobile-form') closeMobileModal(); 
+                loadData();
+            } catch(e){ customAlert("Error", "Something went wrong saving data.", "error"); } finally { if (btn) { btn.disabled = false; btn.innerText = 'រក្សាទុក'; } }
         }
+
         async function callScript(payload) { try { await fetch(APPS_SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); return true; } catch (e) { return false; } }
         function exportToExcel() { if(filteredExpenses.length === 0) return; const exportData = filteredExpenses.map(item => { let row = { 'Date': item.Date, 'Description': item.Description, 'Total': parseFloat(item.Amount)||0 }; categories.forEach(cat => { row[cat.label] = parseFloat(item[cat.key])||0; }); return row; }); const ws = XLSX.utils.json_to_sheet(exportData); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Expenses"); XLSX.writeFile(wb, "Expenses.xlsx"); closeModal('exportModal'); }
         function exportToPDF() { if(filteredExpenses.length === 0) return; const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.setFontSize(18); doc.text("Expense Report", 14, 20); const head = [['Date', 'Desc', ...categories.map(c => c.key), 'Total']]; const body = filteredExpenses.map(item => [item.Date, item.Description, ...categories.map(cat => (parseFloat(item[cat.key])||0).toLocaleString()), (parseFloat(item.Amount)||0).toLocaleString()]); doc.autoTable({ startY: 35, head: head, body: body, theme: 'grid', headStyles: { fillColor: [79, 70, 229] } }); doc.save("Expenses.pdf"); closeModal('exportModal'); }
