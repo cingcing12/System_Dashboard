@@ -2,187 +2,261 @@
 <html lang="km">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>គ្រប់គ្រងអ្នកប្រើប្រាស់ - Admin</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>User Management Pro</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Khmer+OS+Battambang:wght@400;600;700&display=swap');
-:root{
-  --accent: #6b46c1;
-  --muted: #94a3b8;
-  --surface: #ffffff;
-  --glass: rgba(255,255,255,0.85);
-}
-body{ font-family:'Khmer OS Battambang', sans-serif; background:linear-gradient(180deg,#fbfbfd 0%, #f5f7fb 100%); min-height:100vh; color:#0f172a; }
+    @import url('https://fonts.googleapis.com/css2?family=Khmer+OS+Battambang:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
-/* Minimal modal overlay */
-.modal { display:none; position:fixed; inset:0; background:rgba(15,23,42,0.35); z-index:50; align-items:center; justify-content:center; padding:1rem; }
-.modal.active{ display:flex; }
+    :root {
+        --primary: #4f46e5; /* Indigo 600 */
+        --primary-dark: #4338ca;
+        --bg-color: #f1f5f9;
+    }
 
-/* Minimal card */
-.card-min { background:var(--surface); border-radius:14px; border:1px solid #e6eefb; box-shadow: none; }
+    body {
+        font-family: 'Plus Jakarta Sans', 'Khmer OS Battambang', sans-serif;
+        background-color: var(--bg-color);
+        color: #1e293b;
+        -webkit-font-smoothing: antialiased;
+    }
 
-/* Thin subtle shadow only on capture button */
-.capture-btn {
-  width:70px; height:70px; border-radius:9999px;
-  display:flex; align-items:center; justify-content:center;
-  background:linear-gradient(180deg,#fff 0%, #f3f4f6 100%);
-  border:1px solid rgba(15,23,42,0.06);
-  box-shadow: 0 8px 18px rgba(11,16,28,0.06);
-  transition: transform .12s ease, box-shadow .12s ease;
-}
-.capture-btn:active{ transform: scale(.98); box-shadow: 0 6px 12px rgba(11,16,28,0.08); }
+    /* Smooth Modal Animation */
+    .modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+    }
+    .modal.active {
+        display: flex;
+        opacity: 1;
+    }
+    .modal-content {
+        transform: scale(0.95);
+        transition: transform 0.2s ease-out;
+    }
+    .modal.active .modal-content {
+        transform: scale(1);
+    }
 
-/* Minimal video wrapper */
-.video-wrapper { background:#000; border-radius:10px; overflow:hidden; display:flex; align-items:center; justify-content:center; position:relative; }
+    /* Shimmer/Skeleton Loading Effect */
+    .skeleton {
+        background: #e2e8f0;
+        background-image: linear-gradient(to right, #e2e8f0 0%, #f1f5f9 20%, #e2e8f0 40%, #e2e8f0 100%);
+        background-repeat: no-repeat;
+        background-size: 800px 100%;
+        animation: shimmer 1.5s infinite linear; 
+        border-radius: 8px;
+    }
+    @keyframes shimmer {
+        0% { background-position: -468px 0; }
+        100% { background-position: 468px 0; }
+    }
 
-/* Small muted text */
-.small-muted { color:var(--muted); font-size:0.87rem; }
+    /* Camera Shutter Button */
+    .shutter-btn {
+        width: 72px; height: 72px;
+        border-radius: 50%;
+        background: transparent;
+        border: 4px solid white;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    .shutter-inner {
+        width: 56px; height: 56px;
+        background: white;
+        border-radius: 50%;
+        transition: all 0.1s;
+    }
+    .shutter-btn:active .shutter-inner { transform: scale(0.85); }
 
-/* subtle control buttons */
-.icon-btn { background:transparent; border:1px solid #eef2ff; padding:6px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; }
-.icon-btn:focus{ outline:2px solid rgba(107,70,193,0.12); }
-
-/* preview image style */
-.capture-preview { width:100%; height:auto; border-radius:8px; display:block; object-fit:contain; background:#0b1220; }
-
-/* responsive limits */
-.camera-card { width:100%; max-width:720px; }
-@media (max-width:640px){ .capture-btn { width:60px; height:60px; } }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 </style>
 </head>
-<body>
+<body class="pb-20">
 
-<header class="bg-white p-4 sticky top-0 z-20 border-b border-gray-100">
-  <div class="max-w-7xl mx-auto flex justify-between items-center">
-    <h1 class="text-2xl font-semibold text-gray-900 flex items-center gap-3">
-      <i data-lucide="shield-check" class="w-6 h-6 text-violet-600"></i>
-      គ្រប់គ្រងអ្នកប្រើប្រាស់
-    </h1>
-    <button onclick="window.location.href='dashboard.html'" class="text-white bg-violet-600 px-4 py-2 rounded-lg text-sm hover:bg-violet-700">ផ្ទាំងគ្រប់គ្រង</button>
-  </div>
+<header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-100 p-2 rounded-lg">
+                <i data-lucide="shield-check" class="w-6 h-6 text-indigo-600"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-slate-800 leading-none">Admin Portal</h1>
+                <span class="text-xs text-slate-500">គ្រប់គ្រងអ្នកប្រើប្រាស់</span>
+            </div>
+        </div>
+        <button onclick="window.location.href='dashboard.html'" class="group flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors bg-slate-50 hover:bg-indigo-50 px-4 py-2 rounded-full">
+            <i data-lucide="layout-dashboard" class="w-4 h-4 group-hover:scale-110 transition-transform"></i>
+            <span class="hidden sm:inline">ផ្ទាំងគ្រប់គ្រង</span>
+        </button>
+    </div>
 </header>
 
-<main class="max-w-7xl mx-auto p-4 md:p-8">
-  <section class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-8">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-      <h2 class="text-xl font-bold">បញ្ជីគណនី</h2>
-      <button onclick="openModal()" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2">
-        <i data-lucide="user-plus" class="w-4 h-4"></i> បង្កើតគណនីថ្មី
-      </button>
+<main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-800">បញ្ជីគណនី (Accounts)</h2>
+            <p class="text-slate-500 text-sm mt-1">គ្រប់គ្រងសិទ្ធិ និងព័ត៌មានបុគ្គលិក</p>
+        </div>
+        <button onclick="openModal()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all flex items-center justify-center gap-2 transform active:scale-95">
+            <i data-lucide="plus-circle" class="w-5 h-5"></i> បង្កើតគណនីថ្មី
+        </button>
     </div>
-    <div id="user-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <p class="col-span-full text-center text-gray-500 py-10">កំពុងទាញទិន្នន័យ...</p>
-    </div>
-  </section>
+
+    <div id="user-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        </div>
 </main>
 
 <div id="userModal" class="modal" role="dialog" aria-modal="true">
-  <div class="card-min camera-card p-5">
-    <div class="flex justify-between items-center mb-4">
-      <h3 id="modalTitle" class="text-lg font-semibold">បង្កើតគណនីថ្មី</h3>
-      <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700 p-2 rounded-md"><i data-lucide="x" class="w-5 h-5"></i></button>
-    </div>
-
-    <form id="modalForm" class="space-y-4" enctype="multipart/form-data" autocomplete="off">
-      <div>
-        <label class="block text-gray-700 text-sm mb-1">អ៊ីម៉ែល</label>
-        <input id="modalEmail" name="email" type="email" required class="w-full p-3 border rounded-md text-sm" placeholder="example@gmail.com" />
-      </div>
-
-      <div>
-        <label class="block text-gray-700 text-sm mb-1">ពាក្យសម្ងាត់</label>
-        <input id="modalPassword" name="password" type="password" class="w-full p-3 border rounded-md text-sm" placeholder="ពាក្យសម្ងាត់សម្រាប់គណនី" />
-        <p class="text-xs small-muted mt-1">នៅលើការកែប្រែ: ទុកទំនេរ ប្រសិនបើមិនចង់ផ្លាស់ប្តូរ</p>
-      </div>
-
-      <div>
-        <label class="block text-gray-700 text-sm mb-1">តួនាទី</label>
-        <select id="modalRole" name="role" class="w-full p-3 border rounded-md text-sm">
-          <option value="Admin">Admin (អ្នកគ្រប់គ្រង)</option>
-          <option value="Owner">Owner (ម្ចាស់)</option>
-          <option value="Staff" selected>Staff (បុគ្គលិក)</option>
-        </select>
-      </div>
-
-      <div>
-        <label class="block text-gray-700 text-sm mb-1">រូបថតមុខ (Face image)</label>
-        <div class="flex items-center gap-3">
-          <div>
-            <img id="imgPreview" class="w-20 h-20 rounded-full object-cover border border-gray-100" src="" alt="Preview" style="display:none;" />
-          </div>
-          <div class="flex-1">
-            <div class="flex gap-2">
-              <label id="uploadBtn" class="flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer text-sm small-muted">
-                <i data-lucide="upload-cloud" class="w-4 h-4"></i>
-                <span>ជ្រើសរើសរូបភាព</span>
-                <input id="modalImage" name="faceImage" type="file" accept="image/*" class="sr-only" />
-              </label>
-
-              <button type="button" id="openCameraBtn" class="flex items-center gap-2 px-3 py-2 border rounded-md text-sm small-muted">
-                <i data-lucide="camera" class="w-4 h-4"></i>
-                <span>ថតដោយកាមេរ៉ា</span>
-              </button>
+    <div class="modal-content bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <div>
+                <h3 id="modalTitle" class="text-lg font-bold text-slate-800">បង្កើតគណនីថ្មី</h3>
+                <p class="text-xs text-slate-400">សូមបំពេញព័ត៌មានខាងក្រោម</p>
             </div>
-            <p id="faceSourceNote" class="mt-2 small-muted">ជ្រើសរើសឯកសារ ឬ ថតរូបសម្រាប់គណនី</p>
-          </div>
+            <button onclick="closeModal()" class="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
         </div>
-      </div>
 
-      <div class="flex justify-end gap-2 pt-2">
-        <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-md border text-sm">បោះបង់</button>
-        <button type="submit" id="modalSaveBtn" class="px-4 py-2 rounded-md bg-violet-600 text-white text-sm">រក្សាទុក</button>
-      </div>
-    </form>
-  </div>
+        <div class="p-6 overflow-y-auto">
+            <form id="modalForm" class="space-y-6" enctype="multipart/form-data" autocomplete="off">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-slate-700 text-sm font-semibold mb-1.5">អ៊ីម៉ែល <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <i data-lucide="mail" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                                <input id="modalEmail" name="email" type="email" required class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder:text-slate-400" placeholder="example@company.com" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-700 text-sm font-semibold mb-1.5">ពាក្យសម្ងាត់ <span class="text-red-500" id="passReq">*</span></label>
+                            <div class="relative">
+                                <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                                <input id="modalPassword" name="password" type="password" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" placeholder="••••••••" />
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-1 hidden" id="passHint">ទុកទំនេរ ប្រសិនបើមិនចង់ផ្លាស់ប្តូរ</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-700 text-sm font-semibold mb-1.5">តួនាទី</label>
+                            <div class="relative">
+                                <i data-lucide="shield" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                                <select id="modalRole" name="role" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none appearance-none cursor-pointer">
+                                    <option value="Staff" selected>Staff (បុគ្គលិក)</option>
+                                    <option value="Admin">Admin (អ្នកគ្រប់គ្រង)</option>
+                                    <option value="Owner">Owner (ម្ចាស់)</option>
+                                </select>
+                                <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="block text-slate-700 text-sm font-semibold">រូបថត (Face ID)</label>
+                        <div class="border-2 border-dashed border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center gap-4 hover:border-indigo-300 transition-colors bg-slate-50/50 min-h-[180px]">
+                            
+                            <img id="imgPreview" class="w-24 h-24 rounded-full object-cover shadow-md border-2 border-white ring-2 ring-slate-100" src="" alt="Preview" style="display:none;" />
+                            
+                            <div class="flex gap-2 w-full">
+                                <label class="flex-1 cursor-pointer bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-600 py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-all">
+                                    <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i> Upload
+                                    <input id="modalImage" name="faceImage" type="file" accept="image/*" class="sr-only" />
+                                </label>
+                                <button type="button" id="openCameraBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition-all shadow-sm">
+                                    <i data-lucide="camera" class="w-3.5 h-3.5"></i> Camera
+                                </button>
+                            </div>
+                            <p id="faceSourceNote" class="text-xs text-slate-400 text-center px-2">No image selected</p>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+            <button type="button" onclick="closeModal()" class="px-5 py-2.5 rounded-xl text-slate-600 font-medium text-sm hover:bg-slate-200 transition-colors">បោះបង់</button>
+            <button type="button" onclick="document.getElementById('modalForm').requestSubmit()" id="modalSaveBtn" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm shadow-lg shadow-indigo-500/20 transition-all transform active:scale-95">រក្សាទុក</button>
+        </div>
+    </div>
 </div>
 
 <div id="cameraModal" class="modal" aria-modal="true" role="dialog">
-  <div class="card-min p-4 camera-card">
-    <div class="flex justify-between items-center mb-3">
-      <div>
-        <h4 class="text-sm font-medium">ថតរូបមុខ</h4>
-        <p class="small-muted text-xs">សូមផ្ទុកមុខក្នុងកណ្ដាល និងមានពន្លឺល្អ</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <select id="cameraSelect" class="text-sm p-2 border rounded-md small-muted hidden"></select>
-        <button id="switchCamBtn" class="icon-btn" title="បម្លែងកាមេរ៉ា"><i data-lucide="repeat" class="w-4 h-4"></i></button>
-        <button id="openBackCamBtn" class="icon-btn" title="បើកកាមេរ៉ាក្រោយ"><i data-lucide="camera-off" class="w-4 h-4"></i></button>
-        <button id="closeCamera" class="icon-btn" title="បិទ"><i data-lucide="x" class="w-4 h-4"></i></button>
-      </div>
-    </div>
-
-    <div class="video-wrapper mb-3" style="height:360px;">
-      <video id="cameraVideo" autoplay playsinline class="w-full h-full object-cover"></video>
-      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
-        <div style="width:52%; height:52%; border-radius:9999px; border:1px dashed rgba(255,255,255,0.12);"></div>
-      </div>
-    </div>
-
-    <div class="flex flex-col items-center gap-3">
-      <div class="flex items-center gap-6">
-        <button id="retakeBtn" class="text-sm small-muted hidden">Retake</button>
-        <div id="captureBtn" class="capture-btn" role="button" title="Capture">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path d="M12 7a5 5 0 100 10 5 5 0 000-10z" stroke="#0f172a" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path>
-            <path d="M20 7h-3.2l-1.4-1.7A2 2 0 0013.8 4H10.2a2 2 0 00-1.6.3L7.2 6H4" stroke="#0f172a" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path>
-          </svg>
+    <div class="modal-content bg-black w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl relative flex flex-col h-[85vh] sm:h-auto">
+        
+        <div class="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-start bg-gradient-to-b from-black/60 to-transparent">
+            <div class="text-white">
+                <h4 class="text-sm font-bold">Camera</h4>
+                <p class="text-[10px] text-white/70">Position face in center</p>
+            </div>
+            <button id="closeCamera" class="bg-white/20 backdrop-blur-md p-2 rounded-full text-white hover:bg-white/30 transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
         </div>
-        <button id="acceptBtn" class="text-sm small-muted hidden">Accept</button>
-      </div>
 
-      <p id="cameraInstructions" class="small-muted text-xs">ចុចប៊ូតុងមធ្យមដើម្បីថត។</p>
+        <div class="relative flex-1 bg-black flex items-center justify-center overflow-hidden">
+            <video id="cameraVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+            
+            <div id="cameraPreviewContainer" class="absolute inset-0 bg-black z-10" style="display:none;">
+                <img id="cameraPreview" class="w-full h-full object-contain" src="" alt="preview" />
+            </div>
 
-      <div id="cameraPreviewContainer" class="w-full" style="display:none;">
-        <img id="cameraPreview" class="capture-preview" src="" alt="preview" />
-      </div>
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-50">
+                <div class="w-48 h-64 border-2 border-white/30 rounded-[40%] border-dashed"></div>
+            </div>
+        </div>
+
+        <div class="bg-black p-6 pb-8 flex flex-col items-center gap-6 z-20">
+            <select id="cameraSelect" class="bg-white/10 text-white text-xs p-2 rounded-lg border border-white/20 outline-none hidden max-w-[200px]"></select>
+
+            <div class="flex items-center justify-center w-full gap-8">
+                <div class="w-12 flex justify-center">
+                    <button id="retakeBtn" class="hidden text-white flex-col items-center gap-1 text-xs font-medium">
+                        <div class="p-2 bg-white/10 rounded-full"><i data-lucide="rotate-ccw" class="w-5 h-5"></i></div>
+                        Retake
+                    </button>
+                    <button id="switchCamBtn" class="text-white/80 hover:text-white transition-colors p-2">
+                        <i data-lucide="repeat" class="w-6 h-6"></i>
+                    </button>
+                </div>
+
+                <button id="captureBtn" class="shutter-btn shadow-lg shadow-white/10">
+                    <div class="shutter-inner"></div>
+                </button>
+                
+                <div class="w-12 flex justify-center">
+                    <button id="acceptBtn" class="hidden text-white flex-col items-center gap-1 text-xs font-medium">
+                        <div class="p-2 bg-indigo-600 rounded-full"><i data-lucide="check" class="w-5 h-5"></i></div>
+                        Use
+                    </button>
+                    <button id="openBackCamBtn" class="text-white/80 hover:text-white transition-colors p-2" title="Force Back Camera">
+                        <i data-lucide="camera-off" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
 <canvas id="captureCanvas" style="display:none;"></canvas>
@@ -204,6 +278,8 @@ const modalForm = document.getElementById('modalForm');
 const modalTitle = document.getElementById('modalTitle');
 const modalEmail = document.getElementById('modalEmail');
 const modalPassword = document.getElementById('modalPassword');
+const passReq = document.getElementById('passReq');
+const passHint = document.getElementById('passHint');
 const modalRole = document.getElementById('modalRole');
 const modalImage = document.getElementById('modalImage');
 const imgPreview = document.getElementById('imgPreview');
@@ -229,45 +305,69 @@ try {
   if (user && user.Email) currentUserEmail = user.Email;
 } catch (e){ console.error(e); }
 
-/* Camera state */
-let stream = null;
-let devices = [];
-let currentDeviceId = null;
-let isFront = true;
-let capturedBlob = null;
-let capturedDataUrl = null;
+/* Skeleton Loader */
+function showSkeletons() {
+    userList.innerHTML = Array(6).fill(0).map(() => `
+        <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+            <div class="flex items-start gap-4">
+                <div class="skeleton w-14 h-14 rounded-full flex-shrink-0"></div>
+                <div class="flex-1 space-y-2">
+                    <div class="skeleton h-5 w-3/4 rounded"></div>
+                    <div class="skeleton h-3 w-1/2 rounded"></div>
+                </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
+                <div class="skeleton h-6 w-16 rounded-full"></div>
+                <div class="skeleton h-8 w-24 rounded"></div>
+            </div>
+        </div>
+    `).join('');
+}
 
-/* Modal open/close */
+/* Modal Logic */
 function openModal(user = null){
   modal.classList.add('active');
   modalForm.reset();
   imgPreview.style.display='none'; imgPreview.src='';
-  capturedBlob = null; capturedDataUrl = null; faceSourceNote.textContent='';
+  capturedBlob = null; capturedDataUrl = null; faceSourceNote.textContent='No image selected';
   currentDeviceId = null;
   isFront = true;
 
   if(user){
     editingUserEmail = (user.Email||user['អ៊ីម៉េល']||user['អ៊ីម៉ែល'])||'';
-    modalTitle.textContent = 'កែប្រែគណនី';
+    modalTitle.textContent = 'កែប្រែគណនី (Edit User)';
     modalEmail.value = editingUserEmail;
     modalEmail.disabled = true;
+    modalEmail.classList.add('bg-slate-100', 'text-slate-500');
+    
     modalRole.value = user.Role||user['តួនាទី']||'Staff';
+    
     modalPassword.value = '';
     modalPassword.removeAttribute('required');
+    passReq.classList.add('hidden');
+    passHint.classList.remove('hidden');
+
     const faceFile = user.FaceImageFile || user.FaceImage;
     if(faceFile){
       imgPreview.src = `faces/${editingUserEmail.replace(/[@.]/g,'_')}.jpg`;
       imgPreview.style.display='block';
-      faceSourceNote.textContent = 'ប្រើរូបថត​នៅក្នុង​ប្រព័ន្ធ';
+      faceSourceNote.textContent = 'Current Profile Picture';
+      faceSourceNote.classList.add('text-green-600');
     } else {
-      faceSourceNote.textContent = 'មិនមានរូបថត​នៅក្នុង​ប្រព័ន្ធ';
+      faceSourceNote.textContent = 'No existing photo';
     }
   } else {
     editingUserEmail = null;
-    modalTitle.textContent = 'បង្កើតគណនីថ្មី';
+    modalTitle.textContent = 'បង្កើតគណនីថ្មី (New User)';
     modalEmail.disabled = false;
+    modalEmail.classList.remove('bg-slate-100', 'text-slate-500');
+    
     modalPassword.setAttribute('required','required');
-    faceSourceNote.textContent = 'ជ្រើសរើសឯកសារ ឬ ថតរូបសម្រាប់គណនី';
+    passReq.classList.remove('hidden');
+    passHint.classList.add('hidden');
+    
+    faceSourceNote.textContent = 'Required for Face ID';
+    faceSourceNote.classList.remove('text-green-600');
   }
 }
 
@@ -277,49 +377,58 @@ function closeModal(){
   imgPreview.style.display='none'; imgPreview.src='';
   editingUserEmail = null;
   capturedBlob = null; capturedDataUrl = null;
-  faceSourceNote.textContent = '';
 }
 
-/* File input behavior */
-document.getElementById('uploadBtn').addEventListener('click', ()=> modalImage.click());
+/* File Input */
 modalImage.addEventListener('change', (e)=>{
   const f = e.target.files[0];
-  if(!f){ imgPreview.style.display='none'; imgPreview.src=''; faceSourceNote.textContent=''; return; }
-  if(!f.type.startsWith('image/')){ Swal.fire({icon:'error', title:'ទម្ងន់ឯកសារ​មិនត្រឹមត្រូវ', text:'សូមជ្រើសរើសរូបភាព។'}); modalImage.value=''; return; }
+  if(!f){ return; }
+  if(!f.type.startsWith('image/')){ Swal.fire({icon:'error', title:'Invalid File', text:'Please select an image file.'}); modalImage.value=''; return; }
+  
   capturedBlob = null; capturedDataUrl = null;
-  imgPreview.src = URL.createObjectURL(f);
+  const url = URL.createObjectURL(f);
+  imgPreview.src = url;
   imgPreview.style.display = 'block';
-  faceSourceNote.textContent = 'ប្រើរូបភាពដែលបានជ្រើសពីឧបករណ៍';
+  faceSourceNote.textContent = 'Image selected from device';
+  faceSourceNote.classList.add('text-indigo-600');
 });
 
-/* Camera handlers */
+/* Camera Logic */
+let stream = null;
+let devices = [];
+let currentDeviceId = null;
+let isFront = true;
+let capturedBlob = null;
+let capturedDataUrl = null;
+
 openCameraBtn.addEventListener('click', openCameraModal);
 closeCamera.addEventListener('click', closeCameraModal);
 switchCamBtn.addEventListener('click', switchCamera);
-cameraSelect.addEventListener('change', async (e)=>{
-  currentDeviceId = e.target.value || null;
-  await startStream();
-});
+cameraSelect.addEventListener('change', async (e)=>{ currentDeviceId = e.target.value || null; await startStream(); });
 
-// Handler for Force Back Camera Button
+/* Back Camera Logic */
 openBackCamBtn.addEventListener('click', async () => {
   try {
-    currentDeviceId = null; // Clear any specific device selection
-    if (cameraSelect) cameraSelect.value = ""; // Clear dropdown selection
-    isFront = false; // Set state to back camera
-    await startStream(); // Restart stream
+    currentDeviceId = null; 
+    if (cameraSelect) cameraSelect.value = ""; 
+    isFront = false; 
+    await startStream(); 
   } catch(err){
     console.error('Back camera failed', err);
-    Swal.fire({icon:'error', title:'មិនអាចបើកកាមេរ៉ា​ក្រោយ', text:'សូមពិនិត្យឧបករណ៍'});  
+    Swal.fire({icon:'error', title:'Error', text:'Cannot access back camera'});  
   }
 });
 
 async function openCameraModal(){
   cameraModal.classList.add('active');
   cameraPreviewContainer.style.display='none';
-  capturedBlob = null; capturedDataUrl = null;
+  retakeBtn.classList.add('hidden');
+  acceptBtn.classList.add('hidden');
+  captureBtn.classList.remove('hidden');
+  switchCamBtn.parentElement.classList.remove('hidden');
+  openBackCamBtn.parentElement.classList.remove('hidden');
   
-  // Reset to front camera by default when opening
+  capturedBlob = null; capturedDataUrl = null;
   currentDeviceId = null;
   isFront = true; 
 
@@ -338,285 +447,207 @@ async function enumerateCameras(){
     devices = list.filter(d=>d.kind === 'videoinput');
     cameraSelect.innerHTML = '';
     if(devices.length > 1){
-      const hasLabels = devices.some(d => d.label && d.label.trim().length > 0);
-      if(hasLabels){
-        cameraSelect.classList.remove('hidden');
-        devices.forEach((d, i)=>{
-          const opt = document.createElement('option');
-          opt.value = d.deviceId;
-          opt.textContent = d.label || `Camera ${i+1}`;
-          cameraSelect.appendChild(opt);
-        });
-        // Default to first device found
-        currentDeviceId = devices[0].deviceId;
-        cameraSelect.value = currentDeviceId;
-      } else {
-        cameraSelect.classList.add('hidden');
-        currentDeviceId = null;
-      }
-    } else {
-      cameraSelect.classList.add('hidden');
-      currentDeviceId = null;
-    }
-  } catch (err){
-    console.warn('enumerateDevices failed', err);
-    cameraSelect.classList.add('hidden');
-    currentDeviceId = null;
-  }
+       const hasLabels = devices.some(d => d.label && d.label.trim().length > 0);
+       if(hasLabels){
+         cameraSelect.classList.remove('hidden');
+         devices.forEach((d, i)=>{
+           const opt = document.createElement('option');
+           opt.value = d.deviceId;
+           opt.textContent = d.label || `Camera ${i+1}`;
+           cameraSelect.appendChild(opt);
+         });
+         currentDeviceId = devices[0].deviceId;
+         cameraSelect.value = currentDeviceId;
+       } else { cameraSelect.classList.add('hidden'); currentDeviceId = null; }
+    } else { cameraSelect.classList.add('hidden'); currentDeviceId = null; }
+  } catch (err){ console.warn(err); cameraSelect.classList.add('hidden'); }
 }
 
 async function startStream(){
   try{
     stopStream();
-
-    const videoConstraints = {
-      width: { ideal: 1280 },
-      height: { ideal: 720 }
-    };
-
-    // Logic to handle device selection or forcing back camera
+    const videoConstraints = { width: { ideal: 1280 }, height: { ideal: 720 } };
     if(currentDeviceId){
       videoConstraints.deviceId = { exact: currentDeviceId };
-      // Try to detect if this ID is front or back for mirroring logic
       const match = devices.find(d => d.deviceId === currentDeviceId);
-      if (match) {
-         isFront = /front|selfie|user/i.test(match.label || '');
-      }
+      if (match) isFront = /front|selfie|user/i.test(match.label || '');
     } else {
-      // Fallback logic: if no ID, rely on facingMode
-      if (!isFront) {
-        // If user clicked "Back Camera", try to force environment
-        videoConstraints.facingMode = { exact: "environment" };
-      } else {
-        videoConstraints.facingMode = "user";
-      }
+       videoConstraints.facingMode = isFront ? "user" : { exact: "environment" };
     }
 
     try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: videoConstraints });
     } catch (err) {
-        // If "exact: environment" fails (common on laptops), retry with ideal "environment"
         if (!isFront && err.name === 'OverconstrainedError') {
-            console.warn('Exact environment failed, retrying with ideal...');
             videoConstraints.facingMode = "environment";
             stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: videoConstraints });
-        } else {
-            throw err;
-        }
+        } else { throw err; }
     }
 
     cameraVideo.srcObject = stream;
-    // Mirror only if it's the front camera
     cameraVideo.style.transform = isFront ? "scaleX(-1)" : "scaleX(1)";
     await cameraVideo.play();
   } catch (err){
-    console.error('startStream error', err);
-    Swal.fire({ icon:'error', title:'មិនអាចចូលកាមេរ៉ា', text:'សូមអនុញ្ញាតឲ្យគេហទំព័រនេះប្រើកាមេរ៉ា ឬពិនិត្យឧបករណ៍' });
+    console.error(err);
+    Swal.fire({ icon:'error', title:'Camera Error', text:'Check permissions.' });
   }
 }
 
-function stopStream(){
-  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream = null; }
-  cameraVideo.pause();
-  cameraVideo.srcObject = null;
-}
+function stopStream(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream = null; } cameraVideo.pause(); cameraVideo.srcObject = null; }
 
 async function switchCamera(){
-  try {
-    // If devices are listed and selectable
-    if(devices.length > 1 && cameraSelect.classList.contains('hidden') === false){
-      const idx = devices.findIndex(d => d.deviceId === currentDeviceId);
-      const next = devices[(idx + 1) % devices.length];
-      currentDeviceId = next.deviceId;
-      cameraSelect.value = currentDeviceId;
-      await startStream();
-      return;
-    }
-    // If devices exist but no labels (select hidden)
-    if(devices.length > 1 && cameraSelect.classList.contains('hidden')){
-       // Simple toggle logic for device ID
-       let idx = devices.findIndex(d => d.deviceId === currentDeviceId);
-       if(idx === -1) idx = 0;
-       const next = devices[(idx + 1) % devices.length];
-       currentDeviceId = next.deviceId;
-       await startStream();
-       return;
-    }
-    
-    // Fallback if no devices enumerated or just single camera logic
-    isFront = !isFront;
-    currentDeviceId = null;
-    await startStream();
-  } catch (err) {
-    // Basic toggle if all else fails
-    isFront = !isFront;
-    currentDeviceId = null;
-    await startStream();
+  if(devices.length > 1 && !cameraSelect.classList.contains('hidden')){
+     let idx = devices.findIndex(d => d.deviceId === currentDeviceId);
+     const next = devices[(idx + 1) % devices.length];
+     currentDeviceId = next.deviceId;
+     cameraSelect.value = currentDeviceId;
+  } else {
+     isFront = !isFront;
+     currentDeviceId = null;
   }
+  await startStream();
 }
 
-captureBtn.addEventListener('click', capturePhoto);
-retakeBtn.addEventListener('click', retakeCapture);
-acceptBtn.addEventListener('click', acceptCapture);
-
-function capturePhoto(){
-  if(!stream){ Swal.fire({icon:'error', title:'កាមេរ៉ាមិនប្រើប្រាស់', text:'សូមអនុញ្ញាត និងពិនិត្យកាមេរ៉ា'}); return; }
+captureBtn.addEventListener('click', ()=>{
+  if(!stream) return;
   const video = cameraVideo;
   const w = video.videoWidth || 1280;
   const h = video.videoHeight || 720;
   captureCanvas.width = w;
   captureCanvas.height = h;
   const ctx = captureCanvas.getContext('2d');
-  
-  // Flip horizontal only if front camera
   if(isFront){ ctx.translate(w, 0); ctx.scale(-1, 1); }
-  
   ctx.drawImage(video, 0, 0, w, h);
   captureCanvas.toBlob((blob)=>{
-    if(!blob){ Swal.fire({icon:'error', title:'ថតបរាជ័យ', text:'សូមព្យាយាមម្តងទៀត'}); return; }
+    if(!blob) return;
     capturedBlob = blob;
-    if(capturedDataUrl) URL.revokeObjectURL(capturedDataUrl);
     capturedDataUrl = URL.createObjectURL(blob);
     cameraPreview.src = capturedDataUrl;
     cameraPreviewContainer.style.display = 'block';
+    
+    // UI Updates
     retakeBtn.classList.remove('hidden');
     acceptBtn.classList.remove('hidden');
     captureBtn.classList.add('hidden');
+    switchCamBtn.parentElement.classList.add('hidden');
+    openBackCamBtn.parentElement.classList.add('hidden');
+    
     stopStream();
   }, 'image/jpeg', 0.92);
-}
+});
 
-function retakeCapture(){
-  capturedBlob = null;
-  if(capturedDataUrl){ URL.revokeObjectURL(capturedDataUrl); capturedDataUrl = null; }
-  cameraPreview.src = '';
+retakeBtn.addEventListener('click', ()=>{
   cameraPreviewContainer.style.display = 'none';
   retakeBtn.classList.add('hidden');
   acceptBtn.classList.add('hidden');
   captureBtn.classList.remove('hidden');
+  switchCamBtn.parentElement.classList.remove('hidden');
+  openBackCamBtn.parentElement.classList.remove('hidden');
   startStream();
-}
+});
 
-function acceptCapture(){
-  if(!capturedBlob){ Swal.fire({icon:'error', title:'គ្មានរូបភាព', text:'សូមថតរូបម្តងទៀត'}); return; }
+acceptBtn.addEventListener('click', ()=>{
   imgPreview.src = capturedDataUrl;
   imgPreview.style.display = 'block';
-  faceSourceNote.textContent = 'ប្រើរូបថតដែលបានថតពីកាមេរ៉ា';
+  faceSourceNote.textContent = 'Captured via Camera';
+  faceSourceNote.classList.add('text-indigo-600');
   modalImage.value = '';
   closeCameraModal();
-}
+});
 
+/* Data Loading & Rendering */
 async function loadUsers(){
-  userList.innerHTML = '<p class="col-span-full text-center text-gray-500 py-10">កំពុងទាញទិន្នន័យ...</p>';
-  lucide.createIcons();
+  showSkeletons();
   try{
     const res = await fetch(`${SHEETDB_BASE_URL}?sheet=${SHEET_USERS}`);
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     let data = await res.json();
-    if(Array.isArray(data) && data.length>0) data = data.slice(1);
+    if(Array.isArray(data) && data.length>0) data = data.slice(1); // Skip header row logic if needed, dependent on SheetDB config
     const users = Array.isArray(data)? data : [];
+    
     if(currentUserEmail){
       const filtered = users.filter(u => ((u.Email||u['អ៊ីម៉ែល']||'').toLowerCase() !== currentUserEmail.toLowerCase()));
       users.length = 0; users.push(...filtered);
     }
+
     if(!users.length){
-      userList.innerHTML = '<p class="col-span-full text-center text-gray-500 py-10">⚠️ មិនមានគណនីអ្នកប្រើប្រាស់ផ្សេងទៀតទេ</p>'; return;
+      userList.innerHTML = `
+        <div class="col-span-full flex flex-col items-center justify-center py-16 text-center">
+            <div class="bg-slate-100 p-4 rounded-full mb-4">
+                <i data-lucide="users" class="w-8 h-8 text-slate-400"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-slate-700">No Users Found</h3>
+            <p class="text-slate-500">មិនមានគណនីអ្នកប្រើប្រាស់ផ្សេងទៀតទេ</p>
+        </div>`;
+      lucide.createIcons();
+      return;
     }
+
     userList.innerHTML = users.map(u=>{
       const email = u.Email || u['អ៊ីម៉ែល'] || '';
       const role = u.Role || u['តួនាទី'] || 'Staff';
       const face = u.FaceImageFile || u.FaceImage || '';
       const blocked = (String(u.IsBlocked||'FALSE').toUpperCase() === 'TRUE');
-      const faceSrc = face ? `faces/${email.replace(/[@.]/g,'_')}.jpg` : 'https://via.placeholder.com/40';
+      const faceSrc = face ? `faces/${email.replace(/[@.]/g,'_')}.jpg` : `https://ui-avatars.com/api/?name=${email}&background=random`;
+      
+      // Role Badge Colors
+      let roleClass = "bg-slate-100 text-slate-600";
+      if(role === 'Admin') roleClass = "bg-indigo-100 text-indigo-700";
+      if(role === 'Owner') roleClass = "bg-violet-100 text-violet-700";
+
       return `
-        <div class="bg-white p-4 rounded-lg border border-gray-100 flex flex-col gap-3">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <img src="${faceSrc}" class="w-10 h-10 rounded-full object-cover border" />
-              <div>
-                <div class="text-sm font-medium">${email}</div>
-                <div class="text-xs small-muted">${role}</div>
-              </div>
+        <div class="group bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between relative overflow-hidden">
+            ${blocked ? '<div class="absolute inset-0 bg-slate-50/80 backdrop-blur-[1px] z-10 flex items-center justify-center"><div class="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"><i data-lucide="ban" class="w-3 h-3"></i> BLOCKED</div></div>' : ''}
+            
+            <div class="flex items-start gap-4 relative z-20">
+                <img src="${faceSrc}" class="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm ring-2 ${blocked ? 'ring-slate-200 grayscale' : 'ring-slate-100'}" onerror="this.src='https://ui-avatars.com/api/?name=${email}'" />
+                <div class="min-w-0">
+                    <h4 class="font-semibold text-slate-800 truncate pr-4" title="${email}">${email}</h4>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ${roleClass}">
+                        ${role}
+                    </span>
+                </div>
             </div>
-            <div>
-              <span class="text-xs px-2 py-1 rounded-full text-white bg-violet-600">${role}</span>
+
+            <div class="mt-5 pt-4 border-t border-slate-50 flex items-center justify-between relative z-20">
+                <button onclick='deleteUserSwal("${email}")' class="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors" title="Delete">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+                
+                <div class="flex gap-2">
+                    <button onclick='toggleBlockSwal("${email}","${blocked}")' class="px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors flex items-center gap-1.5 ${blocked ? 'border-green-200 text-green-600 hover:bg-green-50' : 'border-slate-200 text-slate-600 hover:border-orange-300 hover:text-orange-600 hover:bg-orange-50'}">
+                        ${blocked ? '<i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Enable' : '<i data-lucide="ban" class="w-3.5 h-3.5"></i> Block'}
+                    </button>
+                    <button onclick='openModal(${JSON.stringify(u)})' class="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-medium hover:bg-indigo-100 transition-colors flex items-center gap-1.5">
+                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
+                    </button>
+                </div>
             </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <button onclick='openModal(${JSON.stringify(u)})' class="text-sm px-3 py-1 border rounded-md small-muted flex items-center gap-2"><i data-lucide="square-pen" class="w-4 h-4"></i> កែប្រែ</button>
-            <button onclick='toggleBlockSwal("${email}","${blocked}")' class="text-sm px-3 py-1 border rounded-md small-muted flex items-center gap-2" title="${blocked ? 'Unblock' : 'Block'}">
-              ${blocked ? '<i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>' : '<i data-lucide="ban" class="w-4 h-4 text-orange-600"></i>'}
-            </button>
-            <button onclick='deleteUserSwal("${email}")' class="text-sm px-3 py-1 border rounded-md text-red-600 flex items-center gap-2"><i data-lucide="trash-2" class="w-4 h-4"></i> លុប</button>
-          </div>
         </div>
       `;
     }).join('');
     lucide.createIcons();
-  }catch(err){
+  } catch(err){
     console.error(err);
-    userList.innerHTML = '<p class="col-span-full text-center text-red-500 py-10">❌ មានបញ្ហាក្នុងការទាញទិន្នន័យ។ សូមពិនិត្យ Console។</p>';
+    userList.innerHTML = `<div class="col-span-full bg-red-50 text-red-600 p-4 rounded-xl text-center"><p>Failed to load data. check console.</p></div>`;
   }
 }
 
-modalForm.addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  modalSaveBtn.disabled = true;
-  modalSaveBtn.textContent = 'កំពុងរក្សាទុក...';
-  const email = modalEmail.value.trim();
-  const password = modalPassword.value.trim();
-  const role = modalRole.value;
-  const file = modalImage.files[0];
-  try{
-    if(!editingUserEmail){
-      if(!email || !password){ Swal.fire({icon:'warning',title:'ទិន្នន័យមិនពេញលេញ', text:'សូមបញ្ចូលអ៊ីម៉ែល និងពាក្យសម្ងាត់'}); modalSaveBtn.disabled=false; modalSaveBtn.textContent='រក្សាទុក'; return; }
-      if(!file && !capturedBlob){ Swal.fire({icon:'warning',title:'ទិន្នន័យមិនពេញលេញ', text:'សូមជ្រើសរើសរូបភាព ឬ ថតរូប'}); modalSaveBtn.disabled=false; modalSaveBtn.textContent='រក្សាទុក'; return; }
-      const fd = new FormData();
-      fd.append('email', email);
-      fd.append('password', password);
-      fd.append('role', role);
-      if(capturedBlob){ fd.append('faceImage', capturedBlob, `captured_${email.replace(/[@.]/g,'_')}.jpg`); } else if(file){ fd.append('faceImage', file); }
-      const res = await fetch(`${NODE_API_BASE}/api/register`, { method:'POST', body:fd });
-      if(!res.ok){ const txt = await res.text().catch(()=>null); throw new Error(txt || 'Server error'); }
-      Swal.fire({icon:'success', title:'បានបង្កើត', text:`គណនី ${email} ត្រូវបានបង្កើត`});
-    } else {
-      if(capturedBlob){
-        const fd = new FormData();
-        fd.append('email', editingUserEmail);
-        fd.append('faceImage', capturedBlob, `captured_${editingUserEmail.replace(/[@.]/g,'_')}.jpg`);
-        const r = await fetch(`${NODE_API_BASE}/api/update-face`, { method:'POST', body:fd });
-        if(!r.ok) throw new Error('Failed to update face image');
-      } else if(file) {
-        const fd = new FormData();
-        fd.append('email', editingUserEmail);
-        fd.append('faceImage', file);
-        const r = await fetch(`${NODE_API_BASE}/api/update-face`, { method:'POST', body:fd });
-        if(!r.ok) throw new Error('Failed to update face image');
-      }
-      const patchData = { Role: role };
-      if(password) patchData.Password = password;
-      await fetch(`${SHEETDB_BASE_URL}/Email/${encodeURIComponent(editingUserEmail)}`, {
-        method:'PATCH',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ data:[patchData] })
-      });
-      Swal.fire({icon:'success', title:'បានកែប្រែ', text:`គណនី ${editingUserEmail} ត្រូវបានកែប្រែ`});
-    }
-    closeModal();
-    await loadUsers();
-  }catch(err){
-    console.error(err);
-    Swal.fire({icon:'error', title:'មានបញ្ហា', text: err.message || String(err)});
-  } finally {
-    modalSaveBtn.disabled = false;
-    modalSaveBtn.textContent = 'រក្សាទុក';
-  }
-});
-
-async function toggleBlockSwal(email,currentStatus){
+/* CRUD Logic (SweetAlert Wrapper) */
+async function toggleBlockSwal(email, currentStatus){
   const isBlocked = String(currentStatus).toUpperCase() === 'TRUE';
-  const action = isBlocked ? 'ដោះ Block' : 'ដាក់ Block';
-  const result = await Swal.fire({ title:`តើអ្នកចង់ ${action}?`, icon:'question', showCancelButton:true, confirmButtonText:'យល់ព្រម', cancelButtonText:'បោះបង់' });
+  const action = isBlocked ? 'Unblock' : 'Block';
+  const result = await Swal.fire({
+    title: `${action} User?`,
+    text: `Are you sure you want to ${action.toLowerCase()} ${email}?`,
+    icon: isBlocked ? 'question' : 'warning',
+    showCancelButton: true,
+    confirmButtonColor: isBlocked ? '#10b981' : '#f97316',
+    confirmButtonText: 'Yes, do it',
+    cancelButtonText: 'Cancel',
+    customClass: { popup: 'rounded-2xl' }
+  });
+
   if(!result.isConfirmed) return;
   try{
     await fetch(`${SHEETDB_BASE_URL}/Email/${encodeURIComponent(email)}`,{
@@ -624,29 +655,88 @@ async function toggleBlockSwal(email,currentStatus){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({ data:[{ IsBlocked: !isBlocked ? 'TRUE' : 'FALSE' }] })
     });
-    Swal.fire({icon:'success', title:'បានបញ្ចប់'});
+    Swal.fire({icon:'success', title:'Updated!', timer: 1500, showConfirmButton: false});
     await loadUsers();
-  } catch (err){ console.error(err); Swal.fire({icon:'error', title:'មានបញ្ហា', text: err.message || String(err)}); }
+  } catch (err){ Swal.fire('Error', err.message, 'error'); }
 }
 
 async function deleteUserSwal(email){
-  const result = await Swal.fire({ title:`តើអ្នកចង់លុប ${email}?`, icon:'warning', showCancelButton:true, confirmButtonText:'លុប', cancelButtonText:'បោះបង់' });
+  const result = await Swal.fire({
+    title: 'Delete User?',
+    text: `This will permanently remove ${email}.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    confirmButtonText: 'Yes, Delete',
+    customClass: { popup: 'rounded-2xl' }
+  });
+
   if(!result.isConfirmed) return;
   try{
     await fetch(`${SHEETDB_BASE_URL}/Email/${encodeURIComponent(email)}`,{ method:'DELETE' });
-    await fetch(`${NODE_API_BASE}/api/delete-face`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ email })
-    });
-    Swal.fire({icon:'success', title:'បានលុប'});
+    await fetch(`${NODE_API_BASE}/api/delete-face`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email }) });
+    Swal.fire({icon:'success', title:'Deleted', timer: 1500, showConfirmButton: false});
     await loadUsers();
-  } catch(err){ console.error(err); Swal.fire({icon:'error', title:'មានបញ្ហា', text: err.message || String(err)}); }
+  } catch(err){ Swal.fire('Error', err.message, 'error'); }
 }
 
-loadUsers();
-window.addEventListener('beforeunload', ()=> { if(stream) stream.getTracks().forEach(t=>t.stop()); });
-</script>
+modalForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  modalSaveBtn.disabled = true;
+  modalSaveBtn.innerHTML = '<i class="animate-spin" data-lucide="loader-2"></i> Saving...';
+  lucide.createIcons();
+  
+  const email = modalEmail.value.trim();
+  const password = modalPassword.value.trim();
+  const role = modalRole.value;
+  const file = modalImage.files[0];
 
+  try{
+    if(!editingUserEmail){
+      // Create
+      if(!email || !password) throw new Error("Email and Password required");
+      if(!file && !capturedBlob) throw new Error("Face Image required");
+      
+      const fd = new FormData();
+      fd.append('email', email);
+      fd.append('password', password);
+      fd.append('role', role);
+      if(capturedBlob) fd.append('faceImage', capturedBlob, `captured_${email}.jpg`);
+      else fd.append('faceImage', file);
+      
+      const res = await fetch(`${NODE_API_BASE}/api/register`, { method:'POST', body:fd });
+      if(!res.ok) throw new Error(await res.text());
+      Swal.fire({icon:'success', title:'User Created', timer: 1500, showConfirmButton: false});
+    } else {
+      // Update
+      if(capturedBlob || file){
+        const fd = new FormData();
+        fd.append('email', editingUserEmail);
+        if(capturedBlob) fd.append('faceImage', capturedBlob, `captured_${editingUserEmail}.jpg`);
+        else fd.append('faceImage', file);
+        const r = await fetch(`${NODE_API_BASE}/api/update-face`, { method:'POST', body:fd });
+        if(!r.ok) throw new Error("Face update failed");
+      }
+      
+      const patchData = { Role: role };
+      if(password) patchData.Password = password;
+      await fetch(`${SHEETDB_BASE_URL}/Email/${encodeURIComponent(editingUserEmail)}`, {
+        method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data:[patchData] })
+      });
+      Swal.fire({icon:'success', title:'User Updated', timer: 1500, showConfirmButton: false});
+    }
+    closeModal();
+    await loadUsers();
+  }catch(err){
+    Swal.fire({icon:'error', title:'Oops...', text: err.message});
+  } finally {
+    modalSaveBtn.disabled = false;
+    modalSaveBtn.textContent = 'រក្សាទុក';
+  }
+});
+
+// Initial Load
+loadUsers();
+</script>
 </body>
 </html>
