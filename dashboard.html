@@ -26,16 +26,16 @@
         .animate-fade-in { animation: fadeIn 0.2s ease-out; }
         .animate-pop-in { animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
 
-        /* MODALS */
+        /* MODALS - UPDATED FOR CENTERING */
         .modal { 
             display: none; position: fixed; inset: 0; 
             background: rgba(15, 23, 42, 0.65); 
-            justify-content: center; align-items: flex-end; 
+            /* Changed from flex-end to center for all devices */
+            justify-content: center; align-items: center; 
             z-index: 50; backdrop-filter: blur(4px);
             transition: all 0.3s ease;
         }
         .modal.active { display: flex; animation: fadeIn 0.2s; }
-        @media (min-width: 1024px) { .modal { align-items: center; } }
 
         /* BOTTOM DOCK */
         .bottom-dock {
@@ -114,7 +114,7 @@
             </div>
             <div class="text-right">
                 <div class="text-2xl font-bold text-indigo-600 flex items-center justify-end gap-2">
-                    <i data-lucide="wallet" class="w-6 h-6"></i> Expense Pro
+                    Expense Pro
                 </div>
                 <p class="text-sm text-slate-400 mt-1" id="pdf-generated-date">Date: ...</p>
                 <p class="text-sm text-slate-400" id="pdf-user">User: ...</p>
@@ -154,6 +154,7 @@
             <p>Generated automatically by Expense Manager Pro system.</p>
         </div>
     </div>
+
     <div id="customConfirmModal" class="modal items-center" style="z-index: 60;">
         <div class="confirm-box">
             <div id="confirm-icon-box" class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -168,8 +169,8 @@
         </div>
     </div>
 
-    <div id="detailModal" class="modal px-4 items-end sm:items-center" style="z-index: 55;">
-        <div class="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-2xl shadow-2xl p-6 animate-slide-up">
+    <div id="detailModal" class="modal px-4 items-center" style="z-index: 55;">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 animate-slide-up">
             <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
                 <div>
                     <p class="text-xs text-slate-400 uppercase font-bold mb-1">Details</p>
@@ -327,8 +328,8 @@
         <button onclick="openExportModal()" class="dock-icon"><i data-lucide="download" class="w-6 h-6"></i><span>Export</span></button>
     </div>
 
-    <div id="filterModal" class="modal px-4 items-end sm:items-center">
-        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl p-6 animate-slide-up">
+    <div id="filterModal" class="modal px-4 items-center">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 animate-slide-up">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i data-lucide="filter" class="w-5 h-5 text-indigo-600"></i> ស្វែងរក</h3>
                 <button onclick="closeModal('filterModal')" class="p-2 bg-slate-100 rounded-full"><i data-lucide="x" class="w-5 h-5 text-slate-500"></i></button>
@@ -347,7 +348,7 @@
         </div>
     </div>
 
-    <div id="exportModal" class="modal px-4 items-end sm:items-center">
+    <div id="exportModal" class="modal px-4 items-center">
         <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6">
             <h3 class="text-lg font-bold text-slate-800 mb-4">Export Report</h3>
             <div class="space-y-3">
@@ -361,8 +362,8 @@
         </div>
     </div>
 
-    <div id="mobileModal" class="modal px-4 items-end sm:items-center">
-        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div id="mobileModal" class="modal px-4 items-center">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="p-4 border-b flex justify-between items-center bg-slate-50">
                 <h3 class="text-lg font-bold text-slate-800 font-khmer-header" id="mobile-modal-title">បន្ថែមចំណាយ</h3>
                 <button onclick="closeMobileModal()" class="text-slate-400"><i data-lucide="x"></i></button>
@@ -456,6 +457,16 @@
         let filteredExpenses = [];
         let currentView = 'active';
         
+        // --- NEW DATE FORMATTER FUNCTION ---
+        function formatDateFriendly(dateStr) {
+            if(!dateStr) return '';
+            // Create date object carefully to avoid timezone shifts
+            const parts = dateStr.split('-');
+            if(parts.length !== 3) return dateStr;
+            const date = new Date(parts[0], parts[1] - 1, parts[2]);
+            return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+
         // --- CUSTOM CONFIRM/ALERT ---
         let confirmCallback = null;
         function customConfirm(title, msg, yesText, colorClass, callback) {
@@ -665,7 +676,8 @@
         function viewItem(id) {
             const item = allExpenses.find(x => x.ID == id);
             if (!item) return;
-            document.getElementById('detail-date').innerText = item.Date;
+            // UPDATED: Use friendly date
+            document.getElementById('detail-date').innerText = formatDateFriendly(item.Date);
             document.getElementById('detail-amount').innerText = formatCurrency(item.Amount);
             document.getElementById('detail-desc').innerText = item.Description || "No description provided.";
             document.getElementById('detail-user').innerHTML = `<i data-lucide="user" class="w-3"></i> ${item.UserEmail || 'Unknown'}`;
@@ -781,10 +793,11 @@
                     `;
                 }
                 
+                // UPDATED: Use friendly date here too
                 list.innerHTML += `
                     <div onclick="viewItem('${item.ID}')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-3 animate-fade-in cursor-pointer hover:bg-slate-50 transition ${currentView==='trash'?'opacity-80 bg-red-50/30':''}">
                         <div class="flex justify-between mb-1">
-                            <div><p class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md inline-block mb-1">${item.Date}</p></div>
+                            <div><p class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md inline-block mb-1">${formatDateFriendly(item.Date)}</p></div>
                             <p class="text-lg font-bold text-indigo-600">${formatCurrency(item.Amount||itemTotal)}</p>
                         </div>
                         <p class="text-slate-700 text-sm font-medium line-clamp-1 mb-2">${item.Description||'No Description'}</p>
@@ -951,7 +964,8 @@
             if(filteredExpenses.length === 0) return;
             
             // 1. Populate Hidden Template
-            document.getElementById('pdf-generated-date').innerText = `Date: ${new Date().toLocaleDateString('km-KH')}`;
+            // UPDATED: Use friendly date in report header
+            document.getElementById('pdf-generated-date').innerText = `Date: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`;
             document.getElementById('pdf-user').innerText = `User: ${user.Email}`;
             document.getElementById('pdf-total-count').innerText = filteredExpenses.length;
             document.getElementById('pdf-grand-total').innerText = document.getElementById('total-summary').innerText; // Use calculated total from dashboard
@@ -966,9 +980,10 @@
                     if (val > 0) breakdown.push(`${cat.label}: ${val.toLocaleString()}`);
                 });
 
+                // UPDATED: Friendly date in table rows
                 tbody.innerHTML += `
                     <tr>
-                        <td>${item.Date}</td>
+                        <td>${formatDateFriendly(item.Date)}</td>
                         <td>${item.Description || '-'}</td>
                         <td class="text-xs text-slate-500">${breakdown.join(', ')}</td>
                         <td class="text-right font-bold">${formatCurrency(item.Amount)}</td>
