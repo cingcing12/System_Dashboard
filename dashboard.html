@@ -957,7 +957,7 @@
         }
 
         async function callScript(payload) { try { await fetch(APPS_SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); return true; } catch (e) { return false; } }
-        function exportToExcel() { if(filteredExpenses.length === 0) return; const exportData = filteredExpenses.map(item => { let row = { 'Date': item.Date, 'Description': item.Description, 'Total': parseFloat(item.Amount)||0 }; categories.forEach(cat => { row[cat.label] = parseFloat(item[cat.key])||0; }); return row; }); const ws = XLSX.utils.json_to_sheet(exportData); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Expenses"); XLSX.writeFile(wb, "Expenses.xlsx"); closeModal('exportModal'); }
+        function exportToExcel(){if(filteredExpenses.length===0)return customAlert("No Data","No data to export.","warning");const ac=categories.filter(c=>c.visible!==false),ct={};ac.forEach(c=>ct[c.key]=0);let gt=0;const rows=filteredExpenses.map(i=>{let it=parseFloat(i.Amount)||0;gt+=it;const r=[i.Date,i.Description||"-"];ac.forEach(c=>{let v=parseFloat(i[c.key])||0;ct[c.key]+=v;r.push(v)});r.push(it);return r}),tr=["GRAND TOTAL",""];ac.forEach(c=>tr.push(ct[c.key]));tr.push(gt);const ws=XLSX.utils.aoa_to_sheet([["Date","Description",...ac.map(c=>c.label),"Total"],...rows,[],tr]);ws['!cols']=[{wch:12},{wch:40},...ac.map(()=>({wch:15})),{wch:18}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Expenses");XLSX.writeFile(wb,`Expense_Report_${new Date().toISOString().split('T')[0]}.xlsx`);closeModal('exportModal');}
         
         // --- NEW: COOL PDF EXPORT WITH HTML2CANVAS ---
         function exportToPDF() {
