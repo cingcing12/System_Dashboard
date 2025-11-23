@@ -1,43 +1,37 @@
 // ================================
-// FULL SMART UPDATED FACE LOGIN + BLOCK CONTROL (LATEST VERSION)
-// WHAT'S NEW:
-// - Blocked users NEVER appear in matching pool
-// - Blocked users ALWAYS get explicit blocked message (NOT "ambiguous")
-// - Face login now detects FAKE / WRONG person much better
-// - Stronger model rules + multiple-frame capture + similarity voting
-// - Anti-spoofing (basic level): checks for real face movement
-// - Ambiguity = only for NON-blocked users
-// - Wrong person (brother) = ALWAYS FAIL, even if similar
+// Smart login + face-login
+// Blocked users cannot login
+// Robust ambiguity detection
 // ================================
 
-// ----------------------------------
-// CONFIGURATION
-// ----------------------------------
+// -------------------------------
+// Config
+// -------------------------------
 const MODEL_URL = "https://cingcing12.github.io/System_Dashboard/models/";
 let modelsLoaded = false;
 let streamRef = null;
 let currentFacing = "user";
+const THRESHOLD = 0.38; // stricter
+const AMBIGUITY_DELTA = 0.12; // minimal difference to avoid ambiguous match
+const CAPTURE_SAMPLES = 4;
 
-// SMART THRESHOLDS
-const STRICT_THRESHOLD = 0.42;        // tighter
-const FAKE_THRESHOLD = 0.36;          // almost identical required
-const AMBIGUITY_DELTA = 0.12;         // difference required between 1st & 2nd
-
-let storedDescriptors = [];           // { email, descriptor }
+let storedDescriptors = []; // { email, descriptor }
 let cachedUsers = null;
+let fetchingUsers = false;
 
-// ----------------------------------
-// CHECK BLOCKED USERS
-// ----------------------------------
+// -------------------------------
+// Utility: check if user is blocked
+// -------------------------------
 function isBlocked(user) {
   if (!user) return false;
-  const val = String(user.IsBlocked).trim().toLowerCase();
-  return val === "true" || val === "1" || val === "yes";
+  const val = user.IsBlocked ?? user.isBlocked ?? user.blocked ?? false;
+  if (typeof val === "boolean") return val === true;
+  return ["true", "yes", "1"].includes(String(val).trim().toLowerCase());
 }
 
-// ----------------------------------
-// L2 NORMALIZE (STABLE MATCHING)
-// ----------------------------------
+// -------------------------------
+// L2 normalize descriptor
+// -------------------------------
 function l2Normalize(arr) {
   const out = new Float32Array(arr.length);
   let sum = 0;
@@ -47,143 +41,216 @@ function l2Normalize(arr) {
   return out;
 }
 
-// ----------------------------------
-// EUCLIDEAN DISTANCE
-// ----------------------------------
+// -------------------------------
+// Euclidean distance
+// -------------------------------
 function euclideanDistance(a, b) {
   let s = 0;
   for (let i = 0; i < a.length; i++) s += (a[i] - b[i]) ** 2;
   return Math.sqrt(s);
 }
 
-// ----------------------------------
-// FETCH USERS
-// ----------------------------------
-async function fetchUsers() {
-  if (cachedUsers) return cachedUsers;
-  const res = await fetch(sheetUrl(SHEET_USERS));
-  const json = await res.json();
-  cachedUsers = json.slice(1);
-  return cachedUsers;
+// -------------------------------
+// Fetch users (cached)
+// -------------------------------
+async function fetchUsers(force = false) {
+  if (cachedUsers && !force) return cachedUsers;
+  if (fetchingUsers) {
+    while (fetchingUsers) await new Promise(r => setTimeout(r, 50));
+    return cachedUsers;
+  }
+  try {
+    fetchingUsers = true;
+    const res = await fetch(sheetUrl(SHEET_USERS));
+    const json = await res.json();
+    const users = Array.isArray(json) ? json.slice(1) : [];
+    cachedUsers = users;
+    return users;
+  } finally {
+    fetchingUsers = false;
+  }
 }
 
-// ----------------------------------
-// PRELOAD FACE IMAGES (BLOCKED REMOVED)
-// ----------------------------------
+// -------------------------------
+// Email login
+// -------------------------------
+const loginBtn = document.getElementById('loginBtn');
+if (loginBtn) loginBtn.addEventListener('click', async () => {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
+  if (!email || !password) return alert('Enter email and password!');
+  try {
+    const users = await fetchUsers();
+    const user = users.find(u => u.Email.trim().toLowerCase() === email.toLowerCase());
+    if (!user) return alert('User not found!');
+    if (isBlocked(user)) return alert('❌ You are blocked by owner!');
+    if (user.PasswordHash !== password) return alert('Wrong password!');
+    await updateLastLoginAndRedirect(user);
+  } catch (err) {
+    console.error(err);
+    alert('Error connecting to server.');
+  }
+});
+
+// -------------------------------
+// Update last login & redirect
+// -------------------------------
+async function updateLastLoginAndRedirect(user) {
+  const now = new Date().toISOString();
+  const patchUrl = `${SHEETDB_BASE_URL}/Email/${encodeURIComponent(user.Email)}`;
+  try {
+    await fetch(patchUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: [{ LastLogin: now }] })
+    });
+  } catch (err) {
+    console.warn('Failed to update last login', err);
+  }
+  try { user.LastLogin = now; localStorage.setItem('user', JSON.stringify(user)); } catch(e){}
+  window.location.href = 'dashboard.html';
+}
+
+// -------------------------------
+// Face login elements
+// -------------------------------
+const faceLoginBtn = document.getElementById('faceLoginBtn');
+const faceModal = document.getElementById('faceModal');
+const video = document.getElementById('video');
+const snapshot = document.getElementById('snapshot');
+const captureBtn = document.getElementById('captureBtn');
+const cancelFaceBtn = document.getElementById('cancelFaceBtn');
+const switchCamBtn = document.getElementById('switchCamBtn');
+const faceMsg = document.getElementById('faceMsg');
+
+const faceLoading = document.createElement('div');
+faceLoading.className = 'absolute inset-0 bg-black/50 flex justify-center items-center z-50 text-white text-lg font-bold';
+faceLoading.textContent = 'Loading face login...';
+faceLoading.style.display = 'none';
+if (faceModal) faceModal.appendChild(faceLoading);
+
+// -------------------------------
+// Load models
+// -------------------------------
+async function loadModels() {
+  if (modelsLoaded) return;
+  if (faceMsg) faceMsg.textContent = 'Loading face recognition models...';
+  await Promise.all([
+    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+  ]);
+  modelsLoaded = true;
+}
+
+// -------------------------------
+// Preload stored faces (non-blocked only)
+// -------------------------------
 async function preloadStoredFaces() {
   storedDescriptors = [];
   const users = await fetchUsers();
   for (const u of users) {
-    if (isBlocked(u)) continue;
+    if (isBlocked(u)) continue; // skip blocked
     if (!u.FaceImageFile) continue;
-
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.src = `https://cingcing12.github.io/System_Dashboard/faces/${u.FaceImageFile}`;
-    await img.decode();
-
-    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 180, scoreThreshold: 0.25 });
-    const desc = await getDescriptorFromImage(img, options);
-    if (!desc) continue;
-
-    storedDescriptors.push({ email: u.Email, descriptor: l2Normalize(desc) });
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = `https://cingcing12.github.io/System_Dashboard/faces/${u.FaceImageFile}`;
+      await img.decode();
+      const desc = await getDescriptorFromImage(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.2 }));
+      if (!desc) continue;
+      storedDescriptors.push({ email: u.Email, descriptor: l2Normalize(desc) });
+    } catch (err) { console.warn('Face load error', u.Email, err); }
   }
 }
 
-// ----------------------------------
-// FACE DETECTOR
-// ----------------------------------
+// -------------------------------
+// Descriptor helper
+// -------------------------------
 async function getDescriptorFromImage(source, options) {
-  const det = await faceapi.detectSingleFace(source, options)
-    .withFaceLandmarks()
-    .withFaceDescriptor();
-  return det ? det.descriptor : null;
+  const detection = await faceapi.detectSingleFace(source, options).withFaceLandmarks().withFaceDescriptor();
+  return detection ? detection.descriptor : null;
 }
 
-// ----------------------------------
-// SMART FACE MATCHING
-// ----------------------------------
-async function smartFaceMatch(capturedDescriptors) {
-  const scores = []; // { email, dist }
-
-  for (const s of storedDescriptors) {
-    let total = 0;
-    for (const d of capturedDescriptors) total += euclideanDistance(d, s.descriptor);
-    const avg = total / capturedDescriptors.length;
-    scores.push({ email: s.email, dist: avg });
-  }
-
-  scores.sort((a,b)=>a.dist - b.dist);
-
-  const best = scores[0];
-  const second = scores[1] ?? { dist: 999 }; 
-
-  if (!best) return { status:"fail" };
-
-  // HARD FAILURE (never ambiguous)
-  if (best.dist > STRICT_THRESHOLD) return { status: "fail" };
-
-  // WRONG PERSON LOOK-ALIKE (brother case)
-  if ((second.dist - best.dist) < AMBIGUITY_DELTA) return { status: "fail" };
-
-  return { status: "ok", email: best.email };
-}
-
-// ----------------------------------
-// CAPTURE + MATCH
-// ----------------------------------
-captureBtn.addEventListener("click", async () => {
-  faceMsg.textContent = "Scanning...";
-
-  const frames = [];
-  const ctx = snapshot.getContext("2d");
-
-  // CAPTURE MULTIPLE FRAMES (ANTI SPOOF + ACCURATE)
-  for (let i = 0; i < 4; i++) {
-    ctx.drawImage(video, 0, 0);
-    const d = await getDescriptorFromImage(snapshot, new faceapi.TinyFaceDetectorOptions({ inputSize: 180, scoreThreshold: 0.25 }));
-    if (d) frames.push(l2Normalize(d));
-    await new Promise(r => setTimeout(r, 150));
-  }
-
-  if (frames.length < 2) {
-    faceMsg.textContent = "❌ No face detected. Try again.";
-    return;
-  }
-
-  if (!storedDescriptors.length) {
-    faceMsg.textContent = "❌ No users with face registered.";
-    return;
-  }
-
-  const match = await smartFaceMatch(frames);
-
-  if (match.status !== "ok") {
-    faceMsg.textContent = "❌ Face not recognized.";
-    return;
-  }
-
-  // SERVER CHECK (BLOCKED USER)
-  const users = await fetchUsers();
-  const target = users.find(u => u.Email === match.email);
-
-  if (!target) {
-    faceMsg.textContent = "❌ User not found!";
-    return;
-  }
-
-  if (isBlocked(target)) {
-    faceMsg.textContent = "❌ This account is blocked by owner!";
-    stopCamera();
-    return;
-  }
-
-  // SUCCESS LOGIN
+// -------------------------------
+// Camera
+// -------------------------------
+async function startCamera() {
   stopCamera();
-  faceModal.style.display = "none";
-  updateLastLoginAndRedirect(target);
+  streamRef = await navigator.mediaDevices.getUserMedia({ video: { width: 480, height: 360, facingMode: currentFacing }, audio: false });
+  video.srcObject = streamRef;
+  await video.play();
+}
+function stopCamera() {
+  if (streamRef) streamRef.getTracks().forEach(t => t.stop());
+  streamRef = null;
+  video.srcObject = null;
+}
+
+// -------------------------------
+// Face login button
+// -------------------------------
+if (faceLoginBtn) faceLoginBtn.addEventListener('click', async () => {
+  faceModal.style.display = 'flex';
+  faceLoading.style.display = 'flex';
+  try {
+    await loadModels();
+    await preloadStoredFaces();
+    await startCamera();
+    faceMsg.textContent = 'Align your face with the camera.';
+  } catch (err) {
+    faceMsg.textContent = '❌ Error initializing face login.';
+    console.error(err);
+  } finally { faceLoading.style.display = 'none'; }
 });
 
-// ----------------------------------
-// END OF FULL SMART SYSTEM
-// ----------------------------------
+// -------------------------------
+// Capture + match
+// -------------------------------
+if (captureBtn) captureBtn.addEventListener('click', async () => {
+  captureBtn.disabled = true;
+  try {
+    if (!video || video.readyState < 2) { faceMsg.textContent = 'Camera not ready.'; return; }
+    const descriptors = [];
+    snapshot.width = video.videoWidth || 480;
+    snapshot.height = video.videoHeight || 360;
+    const ctx = snapshot.getContext('2d');
+
+    // capture multiple frames
+    for (let i = 0; i < CAPTURE_SAMPLES; i++) {
+      ctx.drawImage(video, 0, 0, snapshot.width, snapshot.height);
+      const desc = await getDescriptorFromImage(snapshot, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.2 }));
+      if (desc) descriptors.push(l2Normalize(desc));
+      await new Promise(r => setTimeout(r, 150));
+    }
+
+    if (!descriptors.length) { faceMsg.textContent = '❌ No face detected.'; return; }
+    if (!storedDescriptors.length) { faceMsg.textContent = '❌ No enrolled faces.'; return; }
+
+    // match against all stored faces
+    const scores = storedDescriptors.map(s => {
+      const avgDist = descriptors.reduce((sum, d) => sum + euclideanDistance(d, s.descriptor), 0) / descriptors.length;
+      return { email: s.email, avgDist };
+    });
+    scores.sort((a, b) => a.avgDist - b.avgDist);
+
+    const best = scores[0], second = scores[1] ?? { avgDist: Infinity };
+    if (!best || best.avgDist > THRESHOLD) { faceMsg.textContent = '❌ No matching face.'; return; }
+    if ((second.avgDist - best.avgDist) < AMBIGUITY_DELTA) { faceMsg.textContent = '❌ Match ambiguous. Try again.'; return; }
+
+    // final check: blocked?
+    const users = await fetchUsers(true);
+    const user = users.find(u => u.Email.trim().toLowerCase() === best.email.trim().toLowerCase());
+    if (!user) { faceMsg.textContent = '❌ User not found!'; return; }
+    if (isBlocked(user)) { faceMsg.textContent = '❌ This account is blocked!'; return; }
+
+    // login
+    stopCamera();
+    faceModal.style.display = 'none';
+    await updateLastLoginAndRedirect(user);
+
+  } catch (err) {
+    console.error(err);
+    faceMsg.textContent = '❌ Error during face capture.';
+  } finally { captureBtn.disabled = false; }
+});
