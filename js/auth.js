@@ -1,13 +1,5 @@
 // ================================
-// Full updated login + face-login script
-// Improvements:
-// - Robust blocked-user checks
-// - Cache users to avoid duplicate fetches
-// - Normalize descriptors (L2) for stable matching
-// - Stricter threshold and ambiguity check (reject close ties)
-// - Blocked users are never added to matching pool
-// - Double-check user status from server before logging in
-// - Defensive UI and button disabling to avoid races
+// Full updated login + face-login script (fixed false-positive / final verification)
 // ================================
 
 // -------------------------------
@@ -17,8 +9,12 @@ const MODEL_URL = "https://cingcing12.github.io/System_Dashboard/models/";
 let modelsLoaded = false;
 let streamRef = null;
 let currentFacing = "user";
-const THRESHOLD = 0.45; // stricter (lower -> stricter)
-const AMBIGUITY_DELTA = 0.08; // require second-best to be sufficiently worse
+
+// stricter settings to reduce false positives
+const THRESHOLD = 0.38; // primary acceptance threshold (lower = stricter)
+const AMBIGUITY_DELTA = 0.12; // require second-best to be sufficiently worse
+const FINAL_VERIFICATION_THRESHOLD = 0.40; // final check against matched user's stored image
+const CAPTURE_SAMPLES = 4; // number of frames to capture and average
 let storedDescriptors = []; // { email, descriptor: Float32Array }
 let cachedUsers = null;
 let fetchingUsers = false;
@@ -48,7 +44,6 @@ function l2Normalize(arr) {
 
 // -------------------------------
 // Euclidean distance (assumes same length)
-// Works with normalized vectors too
 // -------------------------------
 function euclideanDistance(a, b) {
   let s = 0;
@@ -186,11 +181,13 @@ async function loadModels() {
 
 // -------------------------------
 // Preload descriptors for non-blocked users ONLY
+// - force fresh users list to ensure blocked flag is current
 // -------------------------------
 async function preloadStoredFaces() {
   storedDescriptors = [];
   try {
-    const users = await fetchUsers();
+    // force refresh so we never mistakenly include recently-blocked users
+    const users = await fetchUsers(true);
     if (!users || !users.length) return;
     for (const u of users) {
       try {
@@ -250,6 +247,39 @@ function stopCamera() {
 }
 
 // -------------------------------
+// Helper: compute average distance between captured descriptors and single descriptor
+// -------------------------------
+function averageDistanceToDescriptor(capturedDescriptors, targetDescriptor) {
+  let total = 0;
+  for (const d of capturedDescriptors) total += euclideanDistance(d, targetDescriptor);
+  return total / capturedDescriptors.length;
+}
+
+// -------------------------------
+// Final verification: compute descriptor from candidate user's stored image and compare
+// Returns true if passes final check
+// -------------------------------
+async function finalVerifyAgainstUserImage(capturedDescriptors, user) {
+  if (!user || !user.FaceImageFile) return false;
+  try {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = `https://cingcing12.github.io/System_Dashboard/faces/${user.FaceImageFile}`;
+    await img.decode();
+    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.2 });
+    const desc = await getDescriptorFromImage(img, options);
+    if (!desc) return false;
+    const normalized = l2Normalize(desc);
+    const avgDist = averageDistanceToDescriptor(capturedDescriptors, normalized);
+    console.log('Final verification avgDist for', user.Email, avgDist);
+    return avgDist <= FINAL_VERIFICATION_THRESHOLD;
+  } catch (err) {
+    console.warn('Final verification error for', user?.Email, err);
+    return false;
+  }
+}
+
+// -------------------------------
 // Face Login button init
 // -------------------------------
 if (faceLoginBtn) {
@@ -260,7 +290,7 @@ if (faceLoginBtn) {
     if (faceMsg) faceMsg.textContent = 'Initializing camera...';
     try {
       await loadModels();
-      await preloadStoredFaces();
+      await preloadStoredFaces(); // forces fresh users list internally
       await startCamera();
       if (faceMsg) faceMsg.textContent = 'Align your face with the camera.';
     } catch (err) {
@@ -279,10 +309,7 @@ if (switchCamBtn) switchCamBtn.addEventListener('click', async () => { currentFa
 if (cancelFaceBtn) cancelFaceBtn.addEventListener('click', () => { stopCamera(); if (faceModal) faceModal.style.display = 'none'; });
 
 // -------------------------------
-// Capture + match logic
-// - Normalizes captured descriptor(s)
-// - Finds best and second best match
-// - Requires bestDistance < THRESHOLD and (secondBest - bestBest) >= AMBIGUITY_DELTA
+// Capture + match logic (with final verification)
 // -------------------------------
 if (captureBtn) {
   captureBtn.addEventListener('click', async () => {
@@ -294,17 +321,20 @@ if (captureBtn) {
       snapshot.width = video.videoWidth || 480;
       snapshot.height = video.videoHeight || 360;
       const ctx = snapshot.getContext('2d');
-      for (let i = 0; i < 2; i++) {
+
+      // capture more samples for stability
+      for (let i = 0; i < CAPTURE_SAMPLES; i++) {
         ctx.drawImage(video, 0, 0, snapshot.width, snapshot.height);
         const desc = await getDescriptorFromImage(snapshot, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.2 }));
         if (desc) descriptors.push(l2Normalize(desc));
-        await new Promise(r => setTimeout(r, 200));
+        await new Promise(r => setTimeout(r, 180));
       }
+
       if (!descriptors.length) { if (faceMsg) faceMsg.textContent = '❌ No face detected. Try again.'; return; }
       if (!storedDescriptors.length) { if (faceMsg) faceMsg.textContent = '❌ No enrolled faces available.'; return; }
       if (faceMsg) faceMsg.textContent = 'Matching face...';
 
-      // evaluate distances: compute average distance between captured descriptors and each stored descriptor
+      // compute average distance to each stored descriptor
       const scores = []; // { email, avgDist }
       for (const s of storedDescriptors) {
         let tot = 0;
@@ -312,7 +342,8 @@ if (captureBtn) {
         const avg = tot / descriptors.length;
         scores.push({ email: s.email, avgDist: avg });
       }
-      // sort ascending (smaller distance = better)
+
+      // sort ascending
       scores.sort((a,b)=>a.avgDist - b.avgDist);
       const best = scores[0];
       const second = scores[1] ?? { avgDist: Infinity };
@@ -328,14 +359,27 @@ if (captureBtn) {
         return;
       }
 
-      // final server-side user check
+      // final server-side user check + final verification against that user's stored image
       try {
-        const users = await fetchUsers();
+        // ensure latest users list to avoid mismatch of block status
+        const users = await fetchUsers(true);
         const user = users.find(u => String(u.Email).trim().toLowerCase() === String(best.email).trim().toLowerCase());
         if (!user) { if (faceMsg) faceMsg.textContent = '❌ User not found!'; stopCamera(); return; }
         if (isBlocked(user)) { if (faceMsg) faceMsg.textContent = '❌ This account is blocked!'; stopCamera(); return; }
-        // success
-        stopCamera(); if (faceModal) faceModal.style.display = 'none'; await updateLastLoginAndRedirect(user);
+
+        // **final verification**: recompute descriptor from matched user's stored image
+        const passesFinal = await finalVerifyAgainstUserImage(descriptors, user);
+        if (!passesFinal) {
+          console.warn('Final verification failed for', user.Email);
+          if (faceMsg) faceMsg.textContent = '❌ Final verification failed. Try again.';
+          return;
+        }
+
+        // success: log in
+        stopCamera();
+        if (faceModal) faceModal.style.display = 'none';
+        await updateLastLoginAndRedirect(user);
+
       } catch (err) {
         console.error('Error after matching', err);
         if (faceMsg) faceMsg.textContent = 'Error connecting to server.';
@@ -352,4 +396,4 @@ if (captureBtn) {
 
 // -------------------------------
 // End of file
-// ------------------------------- 
+// -------------------------------
