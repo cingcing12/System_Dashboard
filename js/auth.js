@@ -183,35 +183,51 @@ async function loadModels() {
 // Preload descriptors for non-blocked users ONLY
 // - force fresh users list to ensure blocked flag is current
 // -------------------------------
+// -------------------------------
+// Preload descriptors for ALL users (including blocked)
+// -------------------------------
 async function preloadStoredFaces() {
   storedDescriptors = [];
   try {
-    // force refresh so we never mistakenly include recently-blocked users
-    const users = await fetchUsers(true);
+    const users = await fetchUsers(true); // always get newest data
     if (!users || !users.length) return;
+
     for (const u of users) {
       try {
-        if (isBlocked(u)) continue; // never add blocked users
-        if (!u.FaceImageFile) continue;
+        if (!u.FaceImageFile) continue; // but don't skip blocked
+
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.src = `https://cingcing12.github.io/System_Dashboard/faces/${u.FaceImageFile}`;
         await img.decode();
-        const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.2 });
+
+        const options = new faceapi.TinyFaceDetectorOptions({
+          inputSize: 160,
+          scoreThreshold: 0.2
+        });
+
         const desc = await getDescriptorFromImage(img, options);
         if (!desc) continue;
+
         const normalized = l2Normalize(desc);
-        storedDescriptors.push({ email: u.Email, descriptor: normalized });
+        storedDescriptors.push({
+          email: u.Email,
+          descriptor: normalized,
+          blocked: isBlocked(u) // keep blocked tag
+        });
+
       } catch (imgErr) {
         console.warn('Failed to load face for', u.Email, imgErr);
-        continue;
       }
     }
+
     console.log('Preloaded descriptors:', storedDescriptors.length);
+
   } catch (err) {
     console.error('Failed to preload stored faces', err);
   }
 }
+
 
 // -------------------------------
 // Get descriptor helper
