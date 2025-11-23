@@ -5,14 +5,51 @@ const MODEL_URL = "https://cingcing12.github.io/System_Dashboard/models/";
 let modelsLoaded = false;
 let streamRef = null;
 let currentFacing = "user";
-const THRESHOLD = 0.5;
-let storedDescriptors = [];
+const THRESHOLD = 0.5; // keep your threshold (lower = stricter)
+let storedDescriptors = []; // { email, descriptor: Float32Array }
+let cachedUsers = null;     // cache users to avoid duplicate fetches
+let fetchingUsers = false;
 
 // ================================
-// ✅ Universal Block Check
+// ✅ Universal Block Check (robust)
 // ================================
+// Accepts different truthy representations: "true", " yes ", "1", 1, true
 function isBlocked(user) {
-  return String(user.IsBlocked).trim().toLowerCase() === "true";
+  if (!user) return false;
+  const v = user.IsBlocked ?? user.isBlocked ?? user.blocked ?? "";
+  if (typeof v === "boolean") return v === true;
+  return String(v).trim().toLowerCase() === "true"
+      || String(v).trim().toLowerCase() === "yes"
+      || String(v).trim() === "1";
+}
+
+// ================================
+// ✅ Cached users fetch helper
+// ================================
+async function fetchUsers(force = false) {
+  if (cachedUsers && !force) return cachedUsers;
+  if (fetchingUsers) {
+    // simple wait loop if another fetch is in progress
+    while (fetchingUsers) {
+      await new Promise(r => setTimeout(r, 50));
+    }
+    return cachedUsers;
+  }
+
+  try {
+    fetchingUsers = true;
+    const res = await fetch(sheetUrl(SHEET_USERS));
+    const json = await res.json();
+    // your sheet appears to have header row at index 0, actual users from index 1
+    const users = Array.isArray(json) ? json.slice(1) : [];
+    cachedUsers = users;
+    return users;
+  } catch (err) {
+    console.error("❌ fetchUsers error:", err);
+    throw err;
+  } finally {
+    fetchingUsers = false;
+  }
 }
 
 // ================================
@@ -21,12 +58,17 @@ function isBlocked(user) {
 (function redirectIfLoggedIn() {
   const storedUser = localStorage.getItem("user");
   if (storedUser) {
-    const userObj = JSON.parse(storedUser);
-    if (!isBlocked(userObj)) {
-      window.location.href = "dashboard.html"; // Already logged in
-    } else {
-      localStorage.removeItem("user"); // Blocked user cannot stay logged in
-      alert("You are blocked by owner!");
+    try {
+      const userObj = JSON.parse(storedUser);
+      if (!isBlocked(userObj)) {
+        window.location.href = "dashboard.html"; // Already logged in
+      } else {
+        localStorage.removeItem("user"); // Blocked user cannot stay logged in
+        alert("You are blocked by owner!");
+      }
+    } catch (e) {
+      console.warn("Invalid stored user, clearing.", e);
+      localStorage.removeItem("user");
     }
   }
 })();
@@ -34,7 +76,8 @@ function isBlocked(user) {
 // ================================
 // ✅ Email + Password Login
 // ================================
-document.getElementById("loginBtn").addEventListener("click", loginUser);
+const loginBtn = document.getElementById("loginBtn");
+if (loginBtn) loginBtn.addEventListener("click", loginUser);
 
 async function loginUser() {
   const email = document.getElementById("email").value.trim();
@@ -42,11 +85,8 @@ async function loginUser() {
   if (!email || !password) return alert("Enter email and password!");
 
   try {
-    const res = await fetch(sheetUrl(SHEET_USERS));
-    const json = await res.json();
-    const users = json.slice(1);
-
-    const user = users.find(u => u.Email === email);
+    const users = await fetchUsers();
+    const user = users.find(u => String(u.Email).trim().toLowerCase() === email.toLowerCase());
 
     if (!user) return alert("User not found!");
     if (isBlocked(user)) return alert("❌ You are blocked by owner!");
@@ -78,8 +118,14 @@ async function updateLastLoginAndRedirect(user) {
     console.warn("⚠️ Failed to update last login:", err);
   }
 
-  user.LastLogin = now;
-  localStorage.setItem("user", JSON.stringify(user));
+  // update local object and persist
+  try {
+    user.LastLogin = now;
+    localStorage.setItem("user", JSON.stringify(user));
+  } catch (e) {
+    console.warn("Failed to save to localStorage:", e);
+  }
+
   window.location.href = "dashboard.html";
 }
 
@@ -94,19 +140,20 @@ const captureBtn = document.getElementById("captureBtn");
 const cancelFaceBtn = document.getElementById("cancelFaceBtn");
 const switchCamBtn = document.getElementById("switchCamBtn");
 const faceMsg = document.getElementById("faceMsg");
-const faceLoading = document.createElement("div"); // loading overlay
 
+// Loading overlay element
+const faceLoading = document.createElement("div");
 faceLoading.className = "absolute inset-0 bg-black/50 flex justify-center items-center z-50 text-white text-lg font-bold";
 faceLoading.textContent = "Loading face login...";
 faceLoading.style.display = "none";
-faceModal.appendChild(faceLoading);
+if (faceModal) faceModal.appendChild(faceLoading);
 
 // ================================
 // ✅ Load Face Models
 // ================================
 async function loadModels() {
   if (modelsLoaded) return;
-  faceMsg.textContent = "Loading face recognition models...";
+  if (faceMsg) faceMsg.textContent = "Loading face recognition models...";
   try {
     await Promise.all([
       faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
@@ -116,32 +163,47 @@ async function loadModels() {
     modelsLoaded = true;
   } catch (err) {
     console.error("❌ Failed to load models:", err);
-    faceMsg.textContent = "Error loading face models.";
+    if (faceMsg) faceMsg.textContent = "Error loading face models.";
+    throw err;
   }
 }
 
 // ================================
-// ✅ Preload Stored Faces (skip blocked)
+// ✅ Preload Stored Faces (skip blocked) & convert descriptors to Array
 // ================================
 async function preloadStoredFaces() {
+  storedDescriptors = [];
   try {
-    const res = await fetch(sheetUrl(SHEET_USERS));
-    const json = await res.json();
-    const users = json.slice(1);
-
-    storedDescriptors = [];
+    const users = await fetchUsers();
+    if (!users || !users.length) return;
 
     for (const u of users) {
-      if (!u.FaceImageFile || isBlocked(u)) continue;
+      if (isBlocked(u)) continue;           // completely skip blocked users
+      if (!u.FaceImageFile) continue;
 
-      const img = new Image();
-      img.src = `https://cingcing12.github.io/System_Dashboard/faces/${u.FaceImageFile}`;
-      await img.decode();
+      try {
+        const img = new Image();
+        img.crossOrigin = "anonymous"; // allow cross-origin image usage
+        img.src = `https://cingcing12.github.io/System_Dashboard/faces/${u.FaceImageFile}`;
+        await img.decode();
 
-      const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.2 });
-      const desc = await getDescriptorFromImage(img, options);
+        const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.2 });
+        const desc = await getDescriptorFromImage(img, options);
 
-      if (desc) storedDescriptors.push({ email: u.Email, descriptor: desc });
+        if (!desc) continue;
+
+        // copy descriptor into a plain Float32Array for safety
+        const descriptorCopy = new Float32Array(desc.length);
+        descriptorCopy.set(desc);
+
+        storedDescriptors.push({
+          email: u.Email,
+          descriptor: descriptorCopy
+        });
+      } catch (imgErr) {
+        console.warn(`Failed to load/describe face for ${u.Email}:`, imgErr);
+        continue;
+      }
     }
   } catch (err) {
     console.error("❌ Failed to preload stored faces:", err);
@@ -165,32 +227,41 @@ async function getDescriptorFromImage(source, options) {
 }
 
 // ================================
-// ✅ Euclidean Distance
+// ✅ Euclidean Distance (works with TypedArrays)
 // ================================
 function euclideanDistance(d1, d2) {
-  return Math.sqrt(d1.reduce((sum, v, i) => sum + (v - d2[i]) ** 2, 0));
+  // d1 and d2 are Float32Array or Array-like
+  let sum = 0;
+  for (let i = 0; i < d1.length; i++) {
+    const diff = d1[i] - d2[i];
+    sum += diff * diff;
+  }
+  return Math.sqrt(sum);
 }
 
 // ================================
 // ✅ Start Face Login
 // ================================
-faceLoginBtn.addEventListener("click", async () => {
-  faceModal.style.display = "flex";
-  faceLoading.style.display = "flex"; // show loading
-  faceMsg.textContent = "Initializing camera...";
+if (faceLoginBtn) {
+  faceLoginBtn.addEventListener("click", async () => {
+    if (!faceModal) return;
+    faceModal.style.display = "flex";
+    faceLoading.style.display = "flex";
+    if (faceMsg) faceMsg.textContent = "Initializing camera...";
 
-  try {
-    await loadModels();
-    await preloadStoredFaces();
-    await startCamera();
-    faceMsg.textContent = "Align your face with the camera.";
-  } catch (err) {
-    faceMsg.textContent = "❌ Error initializing face login.";
-    console.error(err);
-  } finally {
-    faceLoading.style.display = "none"; // hide loading
-  }
-});
+    try {
+      await loadModels();
+      await preloadStoredFaces();
+      await startCamera();
+      if (faceMsg) faceMsg.textContent = "Align your face with the camera.";
+    } catch (err) {
+      if (faceMsg) faceMsg.textContent = "❌ Error initializing face login.";
+      console.error(err);
+    } finally {
+      faceLoading.style.display = "none";
+    }
+  });
+}
 
 // ================================
 // ✅ Start Camera
@@ -202,28 +273,36 @@ async function startCamera() {
       video: { width: 480, height: 360, facingMode: currentFacing },
       audio: false,
     });
-    video.srcObject = streamRef;
+    if (video) {
+      video.srcObject = streamRef;
+      try { await video.play(); } catch (e) { /* some browsers autoplay restrictions */ }
+    }
   } catch (err) {
     console.error("❌ Camera error:", err);
-    faceMsg.textContent = "Cannot access camera.";
+    if (faceMsg) faceMsg.textContent = "Cannot access camera.";
+    throw err;
   }
 }
 
 // ================================
 // ✅ Switch Camera
 // ================================
-switchCamBtn.addEventListener("click", async () => {
-  currentFacing = currentFacing === "user" ? "environment" : "user";
-  await startCamera();
-});
+if (switchCamBtn) {
+  switchCamBtn.addEventListener("click", async () => {
+    currentFacing = currentFacing === "user" ? "environment" : "user";
+    await startCamera();
+  });
+}
 
 // ================================
 // ✅ Cancel Face Login
 // ================================
-cancelFaceBtn.addEventListener("click", () => {
-  stopCamera();
-  faceModal.style.display = "none";
-});
+if (cancelFaceBtn) {
+  cancelFaceBtn.addEventListener("click", () => {
+    stopCamera();
+    if (faceModal) faceModal.style.display = "none";
+  });
+}
 
 // ================================
 // ✅ Stop Camera
@@ -233,73 +312,108 @@ function stopCamera() {
     streamRef.getTracks().forEach(t => t.stop());
     streamRef = null;
   }
-  video.srcObject = null;
+  if (video) {
+    try { video.pause(); } catch (e) {}
+    video.srcObject = null;
+  }
 }
 
 // ================================
-// ✅ Capture & Match Face
+// ✅ Capture & Match Face (with protections)
 // ================================
-captureBtn.addEventListener("click", async () => {
-  faceMsg.textContent = "Capturing face...";
-  const descriptors = [];
-  snapshot.width = video.videoWidth;
-  snapshot.height = video.videoHeight;
-  const ctx = snapshot.getContext("2d");
+if (captureBtn) {
+  captureBtn.addEventListener("click", async () => {
+    // disable button while processing
+    captureBtn.disabled = true;
+    if (faceMsg) faceMsg.textContent = "Capturing face...";
 
-  for (let i = 0; i < 2; i++) {
-    ctx.drawImage(video, 0, 0);
-    const desc = await getDescriptorFromImage(snapshot, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.2 }));
-    if (desc) descriptors.push(desc);
-    await new Promise(r => setTimeout(r, 200));
-  }
+    try {
+      if (!video || video.readyState < 2) {
+        if (faceMsg) faceMsg.textContent = "Camera not ready.";
+        return;
+      }
 
-  if (!descriptors.length) {
-    faceMsg.textContent = "❌ No face detected. Try again.";
-    return;
-  }
+      const descriptors = [];
+      snapshot.width = video.videoWidth || 480;
+      snapshot.height = video.videoHeight || 360;
+      const ctx = snapshot.getContext("2d");
 
-  faceMsg.textContent = "Matching face...";
-  let bestMatch = null;
-  let bestDistance = Infinity;
+      // capture several frames to average out noise
+      for (let i = 0; i < 2; i++) {
+        ctx.drawImage(video, 0, 0, snapshot.width, snapshot.height);
+        const desc = await getDescriptorFromImage(snapshot, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.2 }));
+        if (desc) descriptors.push(new Float32Array(desc)); // copy
+        await new Promise(r => setTimeout(r, 200));
+      }
 
-  for (const s of storedDescriptors) {
-    const avgDist = descriptors.reduce((sum, d) => sum + euclideanDistance(d, s.descriptor), 0) / descriptors.length;
-    if (avgDist < bestDistance) {
-      bestDistance = avgDist;
-      bestMatch = s;
+      if (!descriptors.length) {
+        if (faceMsg) faceMsg.textContent = "❌ No face detected. Try again.";
+        return;
+      }
+
+      if (!storedDescriptors.length) {
+        if (faceMsg) faceMsg.textContent = "❌ No enrolled faces available.";
+        return;
+      }
+
+      if (faceMsg) faceMsg.textContent = "Matching face...";
+
+      // find best match among storedDescriptors (storedDescriptors only contains non-blocked users)
+      let bestMatch = null;
+      let bestDistance = Infinity;
+
+      for (const s of storedDescriptors) {
+        // compute average distance from the captured descriptors to this stored descriptor
+        let total = 0;
+        for (const d of descriptors) {
+          total += euclideanDistance(d, s.descriptor);
+        }
+        const avgDist = total / descriptors.length;
+        if (avgDist < bestDistance) {
+          bestDistance = avgDist;
+          bestMatch = s;
+        }
+      }
+
+      if (!bestMatch || bestDistance > THRESHOLD) {
+        if (faceMsg) faceMsg.textContent = "❌ No matching face.";
+        return;
+      }
+
+      // Double-check the matched user's status from the server (use cached users to avoid extra network if possible)
+      try {
+        const users = await fetchUsers(); // uses cache
+        const user = users.find(u => String(u.Email).trim().toLowerCase() === String(bestMatch.email).trim().toLowerCase());
+
+        if (!user) {
+          if (faceMsg) faceMsg.textContent = "❌ User not found!";
+          stopCamera();
+          return;
+        }
+
+        if (isBlocked(user)) {
+          // This should not normally happen because we excluded blocked users when preloading,
+          // but double-checking here for safety.
+          if (faceMsg) faceMsg.textContent = "❌ This face belongs to a BLOCKED user!";
+          stopCamera();
+          return;
+        }
+
+        // Allowed: login now
+        stopCamera();
+        if (faceModal) faceModal.style.display = "none";
+        await updateLastLoginAndRedirect(user);
+
+      } catch (err) {
+        console.error("Error fetching users during match:", err);
+        if (faceMsg) faceMsg.textContent = "Error connecting to server.";
+      }
+
+    } catch (err) {
+      console.error("Capture/Match error:", err);
+      if (faceMsg) faceMsg.textContent = "Error during face capture.";
+    } finally {
+      captureBtn.disabled = false;
     }
-  }
-
-  if (!bestMatch || bestDistance > THRESHOLD) {
-    faceMsg.textContent = "❌ No matching face.";
-    return;
-  }
-
-  // ✅ Check if matched user is blocked
-  try {
-    const res = await fetch(sheetUrl(SHEET_USERS));
-    const json = await res.json();
-    const user = json.slice(1).find(u => u.Email === bestMatch.email);
-
-    if (!user) {
-      faceMsg.textContent = "❌ User not found!";
-      stopCamera();
-      return;
-    }
-
-    if (isBlocked(user)) {
-      faceMsg.textContent = "❌ You are blocked by owner!!";
-      stopCamera();
-      return;
-    }
-
-    // ✅ Login allowed
-    stopCamera();
-    faceModal.style.display = "none";
-    await updateLastLoginAndRedirect(user);
-
-  } catch (err) {
-    console.error(err);
-    faceMsg.textContent = "Error connecting to server.";
-  }
-});
+  });
+}
