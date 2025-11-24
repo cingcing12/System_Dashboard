@@ -90,22 +90,70 @@
             padding-right: 2.5rem;
         }
 
-        /* PDF Template Styles */
-        #pdf-template table { border-collapse: collapse; width: 100%; }
-        #pdf-template th { background-color: #f3f4f6; color: #374151; font-weight: bold; padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb; }
-        #pdf-template td { padding: 8px; border-bottom: 1px solid #e5e7eb; color: #4b5563; }
-        #pdf-template tr:last-child td { border-bottom: none; }
+        /* === FIXED PDF STYLES === */
+        #pdf-wrapper { 
+            width: 297mm; /* A4 Landscape */
+            min-height: 210mm;
+            padding: 40px;
+            background-color: white !important;
+            color: #1e293b; /* slate-800 */
+        }
+        
+        /* Important: Target children of pdf-wrapper explicitly */
+        #pdf-wrapper table { 
+            border-collapse: collapse; 
+            width: 100%; 
+            table-layout: auto; 
+            margin-top: 10px;
+        }
+        
+        #pdf-wrapper th { 
+            background-color: #4f46e5 !important; /* Ensure color applies */
+            color: white !important; 
+            font-weight: 900 !important; 
+            font-family: 'Khmer OS Muol', sans-serif !important;
+            padding: 14px 10px; /* More padding for Khmer characters */
+            text-align: center; 
+            border: 1px solid #3730a3; 
+            font-size: 12px;
+            white-space: nowrap;
+            line-height: 1.6; /* Fixes clipping of 'សរុប' */
+        }
+        
+        #pdf-wrapper td { 
+            padding: 10px 8px; 
+            border: 1px solid #cbd5e1; 
+            color: #334155; 
+            font-size: 12px;
+            text-align: center;
+            font-weight: 500;
+            font-family: 'Khmer OS Battambang', sans-serif;
+        }
+        
+        #pdf-wrapper tr:nth-child(even) { 
+            background-color: #f1f5f9; 
+        }
+        
+        #pdf-wrapper tr.footer-row td {
+            background-color: #e0e7ff !important;
+            color: #312e81 !important;
+            font-weight: bold;
+            border-top: 2px solid #4f46e5;
+            font-size: 13px;
+        }
+        
+        .pdf-desc-col { text-align: left !important; }
     </style>
 </head>
 <body>
 
     <div id="toast-container" class="fixed top-4 right-4 z-[100] space-y-2 pointer-events-none"></div>
 
-    <div id="pdf-wrapper" class="fixed top-0 left-0 z-[-1] w-[210mm] bg-white text-slate-800 p-10 hidden">
-        <div class="flex justify-between items-start mb-8 border-b-2 border-indigo-600 pb-6">
+    <div id="pdf-wrapper" class="fixed top-0 left-0 z-[-10] opacity-0 pointer-events-none">
+        <div class="flex justify-between items-start mb-6 border-b-2 border-indigo-600 pb-4">
             <div>
-                <h1 class="text-3xl font-bold text-indigo-700 font-khmer-header mb-2">របាយការណ៍ចំណាយ</h1>
-                <p class="text-slate-500 text-sm">Expense Report Details</p>
+                <h1 class="text-3xl font-bold text-indigo-700 font-khmer-header mb-1">របាយការណ៍ចំណាយប្រចាំថ្ងៃ</h1>
+                <p class="text-slate-500 text-sm">Daily Expense Consolidated Report</p>
             </div>
             <div class="text-right">
                 <div class="text-2xl font-bold text-indigo-600 flex items-center justify-end gap-2">
@@ -117,25 +165,21 @@
         </div>
 
         <div class="mb-8">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="bg-slate-100">
-                        <th class="p-3 text-left rounded-l-lg font-khmer-header">កាលបរិច្ឆេទ</th>
-                        <th class="p-3 text-left font-khmer-header">បរិយាយ</th>
-                        <th class="p-3 text-left font-khmer-header">លម្អិត</th>
-                        <th class="p-3 text-right rounded-r-lg font-khmer-header">សរុប</th>
-                    </tr>
-                </thead>
+            <table id="pdf-table">
+                <thead id="pdf-table-head">
+                    </thead>
                 <tbody id="pdf-table-body">
                     </tbody>
+                <tfoot id="pdf-table-foot">
+                    </tfoot>
             </table>
         </div>
 
         <div class="flex justify-end">
-            <div class="w-64 bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div class="w-72 bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
                 <div class="flex justify-between mb-2">
-                    <span class="text-slate-500 font-medium">ចំនួនប្រតិបត្តិការ:</span>
-                    <span class="font-bold text-slate-700" id="pdf-total-count">0</span>
+                    <span class="text-slate-500 font-medium">ចំនួនថ្ងៃសរុប:</span>
+                    <span class="font-bold text-slate-700" id="pdf-total-days">0</span>
                 </div>
                 <div class="h-px bg-slate-200 my-2"></div>
                 <div class="flex justify-between items-center">
@@ -145,8 +189,9 @@
             </div>
         </div>
         
-        <div class="mt-12 pt-6 border-t border-slate-100 text-center text-xs text-slate-400">
-            <p>Generated automatically by Expense Manager Pro system.</p>
+        <div class="mt-8 pt-4 border-t border-slate-100 text-center text-xs text-slate-400 flex justify-between">
+            <span>System generated report</span>
+            <span>Signature: __________________________</span>
         </div>
     </div>
 
@@ -966,59 +1011,195 @@
         }
 
         async function callScript(payload) { try { await fetch(APPS_SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); return true; } catch (e) { return false; } }
-        function exportToExcel(){if(filteredExpenses.length===0)return customAlert("No Data","No data to export.","warning");const ac=categories.filter(c=>c.visible!==false),ct={};ac.forEach(c=>ct[c.key]=0);let gt=0;const rows=filteredExpenses.map(i=>{let it=parseFloat(i.Amount)||0;gt+=it;const r=[i.Date,i.Description||"-"];ac.forEach(c=>{let v=parseFloat(i[c.key])||0;ct[c.key]+=v;r.push(v)});r.push(it);return r}),tr=["GRAND TOTAL",""];ac.forEach(c=>tr.push(ct[c.key]));tr.push(gt);const ws=XLSX.utils.aoa_to_sheet([["Date","Description",...ac.map(c=>c.label),"Total"],...rows,[],tr]);ws['!cols']=[{wch:12},{wch:40},...ac.map(()=>({wch:15})),{wch:18}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Expenses");XLSX.writeFile(wb,`Expense_Report_${new Date().toISOString().split('T')[0]}.xlsx`);closeModal('exportModal');}
         
-        // --- NEW: COOL PDF EXPORT WITH HTML2CANVAS ---
-        function exportToPDF() {
-            if(filteredExpenses.length === 0) return;
-            
-            // 1. Populate Hidden Template
-            // UPDATED: Use friendly date in report header
-            document.getElementById('pdf-generated-date').innerText = `Date: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`;
-            document.getElementById('pdf-user').innerText = `User: ${user.Email}`;
-            document.getElementById('pdf-total-count').innerText = filteredExpenses.length;
-            document.getElementById('pdf-grand-total').innerText = document.getElementById('total-summary').innerText; // Use calculated total from dashboard
+        // --- HELPER: AGGREGATE DATA FOR EXPORT ---
+        function aggregateExpensesByDate(data) {
+            const grouped = {};
+            const activeCats = categories.filter(c => c.visible !== false);
 
-            const tbody = document.getElementById('pdf-table-body');
-            tbody.innerHTML = '';
-            filteredExpenses.forEach(item => {
-                // Build breakdown string
-                let breakdown = [];
-                categories.forEach(cat => {
-                    const val = parseFloat(item[cat.key]) || 0;
-                    if (val > 0) breakdown.push(`${cat.label}: ${val.toLocaleString()}`);
+            data.forEach(item => {
+                if (!item.Date) return;
+                
+                if (!grouped[item.Date]) {
+                    // Initialize group
+                    grouped[item.Date] = {
+                        Date: item.Date,
+                        Amount: 0
+                    };
+                    // Initialize categories to 0
+                    activeCats.forEach(c => grouped[item.Date][c.key] = 0);
+                }
+
+                // Add values
+                grouped[item.Date].Amount += (parseFloat(item.Amount) || 0);
+                activeCats.forEach(c => {
+                    grouped[item.Date][c.key] += (parseFloat(item[c.key]) || 0);
+                });
+            });
+
+            // Convert back to array
+            return Object.values(grouped).map(g => ({
+                ...g
+            })).sort((a,b) => new Date(a.Date) - new Date(b.Date));
+        }
+
+        // --- EXCEL EXPORT (Updated) ---
+        function exportToExcel() {
+            if (filteredExpenses.length === 0) return customAlert("No Data", "No data to export.", "warning");
+            
+            try {
+                // 1. Group Data (No Description)
+                const aggregatedData = aggregateExpensesByDate(filteredExpenses);
+                const activeCats = categories.filter(c => c.visible !== false);
+                
+                // 2. Prepare Rows (Separated Columns)
+                const rows = aggregatedData.map(item => {
+                    const row = [
+                        item.Date,
+                    ];
+                    // Add Category Columns
+                    activeCats.forEach(c => row.push(item[c.key] || 0));
+                    // Add Total
+                    row.push(item.Amount);
+                    return row;
                 });
 
-                // UPDATED: Friendly date in table rows
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${formatDateFriendly(item.Date)}</td>
-                        <td>${item.Description || '-'}</td>
-                        <td class="text-xs text-slate-500">${breakdown.join(', ')}</td>
-                        <td class="text-right font-bold">${formatCurrency(item.Amount)}</td>
-                    </tr>
-                `;
-            });
+                // 3. Calculate Vertical Grand Totals
+                const grandTotals = ["GRAND TOTAL"];
+                let finalSum = 0;
+                activeCats.forEach(c => {
+                    let catSum = 0;
+                    aggregatedData.forEach(item => catSum += (item[c.key] || 0));
+                    grandTotals.push(catSum);
+                });
+                aggregatedData.forEach(item => finalSum += item.Amount);
+                grandTotals.push(finalSum);
 
-            // 2. Show Template temporarily (it needs to be visible for html2canvas to capture it)
-            const element = document.getElementById('pdf-wrapper');
-            element.classList.remove('hidden');
+                // 4. Prepare Header Row (Beautiful Headers)
+                const headerRow = ["Date", ...activeCats.map(c => c.label), "Total"];
 
-            // 3. Capture
-            html2canvas(element, { scale: 2 }).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                // 5. Create Workbook with Spacer Row
+                const ws = XLSX.utils.aoa_to_sheet([
+                    headerRow, 
+                    ...rows, 
+                    [], // Empty spacer row
+                    grandTotals // Footer Row
+                ]);
                 
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save('Expense_Report_Pro.pdf');
+                // Adjust Column Widths
+                const cols = [{wch: 15}, ...activeCats.map(() => ({wch: 15})), {wch: 18}];
+                ws['!cols'] = cols;
+
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Expenses");
+                XLSX.writeFile(wb, `Expense_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
                 
-                // Hide template again
-                element.classList.add('hidden');
                 closeModal('exportModal');
-            });
+                // COOL ALERT SUCCESS
+                customAlert("Success", "Excel file has been downloaded successfully!", "success");
+
+            } catch (e) {
+                console.error(e);
+                customAlert("Error", "Failed to generate Excel file.", "error");
+            }
+        }
+        
+        // --- PDF EXPORT (Updated) ---
+        function exportToPDF() {
+            if(filteredExpenses.length === 0) return customAlert("No Data", "No data to export.", "warning");
+            
+            try {
+                // 1. Group Data
+                const aggregatedData = aggregateExpensesByDate(filteredExpenses);
+                const activeCats = categories.filter(c => c.visible !== false);
+
+                // 2. Populate Header (Date, [Cats...], Total) - REMOVED DESCRIPTION
+                const thead = document.getElementById('pdf-table-head');
+                let headerHtml = `
+                    <tr>
+                        <th class="rounded-l-lg font-khmer-header" style="width: 90px;">កាលបរិច្ឆេទ</th>
+                `;
+                activeCats.forEach(c => {
+                    headerHtml += `<th class="font-khmer-header" style="width: 70px;">${c.label}</th>`;
+                });
+                headerHtml += `<th class="rounded-r-lg font-khmer-header" style="width: 100px;">សរុប</th></tr>`;
+                thead.innerHTML = headerHtml;
+
+                // 3. Populate Body & Calculate Totals
+                const tbody = document.getElementById('pdf-table-body');
+                const tfoot = document.getElementById('pdf-table-foot');
+                tbody.innerHTML = '';
+                
+                let grandTotal = 0;
+                // Initialize category totals object
+                const catTotals = {};
+                activeCats.forEach(c => catTotals[c.key] = 0);
+
+                aggregatedData.forEach(item => {
+                    grandTotal += item.Amount;
+                    let rowHtml = `
+                        <tr>
+                            <td>${formatDateFriendly(item.Date)}</td>
+                    `;
+                    // Categories Columns
+                    activeCats.forEach(c => {
+                        const val = parseFloat(item[c.key]) || 0;
+                        catTotals[c.key] += val; // Accumulate vertical total
+                        rowHtml += `<td>${val > 0 ? formatCurrency(val) : '-'}</td>`;
+                    });
+                    // Total Column
+                    rowHtml += `<td class="font-bold bg-slate-50">${formatCurrency(item.Amount)}</td></tr>`;
+                    tbody.innerHTML += rowHtml;
+                });
+
+                // 4. Populate Footer (Grand Totals Row)
+                let footerHtml = `<tr class="footer-row"><td>GRAND TOTAL</td>`;
+                activeCats.forEach(c => {
+                    footerHtml += `<td>${formatCurrency(catTotals[c.key])}</td>`;
+                });
+                footerHtml += `<td>${formatCurrency(grandTotal)}</td></tr>`;
+                tfoot.innerHTML = footerHtml;
+
+                // Update Report Footer Data (Outside Table)
+                document.getElementById('pdf-generated-date').innerText = `Date: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+                document.getElementById('pdf-user').innerText = `User: ${user.Email}`;
+                document.getElementById('pdf-total-days').innerText = aggregatedData.length + ' ថ្ងៃ';
+                document.getElementById('pdf-grand-total').innerText = formatCurrency(grandTotal);
+
+                // 5. Show Wrapper & Capture
+                const element = document.getElementById('pdf-wrapper');
+                element.classList.remove('opacity-0'); // Make visible for capture
+                element.classList.remove('z-[-10]'); 
+                element.style.zIndex = "9999"; // Bring to front temporarily
+
+                // 6. Generate PDF
+                html2canvas(element, { scale: 2 }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const { jsPDF } = window.jspdf;
+                    // LANDSCAPE MODE ('l')
+                    const pdf = new jsPDF('l', 'mm', 'a4');
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                    
+                    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                    pdf.save('Expense_Report_Pro.pdf');
+                    
+                    // Hide again
+                    element.classList.add('opacity-0');
+                    element.classList.add('z-[-10]');
+                    element.style.zIndex = "-10";
+                    
+                    closeModal('exportModal');
+                    
+                    // COOL ALERT SUCCESS
+                    customAlert("Success", "PDF Report saved successfully!", "success");
+                });
+
+            } catch (e) {
+                console.error(e);
+                element.classList.add('hidden'); 
+                customAlert("Error", "Failed to generate PDF.", "error");
+            }
         }
     </script>
 </body>
