@@ -26,11 +26,10 @@
         .animate-fade-in { animation: fadeIn 0.2s ease-out; }
         .animate-pop-in { animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
 
-        /* MODALS - UPDATED FOR CENTERING */
+        /* MODALS */
         .modal { 
             display: none; position: fixed; inset: 0; 
             background: rgba(15, 23, 42, 0.65); 
-            /* Changed from flex-end to center for all devices */
             justify-content: center; align-items: center; 
             z-index: 50; backdrop-filter: blur(4px);
             transition: all 0.3s ease;
@@ -90,10 +89,6 @@
             background-size: 1.5em 1.5em;
             padding-right: 2.5rem;
         }
-
-        /* Toggle Switch */
-        .toggle-checkbox:checked { right: 0; border-color: #4f46e5; }
-        .toggle-checkbox:checked + .toggle-label { background-color: #4f46e5; }
 
         /* PDF Template Styles */
         #pdf-template table { border-collapse: collapse; width: 100%; }
@@ -449,7 +444,7 @@
 
         // CONFIG
         const SHEETDB_URL = "https://sheetdb.io/api/v1/3ack97nmcay65"; 
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzLQwE-9GDbddc6Fh67bxwi25vcqUacN1VZU6ShHVN6fHag7JQLTO3DpJGaAJMZtFtZMA/exec"; 
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxgwmWfbIQb7ETnPQHlmydgAhShl9a9Nn-lIjhlBKdB7aYi4WiyjFYfjL2cIUXfpes7ig/exec"; 
 
         // USER STATE
         let categories = []; 
@@ -763,8 +758,22 @@
 
         async function deleteForever(id) {
             showToast('Deleting...', 'info');
-            await callScript({ action: "DELETE_ROW_FOREVER", id: id });
-            setTimeout(loadData, 2000);
+            // UPDATED: Use SheetDB Directly instead of Apps Script
+            try {
+                const res = await fetch(`${SHEETDB_URL}/ID/${id}?sheet=Expenses`, {
+                    method: 'DELETE'
+                });
+                
+                if(res.ok) {
+                     showToast('Deleted Permanently', 'success');
+                     loadData();
+                } else {
+                     throw new Error("API Error");
+                }
+            } catch(e) {
+                console.error(e);
+                customAlert("Error", "Could not delete item. Check connection.", "error");
+            }
         }
 
         function renderList(data) {
