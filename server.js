@@ -20,7 +20,7 @@ const GITHUB_BRANCH = process.env.GITHUB_BRANCH || "main";
 // ---------------------------
 // SheetDB Config
 // ---------------------------
-const SHEETDB_BASE_URL = "https://sheetdb.io/api/v1/qik1anddidakk";
+const SHEETDB_BASE_URL = "https://sheetdb.io/api/v1/15edyx91e1lkq";
 const SHEET_USERS = "Users";
 function sheetUrl(sheetName) {
   return `${SHEETDB_BASE_URL}?sheet=${sheetName}`;
