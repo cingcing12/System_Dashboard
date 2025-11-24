@@ -381,7 +381,7 @@ if (captureBtn) {
         const users = await fetchUsers(true);
         const user = users.find(u => String(u.Email).trim().toLowerCase() === String(best.email).trim().toLowerCase());
         if (!user) { if (faceMsg) faceMsg.textContent = '❌ User not found!'; stopCamera(); return; }
-        if (isBlocked(user)) { if (faceMsg) faceMsg.textContent = '❌ This account is blocked!'; stopCamera(); return; }
+        if (isBlocked(user)) { if (faceMsg) faceMsg.textContent = '❌ This account is blocked!'; return; }
 
         // **final verification**: recompute descriptor from matched user's stored image
         const passesFinal = await finalVerifyAgainstUserImage(descriptors, user);
