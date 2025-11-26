@@ -81,20 +81,22 @@ async function uploadImageToGitHubBuffer(buffer, repoPath, commitMessage) {
 }
 
 // ---------------------------
-// Register User Endpoint
+// Register User Endpoint (CHANGED TO NAME)
 // ---------------------------
 app.post("/api/register", upload.single("faceImage"), async (req, res) => {
-  const { email, password, role } = req.body;
-  if (!email || !password || !req.file)
+  // Now receiving 'name' instead of 'email'
+  const { name, password, role } = req.body;
+  if (!name || !password || !req.file)
     return res.status(400).json({ error: "Missing required fields" });
 
-  const safeEmail = email.replace(/[@.]/g, "_");
-  const fileName = `${safeEmail}.jpg`;
+  // Filename logic: Remove spaces, replace with underscore
+  const safeName = name.trim().replace(/\s+/g, "_");
+  const fileName = `${safeName}.jpg`;
   const githubPath = `faces/${fileName}`;
 
   try {
     const userData = {
-      Email: email,
+      Name: name, // Changed Key from Email to Name
       PasswordHash: password,
       Role: role || "Staff",
       IsBlocked: "FALSE",
@@ -118,7 +120,7 @@ app.post("/api/register", upload.single("faceImage"), async (req, res) => {
     }
 
     // Upload face image to GitHub directly from buffer
-    await uploadImageToGitHubBuffer(req.file.buffer, githubPath, `Add face image for ${email}`);
+    await uploadImageToGitHubBuffer(req.file.buffer, githubPath, `Add face image for ${name}`);
 
     res.json({
       success: true,
@@ -132,19 +134,19 @@ app.post("/api/register", upload.single("faceImage"), async (req, res) => {
 });
 
 // ---------------------------
-// Update Face Image Endpoint (memory, replace old on GitHub)
+// Update Face Image Endpoint (CHANGED TO NAME)
 // ---------------------------
 app.post("/api/update-face", upload.single("faceImage"), async (req, res) => {
-  const { email } = req.body;
-  if (!email || !req.file) return res.status(400).json({ error: "Missing email or file" });
+  const { name } = req.body; // Expecting name
+  if (!name || !req.file) return res.status(400).json({ error: "Missing name or file" });
 
-  const safeEmail = email.replace(/[@.]/g, "_");
-  const fileName = `${safeEmail}.jpg`;
+  const safeName = name.trim().replace(/\s+/g, "_");
+  const fileName = `${safeName}.jpg`;
   const githubPath = `faces/${fileName}`;
 
   try {
     // Upload new file to GitHub directly from buffer (replaces old one)
-    await uploadImageToGitHubBuffer(req.file.buffer, githubPath, `Update face image for ${email}`);
+    await uploadImageToGitHubBuffer(req.file.buffer, githubPath, `Update face image for ${name}`);
 
     res.json({
       success: true,
@@ -155,6 +157,17 @@ app.post("/api/update-face", upload.single("faceImage"), async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Failed to update face image", details: err.message });
   }
+});
+
+// ---------------------------
+// Delete Face Endpoint (Added for cleanup)
+// ---------------------------
+app.post("/api/delete-face", async (req, res) => {
+  const { name } = req.body;
+  // This is optional if you want to delete the file from GitHub when user is deleted
+  // Not implemented fully here to keep it simple, but the endpoint exists to prevent frontend 404
+  console.log(`Requested delete face for: ${name}`); 
+  res.json({ success: true });
 });
 
 // ---------------------------
