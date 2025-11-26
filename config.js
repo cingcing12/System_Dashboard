@@ -1,5 +1,5 @@
 // ✅ Your unique SheetDB API base URL
-const SHEETDB_BASE_URL = "https://sheetdb.io/api/v1/xw1p32oicjp24";
+const SHEETDB_BASE_URL = "https://sheetdb.io/api/v1/lman7mvjnhxo8";
 
 // Tabs (Sheets)
 const SHEET_EXPENSES = "Expenses";
