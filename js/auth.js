@@ -101,22 +101,38 @@ async function fetchUsers(force = false) {
 // -------------------------------
 // Manual Login (UPDATED TO NAME)
 // -------------------------------
+
 const loginBtn = document.getElementById('loginBtn');
 if (loginBtn) loginBtn.addEventListener('click', loginUser);
 
 async function loginUser() {
-  // 1. Get Value from Name input
-  const nameInput = document.getElementById('name').value.trim();
-  const password = document.getElementById('password').value.trim();
+  // 1. Get Elements safely
+  const nameField = document.getElementById('name');
+  const passField = document.getElementById('password');
+
+  // Safety Check: If HTML is wrong, stop here so it doesn't crash
+  if (!nameField) {
+      console.error("CRITICAL ERROR: Input with id='name' not found in HTML.");
+      alert("System Error: Input 'name' is missing. Please check login.html");
+      return;
+  }
+  if (!passField) {
+      console.error("CRITICAL ERROR: Input with id='password' not found in HTML.");
+      return;
+  }
+
+  // 2. Get Values
+  const nameInput = nameField.value.trim();
+  const password = passField.value.trim();
   
   if (!nameInput || !password) return alert('Enter name and password!');
   
   try {
     const users = await fetchUsers();
     
-    // 2. Search by Name
+    // 3. Search by Name
     const user = users.find(u => {
-        const uName = u.Name || u['ឈ្មោះ'] || ''; // Handle English or Khmer header
+        const uName = u.Name || u['ឈ្មោះ'] || ''; 
         return String(uName).trim().toLowerCase() === nameInput.toLowerCase();
     });
 
