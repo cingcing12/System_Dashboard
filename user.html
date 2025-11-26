@@ -13,8 +13,7 @@
     @import url('https://fonts.googleapis.com/css2?family=Khmer+OS+Battambang:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
     :root {
-        --primary: #4f46e5; /* Indigo 600 */
-        --primary-dark: #4338ca;
+        --primary: #4f46e5;
         --bg-color: #f1f5f9;
     }
 
@@ -25,7 +24,7 @@
         -webkit-font-smoothing: antialiased;
     }
 
-    /* Smooth Modal Animation */
+    /* Modal Animation */
     .modal {
         display: none;
         position: fixed;
@@ -51,7 +50,7 @@
         transform: scale(1);
     }
 
-    /* Shimmer/Skeleton Loading Effect */
+    /* Shimmer/Skeleton Loading */
     .skeleton {
         background: #e2e8f0;
         background-image: linear-gradient(to right, #e2e8f0 0%, #f1f5f9 20%, #e2e8f0 40%, #e2e8f0 100%);
@@ -82,8 +81,8 @@
         transition: all 0.1s;
     }
     .shutter-btn:active .shutter-inner { transform: scale(0.85); }
-
-    /* Custom Scrollbar */
+    
+    /* Scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -156,7 +155,7 @@
                                 <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
                                 <input id="modalPassword" name="password" type="password" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all" placeholder="••••••••" />
                             </div>
-                            <p class="text-[10px] text-slate-400 mt-1 hidden" id="passHint">ទុកទំនេរ ប្រសិនបើមិនចង់ផ្លាស់ប្តូរ</p>
+                            <p class="text-[10px] text-slate-400 mt-1 hidden" id="passHint">ទុកទំនេរ ប្រសិនបើមិនចង់ផ្លាស់ប្តូរ (Leave blank to keep current)</p>
                         </div>
 
                         <div>
@@ -230,28 +229,33 @@
         <div class="bg-black p-6 pb-8 flex flex-col items-center gap-6 z-20">
             <select id="cameraSelect" class="bg-white/10 text-white text-xs p-2 rounded-lg border border-white/20 outline-none hidden max-w-[200px]"></select>
 
-            <div class="flex items-center justify-center w-full gap-8">
-                <div class="w-12 flex justify-center">
-                    <button id="retakeBtn" class="hidden text-white flex-col items-center gap-1 text-xs font-medium">
-                        <div class="p-2 bg-white/10 rounded-full"><i data-lucide="rotate-ccw" class="w-5 h-5"></i></div>
-                        Retake
-                    </button>
-                    <button id="switchCamBtn" class="text-white/80 hover:text-white transition-colors p-2">
+            <div class="flex items-center justify-between w-full px-8 gap-4">
+                
+                <div class="w-20 flex justify-center">
+                    <button id="switchCamBtn" class="text-white/80 hover:text-white transition-colors p-2 flex flex-col items-center gap-1">
                         <i data-lucide="repeat" class="w-6 h-6"></i>
+                    </button>
+                    
+                    <button id="retakeBtn" class="hidden text-white flex-col items-center gap-1 text-xs font-medium group">
+                        <div class="p-2.5 bg-white/20 rounded-full group-hover:bg-white/30 transition-all"><i data-lucide="rotate-ccw" class="w-5 h-5"></i></div>
+                        <span class="mt-1">Retake</span>
                     </button>
                 </div>
 
-                <button id="captureBtn" class="shutter-btn shadow-lg shadow-white/10">
-                    <div class="shutter-inner"></div>
-                </button>
-                
-                <div class="w-12 flex justify-center">
-                    <button id="acceptBtn" class="hidden text-white flex-col items-center gap-1 text-xs font-medium">
-                        <div class="p-2 bg-indigo-600 rounded-full"><i data-lucide="check" class="w-5 h-5"></i></div>
-                        Use
+                <div class="flex justify-center">
+                    <button id="captureBtn" class="shutter-btn shadow-lg shadow-white/10">
+                        <div class="shutter-inner"></div>
                     </button>
-                    <button id="openBackCamBtn" class="text-white/80 hover:text-white transition-colors p-2" title="Force Back Camera">
+                </div>
+                
+                <div class="w-20 flex justify-center">
+                    <button id="openBackCamBtn" class="text-white/80 hover:text-white transition-colors p-2 flex flex-col items-center gap-1" title="Force Back Camera">
                         <i data-lucide="camera-off" class="w-6 h-6"></i>
+                    </button>
+
+                    <button id="acceptBtn" class="hidden text-white flex-col items-center gap-1 text-xs font-medium group">
+                        <div class="p-2.5 bg-green-500 rounded-full group-hover:bg-green-600 shadow-lg shadow-green-500/40 transition-all"><i data-lucide="check" class="w-5 h-5"></i></div>
+                        <span class="mt-1">Use Photo</span>
                     </button>
                 </div>
             </div>
@@ -276,7 +280,6 @@ const modal = document.getElementById('userModal');
 const cameraModal = document.getElementById('cameraModal');
 const modalForm = document.getElementById('modalForm');
 const modalTitle = document.getElementById('modalTitle');
-// Changed to Name
 const modalName = document.getElementById('modalName'); 
 const modalPassword = document.getElementById('modalPassword');
 const passReq = document.getElementById('passReq');
@@ -299,11 +302,10 @@ const faceSourceNote = document.getElementById('faceSourceNote');
 const captureCanvas = document.getElementById('captureCanvas');
 const openBackCamBtn = document.getElementById('openBackCamBtn');
 
-let editingUserName = null; // Changed variable name
+let editingUserName = null; 
 let currentUserName = '';
 try {
   const user = JSON.parse(localStorage.getItem("user"));
-  // Assuming the logged in user now has a Name field or you track them by name
   if (user && (user.Name || user.Email)) currentUserName = user.Name || user.Email;
 } catch (e){ console.error(e); }
 
@@ -326,7 +328,7 @@ function showSkeletons() {
     `).join('');
 }
 
-/* Modal Logic */
+/* Modal Logic & Password Issue Fix */
 function openModal(user = null){
   modal.classList.add('active');
   modalForm.reset();
@@ -336,7 +338,7 @@ function openModal(user = null){
   isFront = true;
 
   if(user){
-    // Using Name instead of Email
+    // EDIT MODE
     editingUserName = (user.Name||user['ឈ្មោះ']||user['Name'])||'';
     modalTitle.textContent = 'កែប្រែគណនី (Edit User)';
     modalName.value = editingUserName;
@@ -345,14 +347,14 @@ function openModal(user = null){
     
     modalRole.value = user.Role||user['តួនាទី']||'Staff';
     
+    // Fix Password Issue: Not required on edit
     modalPassword.value = '';
     modalPassword.removeAttribute('required');
-    passReq.classList.add('hidden');
-    passHint.classList.remove('hidden');
+    passReq.classList.add('hidden'); // Hide asterisk
+    passHint.classList.remove('hidden'); // Show hint
 
     const faceFile = user.FaceImageFile || user.FaceImage;
     if(faceFile){
-      // Assuming faces are stored based on Name now
       const safeName = editingUserName.trim().replace(/\s+/g, "_");
       imgPreview.src = `faces/${safeName}.jpg`;
       imgPreview.style.display='block';
@@ -362,14 +364,16 @@ function openModal(user = null){
       faceSourceNote.textContent = 'No existing photo';
     }
   } else {
+    // CREATE MODE
     editingUserName = null;
     modalTitle.textContent = 'បង្កើតគណនីថ្មី (New User)';
     modalName.disabled = false;
     modalName.classList.remove('bg-slate-100', 'text-slate-500');
     
+    // Fix Password Issue: Required on create
     modalPassword.setAttribute('required','required');
-    passReq.classList.remove('hidden');
-    passHint.classList.add('hidden');
+    passReq.classList.remove('hidden'); // Show asterisk
+    passHint.classList.add('hidden'); // Hide hint
     
     faceSourceNote.textContent = 'Required for Face ID';
     faceSourceNote.classList.remove('text-green-600');
@@ -426,12 +430,7 @@ openBackCamBtn.addEventListener('click', async () => {
 
 async function openCameraModal(){
   cameraModal.classList.add('active');
-  cameraPreviewContainer.style.display='none';
-  retakeBtn.classList.add('hidden');
-  acceptBtn.classList.add('hidden');
-  captureBtn.classList.remove('hidden');
-  switchCamBtn.parentElement.classList.remove('hidden');
-  openBackCamBtn.parentElement.classList.remove('hidden');
+  resetCameraUI(); // Ensure UI is in initial state
   
   capturedBlob = null; capturedDataUrl = null;
   currentDeviceId = null;
@@ -444,6 +443,19 @@ async function openCameraModal(){
 function closeCameraModal(){
   cameraModal.classList.remove('active');
   stopStream();
+}
+
+function resetCameraUI() {
+    cameraPreviewContainer.style.display = 'none';
+    
+    // Show controls
+    captureBtn.style.display = 'flex'; // Shutter
+    switchCamBtn.style.display = 'flex'; // Switch
+    openBackCamBtn.style.display = 'flex'; // Force Back
+
+    // Hide Action Buttons
+    retakeBtn.classList.add('hidden');
+    acceptBtn.classList.add('hidden');
 }
 
 async function enumerateCameras(){
@@ -513,6 +525,7 @@ async function switchCamera(){
   await startStream();
 }
 
+// CAPTURE BUTTON CLICK
 captureBtn.addEventListener('click', ()=>{
   if(!stream) return;
   const video = cameraVideo;
@@ -527,36 +540,45 @@ captureBtn.addEventListener('click', ()=>{
     if(!blob) return;
     capturedBlob = blob;
     capturedDataUrl = URL.createObjectURL(blob);
+    
+    // Show Preview
     cameraPreview.src = capturedDataUrl;
     cameraPreviewContainer.style.display = 'block';
     
-    // UI Updates
+    // UI Updates: Hide controls, Show Action Buttons
+    captureBtn.style.display = 'none';
+    switchCamBtn.style.display = 'none';
+    openBackCamBtn.style.display = 'none';
+    
     retakeBtn.classList.remove('hidden');
     acceptBtn.classList.remove('hidden');
-    captureBtn.classList.add('hidden');
-    switchCamBtn.parentElement.classList.add('hidden');
-    openBackCamBtn.parentElement.classList.add('hidden');
     
-    stopStream();
+    stopStream(); // "Freeze" the camera
   }, 'image/jpeg', 0.92);
 });
 
+// RETAKE BUTTON CLICK
 retakeBtn.addEventListener('click', ()=>{
   cameraPreviewContainer.style.display = 'none';
+  
+  // Reset Buttons
+  captureBtn.style.display = 'flex';
+  switchCamBtn.style.display = 'flex';
+  openBackCamBtn.style.display = 'flex';
+  
   retakeBtn.classList.add('hidden');
   acceptBtn.classList.add('hidden');
-  captureBtn.classList.remove('hidden');
-  switchCamBtn.parentElement.classList.remove('hidden');
-  openBackCamBtn.parentElement.classList.remove('hidden');
-  startStream();
+  
+  startStream(); // Restart Camera
 });
 
+// ACCEPT BUTTON CLICK
 acceptBtn.addEventListener('click', ()=>{
   imgPreview.src = capturedDataUrl;
   imgPreview.style.display = 'block';
   faceSourceNote.textContent = 'Captured via Camera';
   faceSourceNote.classList.add('text-indigo-600');
-  modalImage.value = '';
+  modalImage.value = ''; // Clear file input if any
   closeCameraModal();
 });
 
@@ -589,7 +611,6 @@ async function loadUsers(){
     }
 
     userList.innerHTML = users.map(u=>{
-      // Changed to use Name
       const name = u.Name || u['ឈ្មោះ'] || '';
       const role = u.Role || u['តួនាទី'] || 'Staff';
       const face = u.FaceImageFile || u.FaceImage || '';
@@ -598,7 +619,6 @@ async function loadUsers(){
       const safeName = name.trim().replace(/\s+/g, "_");
       const faceSrc = face ? `faces/${safeName}.jpg` : `https://ui-avatars.com/api/?name=${name}&background=random`;
       
-      // Role Badge Colors
       let roleClass = "bg-slate-100 text-slate-600";
       if(role === 'Admin') roleClass = "bg-indigo-100 text-indigo-700";
       if(role === 'Owner') roleClass = "bg-violet-100 text-violet-700";
@@ -641,7 +661,7 @@ async function loadUsers(){
   }
 }
 
-/* CRUD Logic (SweetAlert Wrapper) */
+/* CRUD Logic */
 async function toggleBlockSwal(name, currentStatus){
   const isBlocked = String(currentStatus).toUpperCase() === 'TRUE';
   const action = isBlocked ? 'Unblock' : 'Block';
@@ -652,13 +672,11 @@ async function toggleBlockSwal(name, currentStatus){
     showCancelButton: true,
     confirmButtonColor: isBlocked ? '#10b981' : '#f97316',
     confirmButtonText: 'Yes, do it',
-    cancelButtonText: 'Cancel',
     customClass: { popup: 'rounded-2xl' }
   });
 
   if(!result.isConfirmed) return;
   try{
-    // Important: Using Name search column
     await fetch(`${SHEETDB_BASE_URL}/Name/${encodeURIComponent(name)}`,{
       method:'PATCH',
       headers:{'Content-Type':'application/json'},
@@ -682,9 +700,7 @@ async function deleteUserSwal(name){
 
   if(!result.isConfirmed) return;
   try{
-    // Important: Using Name search column
     await fetch(`${SHEETDB_BASE_URL}/Name/${encodeURIComponent(name)}`,{ method:'DELETE' });
-    // Note: Passing 'name' to the delete-face endpoint now
     await fetch(`${NODE_API_BASE}/api/delete-face`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name }) });
     Swal.fire({icon:'success', title:'Deleted', timer: 1500, showConfirmButton: false});
     await loadUsers();
@@ -697,7 +713,6 @@ modalForm.addEventListener('submit', async (e)=>{
   modalSaveBtn.innerHTML = '<i class="animate-spin" data-lucide="loader-2"></i> Saving...';
   lucide.createIcons();
   
-  // Using Name value
   const name = modalName.value.trim();
   const password = modalPassword.value.trim();
   const role = modalRole.value;
@@ -705,12 +720,13 @@ modalForm.addEventListener('submit', async (e)=>{
 
   try{
     if(!editingUserName){
-      // Create
+      // ===========================
+      // CREATE NEW USER
+      // ===========================
       if(!name || !password) throw new Error("Name and Password required");
       if(!file && !capturedBlob) throw new Error("Face Image required");
       
       const fd = new FormData();
-      // Appending name instead of email
       fd.append('name', name);
       fd.append('password', password);
       fd.append('role', role);
@@ -721,7 +737,11 @@ modalForm.addEventListener('submit', async (e)=>{
       if(!res.ok) throw new Error(await res.text());
       Swal.fire({icon:'success', title:'User Created', timer: 1500, showConfirmButton: false});
     } else {
-      // Update
+      // ===========================
+      // UPDATE EXISTING USER
+      // ===========================
+      
+      // 1. Upload new face if one was selected/captured
       if(capturedBlob || file){
         const fd = new FormData();
         fd.append('name', editingUserName);
@@ -731,12 +751,21 @@ modalForm.addEventListener('submit', async (e)=>{
         if(!r.ok) throw new Error("Face update failed");
       }
       
+      // 2. Prepare Data for Google Sheet Update
       const patchData = { Role: role };
-      if(password) patchData.Password = password;
-      // Patching based on Name
+      
+      // FIXED HERE: Changed 'Password' to 'PasswordHash' to match your Sheet Header
+      if(password && password.length > 0) {
+          patchData.PasswordHash = password; 
+      }
+      
+      // Send Update to SheetDB
       await fetch(`${SHEETDB_BASE_URL}/Name/${encodeURIComponent(editingUserName)}`, {
-        method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data:[patchData] })
+        method:'PATCH', 
+        headers:{'Content-Type':'application/json'}, 
+        body: JSON.stringify({ data:[patchData] })
       });
+      
       Swal.fire({icon:'success', title:'User Updated', timer: 1500, showConfirmButton: false});
     }
     closeModal();
