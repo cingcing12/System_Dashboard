@@ -19,7 +19,7 @@ let storedDescriptors = [];
 let cachedUsers = null;
 let fetchingUsers = false;
 
-// -------------------------------
+// ------------------------------- 
 // Utility: robust blocked checker
 // -------------------------------
 function isBlocked(user) {
