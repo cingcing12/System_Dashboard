@@ -7,9 +7,11 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="icon" href="iconApp.jpg">
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Khmer+OS+Muol:wght@400;600;700&family=Khmer+OS+Battambang:wght@400;600;700&display=swap');
@@ -89,111 +91,11 @@
             background-size: 1.5em 1.5em;
             padding-right: 2.5rem;
         }
-
-        /* === FIXED PDF STYLES === */
-        #pdf-wrapper { 
-            width: 297mm; /* A4 Landscape */
-            min-height: 210mm;
-            padding: 40px;
-            background-color: white !important;
-            color: #1e293b; /* slate-800 */
-        }
-        
-        /* Important: Target children of pdf-wrapper explicitly */
-        #pdf-wrapper table { 
-            border-collapse: collapse; 
-            width: 100%; 
-            table-layout: auto; 
-            margin-top: 10px;
-        }
-        
-        #pdf-wrapper th { 
-            background-color: #4f46e5 !important; /* Ensure color applies */
-            color: white !important; 
-            font-weight: 900 !important; 
-            font-family: 'Khmer OS Muol', sans-serif !important;
-            padding: 14px 10px; /* More padding for Khmer characters */
-            text-align: center; 
-            border: 1px solid #3730a3; 
-            font-size: 12px;
-            white-space: nowrap;
-            line-height: 1.6; /* Fixes clipping of 'សរុប' */
-        }
-        
-        #pdf-wrapper td { 
-            padding: 10px 8px; 
-            border: 1px solid #cbd5e1; 
-            color: #334155; 
-            font-size: 12px;
-            text-align: center;
-            font-weight: 500;
-            font-family: 'Khmer OS Battambang', sans-serif;
-        }
-        
-        #pdf-wrapper tr:nth-child(even) { 
-            background-color: #f1f5f9; 
-        }
-        
-        #pdf-wrapper tr.footer-row td {
-            background-color: #e0e7ff !important;
-            color: #312e81 !important;
-            font-weight: bold;
-            border-top: 2px solid #4f46e5;
-            font-size: 13px;
-        }
-        
-        .pdf-desc-col { text-align: left !important; }
     </style>
 </head>
 <body>
 
     <div id="toast-container" class="fixed top-4 right-4 z-[100] space-y-2 pointer-events-none"></div>
-
-    <div id="pdf-wrapper" class="fixed top-0 left-0 z-[-10] opacity-0 pointer-events-none">
-        <div class="flex justify-between items-start mb-6 border-b-2 border-indigo-600 pb-4">
-            <div>
-                <h1 class="text-3xl font-bold text-indigo-700 font-khmer-header mb-1">របាយការណ៍ចំណាយប្រចាំថ្ងៃ</h1>
-                <p class="text-slate-500 text-sm font-khmer-header">របាយការណ៍សង្ខេបចំណាយប្រចាំថ្ងៃ</p>
-            </div>
-            <div class="text-right">
-                <div class="text-2xl font-bold text-indigo-600 flex items-center justify-end gap-2 font-khmer-header">
-                    កម្មវិធីគ្រប់គ្រងចំណាយ
-                </div>
-                <p class="text-sm text-slate-500 mt-1 font-bold" id="pdf-generated-date">កាលបរិច្ឆេទ: ...</p>
-                <p class="text-sm text-slate-500 font-bold" id="pdf-user">អ្នកប្រើប្រាស់: ...</p>
-            </div>
-        </div>
-
-        <div class="mb-8">
-            <table id="pdf-table">
-                <thead id="pdf-table-head">
-                    </thead>
-                <tbody id="pdf-table-body">
-                    </tbody>
-                <tfoot id="pdf-table-foot">
-                    </tfoot>
-            </table>
-        </div>
-
-        <div class="flex justify-end">
-            <div class="w-72 bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
-                <div class="flex justify-between mb-2">
-                    <span class="text-slate-500 font-medium font-khmer-header">ចំនួនថ្ងៃសរុប:</span>
-                    <span class="font-bold text-slate-700" id="pdf-total-days">0</span>
-                </div>
-                <div class="h-px bg-slate-200 my-2"></div>
-                <div class="flex justify-between items-center">
-                    <span class="text-indigo-700 font-bold text-lg font-khmer-header">សរុបរួម:</span>
-                    <span class="text-indigo-700 font-bold text-xl" id="pdf-grand-total">0 ៛</span>
-                </div>
-            </div>
-        </div>
-        
-        <div class="mt-8 pt-4 border-t border-slate-100 text-center text-xs text-slate-400 flex justify-between font-khmer-header">
-            <span>របាយការណ៍បង្កើតដោយប្រព័ន្ធ</span>
-            <span>ហត្ថលេខា: __________________________</span>
-        </div>
-    </div>
 
     <div id="customConfirmModal" class="modal items-center" style="z-index: 60;">
         <div class="confirm-box">
@@ -210,8 +112,8 @@
     </div>
 
     <div id="detailModal" class="modal px-4 items-center" style="z-index: 55;">
-        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 animate-slide-up">
-            <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 animate-slide-up flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-start mb-6 border-b border-slate-100 pb-4 shrink-0">
                 <div>
                     <p class="text-xs text-slate-400 uppercase font-bold mb-1">Details</p>
                     <h3 class="text-xl font-bold text-slate-800 font-khmer-header" id="detail-date">...</h3>
@@ -221,10 +123,10 @@
                 </button>
             </div>
             
-            <div class="space-y-6">
+            <div class="space-y-6 overflow-y-auto pr-1">
                 <div class="text-center py-2">
-                     <p class="text-sm text-slate-500 mb-1">Total Amount</p>
-                     <p class="text-3xl font-bold text-indigo-600" id="detail-amount">0 ៛</p>
+                      <p class="text-sm text-slate-500 mb-1">Total Amount</p>
+                      <p class="text-3xl font-bold text-indigo-600" id="detail-amount">0 ៛</p>
                 </div>
 
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
@@ -243,7 +145,7 @@
                 </div>
             </div>
 
-            <div class="mt-6 pt-4 border-t border-slate-100 flex gap-2" id="detail-actions"></div>
+            <div class="mt-6 pt-4 border-t border-slate-100 flex gap-2 shrink-0" id="detail-actions"></div>
         </div>
     </div>
 
@@ -389,16 +291,91 @@
     </div>
 
     <div id="exportModal" class="modal px-4 items-center">
-        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6">
-            <h3 class="text-lg font-bold text-slate-800 mb-4">Export Report</h3>
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 animate-pop-in">
+            <h3 class="text-lg font-bold text-slate-800 mb-4 font-khmer-header">Export Data</h3>
             <div class="space-y-3">
-                <button onclick="exportToPDF()" class="w-full flex items-center p-4 bg-red-50 text-red-700 rounded-xl border border-red-100 hover:bg-red-100 transition">
-                    <div class="p-2 bg-white rounded-lg mr-4 shadow-sm"><i data-lucide="file-text" class="w-6 h-6 text-red-600"></i></div>
-                    <div class="text-left"><p class="font-bold">Save as PDF</p></div>
+                <button onclick="openDateSelection('pdf')" class="w-full flex items-center p-4 bg-red-50 text-red-700 rounded-xl border border-red-100 hover:bg-red-100 transition group">
+                    <div class="p-2 bg-white rounded-lg mr-4 shadow-sm group-hover:scale-110 transition-transform">
+                        <i data-lucide="file-text" class="w-6 h-6 text-red-600"></i>
+                    </div>
+                    <div class="text-left">
+                        <p class="font-bold">Save as PDF</p>
+                        <p class="text-xs text-red-500">Professional Report</p>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-5 h-5 ml-auto opacity-50"></i>
                 </button>
-                <button onclick="exportToExcel()" class="w-full flex items-center p-4 bg-green-50 text-green-700 rounded-xl border border-green-100 hover:bg-green-100 transition"><div class="p-2 bg-white rounded-lg mr-4 shadow-sm"><i data-lucide="table" class="w-6 h-6 text-green-600"></i></div><div class="text-left"><p class="font-bold">Save as Excel</p></div></button>
+
+                <button onclick="openDateSelection('excel')" class="w-full flex items-center p-4 bg-green-50 text-green-700 rounded-xl border border-green-100 hover:bg-green-100 transition group">
+                    <div class="p-2 bg-white rounded-lg mr-4 shadow-sm group-hover:scale-110 transition-transform">
+                        <i data-lucide="table" class="w-6 h-6 text-green-600"></i>
+                    </div>
+                    <div class="text-left">
+                        <p class="font-bold">Save as Excel</p>
+                        <p class="text-xs text-green-600">Styled Spreadsheet</p>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-5 h-5 ml-auto opacity-50"></i>
+                </button>
             </div>
             <button onclick="closeModal('exportModal')" class="w-full mt-6 py-3 text-slate-400 font-medium hover:text-slate-600">Cancel</button>
+        </div>
+    </div>
+
+    <div id="dateSelectionModal" class="modal px-4 items-center" style="z-index: 55;">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 animate-slide-up">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2 font-khmer-header">
+                    <i data-lucide="calendar-days" class="w-5 h-5 text-indigo-600"></i> Select Range
+                </h3>
+                <button onclick="closeModal('dateSelectionModal')" class="p-2 bg-slate-100 rounded-full hover:bg-slate-200">
+                    <i data-lucide="x" class="w-5 h-5 text-slate-500"></i>
+                </button>
+            </div>
+
+            <input type="hidden" id="export-target-type" value="">
+
+            <div class="space-y-4">
+                <p class="text-sm text-slate-500 font-medium">Select data range:</p>
+                
+                <label class="flex items-center p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition" onclick="togglePDFInputs('all')">
+                    <input type="radio" name="pdf_option" value="all" class="w-5 h-5 text-indigo-600 border-gray-300 focus:ring-indigo-500" checked>
+                    <span class="ml-3 font-bold text-slate-700">All Data</span>
+                </label>
+
+                <label class="flex items-center p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition" onclick="togglePDFInputs('month')">
+                    <input type="radio" name="pdf_option" value="month" class="w-5 h-5 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                    <div class="ml-3 w-full">
+                        <span class="font-bold text-slate-700 block">Monthly</span>
+                        <div id="pdf-input-month" class="hidden mt-2">
+                            <input type="month" id="pdf-month-val" class="w-full p-2 border rounded-lg text-sm bg-white">
+                        </div>
+                    </div>
+                </label>
+
+                <label class="flex items-center p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition" onclick="togglePDFInputs('year')">
+                    <input type="radio" name="pdf_option" value="year" class="w-5 h-5 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                    <div class="ml-3 w-full">
+                        <span class="font-bold text-slate-700 block">Yearly</span>
+                        <div id="pdf-input-year" class="hidden mt-2">
+                            <select id="pdf-year-val" class="w-full p-2 border rounded-lg text-sm bg-white"></select>
+                        </div>
+                    </div>
+                </label>
+
+                <label class="flex items-center p-3 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition" onclick="togglePDFInputs('range')">
+                    <input type="radio" name="pdf_option" value="range" class="w-5 h-5 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                    <div class="ml-3 w-full">
+                        <span class="font-bold text-slate-700 block">Date Range</span>
+                        <div id="pdf-input-range" class="hidden mt-2 grid grid-cols-2 gap-2">
+                            <input type="date" id="pdf-start-val" class="w-full p-2 border rounded-lg text-sm bg-white" placeholder="Start">
+                            <input type="date" id="pdf-end-val" class="w-full p-2 border rounded-lg text-sm bg-white" placeholder="End">
+                        </div>
+                    </div>
+                </label>
+            </div>
+
+            <button onclick="handleExportConfirmation()" class="w-full mt-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
+                <i data-lucide="download" class="w-4 h-4"></i> Generate File
+            </button>
         </div>
     </div>
 
@@ -413,7 +390,7 @@
                     <input type="hidden" name="ID" id="mobile-edit-id">
                     <div class="mb-4">
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">កាលបរិច្ឆេទ</label>
-                        <input type="date" name="Date" id="mobile-date" class="w-full p-3 border rounded-xl bg-slate-50 font-medium" required>
+                        <input type="date" name="Date" id="mobile-date" class="w-full p-3 border rounded-xl bg-slate-50 font-medium" required onchange="checkExistingDate(this.value, 'mobile-form')">
                     </div>
                     <div id="mobile-dynamic-inputs" class="space-y-4"><div class="text-center p-4"><i data-lucide="loader-2" class="w-6 h-6 animate-spin mx-auto text-indigo-500"></i><p class="text-xs text-gray-400 mt-2">Loading categories...</p></div></div>
                     <div class="mt-6 pt-4 border-t">
@@ -488,7 +465,7 @@
         const user = JSON.parse(userStr); 
 
         // CONFIG
-        const SHEETDB_URL = "https://sheetdb.io/api/v1/3ack97nmcay65"; 
+        const SHEETDB_URL = "https://sheetdb.io/api/v1/fs779752mqg6p"; 
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxgwmWfbIQb7ETnPQHlmydgAhShl9a9Nn-lIjhlBKdB7aYi4WiyjFYfjL2cIUXfpes7ig/exec"; 
 
         // USER STATE
@@ -497,14 +474,54 @@
         let filteredExpenses = [];
         let currentView = 'active';
         
-        // --- NEW DATE FORMATTER FUNCTION ---
+        // --- LOGO (Base64) ---
+        const LOGO_BASE64 = "logoPdf.jpg";
+
+        // --- DATE FORMATTER ---
         function formatDateFriendly(dateStr) {
             if(!dateStr) return '';
-            // Create date object carefully to avoid timezone shifts
             const parts = dateStr.split('-');
             if(parts.length !== 3) return dateStr;
             const date = new Date(parts[0], parts[1] - 1, parts[2]);
             return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+        function formatDateMinimal(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' });
+        }
+
+        // --- HELPER: Convert English Numbers to Khmer (0-9 -> ០-៩) ---
+        function toKhmerNum(num) {
+            const khmerNums = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+            return num.toString().replace(/[0-9]/g, w => khmerNums[+w]);
+        }
+
+        // --- HELPER: Get Complex Khmer Footer Dates ---
+        function getKhmerFooterDates() {
+            const date = new Date();
+            const days = ['អាទិត្យ', 'ច័ន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍'];
+            const months = ["មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា", "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ"];
+
+            // Gregorian Data
+            const dayName = days[date.getDay()];
+            const dayNum = date.getDate();
+            const monthName = months[date.getMonth()];
+            const year = date.getFullYear();
+            const beYear = year + 543; // Buddhist Era (Approximate)
+
+            // Convert to Khmer Numerals
+            const kDay = toKhmerNum(dayNum);
+            const kYear = toKhmerNum(year);
+            const kBeYear = toKhmerNum(beYear);
+
+            // LINE 1: Lunar Format (Traditional)
+            const lunarLine = `ថ្ងៃ${dayName} ៥កើត ខែមិគសិរ ឆ្នាំម្សាញ់ សប្តស័ក ព.ស ២៥៦៩`; 
+
+            // LINE 2: Location & Gregorian Date
+            const gregorianLine = `កំពង់ស្ពឺ ថ្ងៃទី ${kDay} ខែ ${monthName} ឆ្នាំ ${kYear}`;
+
+            return { lunar: lunarLine, gregorian: gregorianLine };
         }
 
         // --- CUSTOM CONFIRM/ALERT ---
@@ -560,8 +577,12 @@
         window.onload = async () => { 
             initProfile(); 
             await loadCategories(); 
-            loadData(); 
+            await loadData(); // Wait for data before checking date
             populateDropdowns(); 
+            
+            // Initial check for today's date on Desktop form is REMOVED to comply with "no selected auto"
+            // If you want the field to be empty, the renderForms function handles it below.
+
             lucide.createIcons(); 
         };
 
@@ -603,13 +624,9 @@
         async function toggleCategoryVisibility(index) {
             const cat = categories[index];
             const newStatus = !cat.visible;
-            
-            // UI Optimistic Update
             cat.visible = newStatus;
             renderCategorySettings(); 
             renderForms(); 
-
-            // Save to Cloud
             try {
                 await fetch(`${SHEETDB_URL}/Key/${cat.key}?sheet=Categories`, { 
                     method: 'PATCH', 
@@ -654,6 +671,59 @@
                 allExpenses.sort((a,b)=>new Date(b.Date)-new Date(a.Date)); 
                 applyFilters();
             } catch(e){ console.error(e); list.innerHTML = `<div class="text-center py-10 text-red-500 p-4 bg-red-50 rounded-xl border border-red-100"><p class="font-bold">Error Loading Data</p><button onclick="loadData()" class="mt-3 px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-medium">Retry</button></div>`; }
+        }
+
+        // --- NEW: CHECK EXISTING DATE LOGIC ---
+        function checkExistingDate(dateStr, formId) {
+            if (!dateStr) return;
+
+            // 1. Find if there is an active entry for this date AND this user
+            const existingEntry = allExpenses.find(x => x.Date === dateStr && x.Status !== 'Deleted' && x.UserEmail === user.Email);
+
+            if (existingEntry) {
+                // FOUND: Populate form for EDIT
+                populateForm(formId, existingEntry);
+                showToast("Found existing report for this date. Switched to Edit mode.", "info");
+                
+                // Update UI to reflect Edit Mode
+                if(formId === 'desktop-form') {
+                    document.getElementById('desktop-submit-btn').innerText = 'Update';
+                    document.getElementById('desktop-cancel-btn').classList.remove('hidden');
+                } else {
+                    // Mobile doesn't usually have cancel, but logic is same
+                }
+            } else {
+                // NOT FOUND: This is a new entry for this date
+                // We need to clear previous values (ID, amounts) but KEEP the date
+                
+                // Get the hidden ID field to check if we were previously editing something
+                const idField = document.getElementById(formId === 'mobile-form' ? 'mobile-edit-id' : 'desktop-edit-id');
+                
+                // Only reset if the form currently has an ID (meaning we were editing, now we are adding new)
+                // OR if we just want to ensure it's clean.
+                
+                // 1. Clear ID
+                idField.value = '';
+                
+                // 2. Clear Description
+                const descField = document.getElementById(formId).querySelector('[name="Description"]');
+                if(descField) descField.value = '';
+
+                // 3. Clear Amounts
+                categories.forEach(c => {
+                    const input = document.getElementById(formId).querySelector(`[name="${c.key}"]`);
+                    if(input) input.value = '';
+                });
+
+                // 4. Reset Total
+                calculateTotal(formId.replace('-form', ''));
+
+                // 5. Update Buttons to "Save"
+                if(formId === 'desktop-form') {
+                    document.getElementById('desktop-submit-btn').innerText = 'រក្សាទុក'; // Save
+                    document.getElementById('desktop-cancel-btn').classList.add('hidden');
+                }
+            }
         }
 
         function populateDropdowns() {
@@ -716,7 +786,6 @@
         function viewItem(id) {
             const item = allExpenses.find(x => x.ID == id);
             if (!item) return;
-            // UPDATED: Use friendly date
             document.getElementById('detail-date').innerText = formatDateFriendly(item.Date);
             document.getElementById('detail-amount').innerText = formatCurrency(item.Amount);
             document.getElementById('detail-desc').innerText = item.Description || "No description provided.";
@@ -771,10 +840,8 @@
             currentView = currentView === 'active' ? 'trash' : 'active'; 
             const btn = document.getElementById('trash-toggle-btn'); 
             const title = currentView === 'trash' ? 'ធុងសំរាម (Trash)' : 'បញ្ជីចំណាយ';
-            
             const mobileTitle = document.getElementById('list-header-title-mobile');
             if(mobileTitle) mobileTitle.innerText = title;
-            
             const desktopTitle = document.getElementById('list-header-title');
             if(desktopTitle) desktopTitle.innerText = title;
 
@@ -803,22 +870,10 @@
 
         async function deleteForever(id) {
             showToast('Deleting...', 'info');
-            // UPDATED: Use SheetDB Directly instead of Apps Script
             try {
-                const res = await fetch(`${SHEETDB_URL}/ID/${id}?sheet=Expenses`, {
-                    method: 'DELETE'
-                });
-                
-                if(res.ok) {
-                     showToast('Deleted Permanently', 'success');
-                     loadData();
-                } else {
-                     throw new Error("API Error");
-                }
-            } catch(e) {
-                console.error(e);
-                customAlert("Error", "Could not delete item. Check connection.", "error");
-            }
+                const res = await fetch(`${SHEETDB_URL}/ID/${id}?sheet=Expenses`, { method: 'DELETE' });
+                if(res.ok) { showToast('Deleted Permanently', 'success'); loadData(); } else { throw new Error("API Error"); }
+            } catch(e) { console.error(e); customAlert("Error", "Could not delete item. Check connection.", "error"); }
         }
 
         function renderList(data) {
@@ -836,28 +891,12 @@
                 });
                 let btns = '';
                 if(currentView === 'active') {
-                    btns = `
-                        <button onclick="event.stopPropagation(); editItem('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold border border-blue-200 hover:bg-blue-100 transition"><i data-lucide="pencil" class="w-3 h-3"></i> Edit</button>
-                        <button onclick="event.stopPropagation(); askTrash('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-lg font-bold border border-orange-200 hover:bg-orange-100 transition"><i data-lucide="trash-2" class="w-3 h-3"></i> Trash</button>
-                    `;
+                    btns = `<button onclick="event.stopPropagation(); editItem('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold border border-blue-200 hover:bg-blue-100 transition"><i data-lucide="pencil" class="w-3 h-3"></i> Edit</button><button onclick="event.stopPropagation(); askTrash('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-lg font-bold border border-orange-200 hover:bg-orange-100 transition"><i data-lucide="trash-2" class="w-3 h-3"></i> Trash</button>`;
                 } else {
-                    btns = `
-                        <button onclick="event.stopPropagation(); askRestore('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg font-bold border border-emerald-200 hover:bg-emerald-100 transition"><i data-lucide="rotate-ccw" class="w-3 h-3"></i> Restore</button>
-                        <button onclick="event.stopPropagation(); askDeleteForever('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg font-bold border border-red-200 hover:bg-red-100 transition"><i data-lucide="x" class="w-3 h-3"></i> Delete</button>
-                    `;
+                    btns = `<button onclick="event.stopPropagation(); askRestore('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg font-bold border border-emerald-200 hover:bg-emerald-100 transition"><i data-lucide="rotate-ccw" class="w-3 h-3"></i> Restore</button><button onclick="event.stopPropagation(); askDeleteForever('${item.ID}')" class="text-xs flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg font-bold border border-red-200 hover:bg-red-100 transition"><i data-lucide="x" class="w-3 h-3"></i> Delete</button>`;
                 }
                 
-                // UPDATED: Use friendly date here too
-                list.innerHTML += `
-                    <div onclick="viewItem('${item.ID}')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-3 animate-fade-in cursor-pointer hover:bg-slate-50 transition ${currentView==='trash'?'opacity-80 bg-red-50/30':''}">
-                        <div class="flex justify-between mb-1">
-                            <div><p class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md inline-block mb-1">${formatDateFriendly(item.Date)}</p></div>
-                            <p class="text-lg font-bold text-indigo-600">${formatCurrency(item.Amount||itemTotal)}</p>
-                        </div>
-                        <p class="text-slate-700 text-sm font-medium line-clamp-1 mb-2">${item.Description||'No Description'}</p>
-                        <div class="flex flex-wrap gap-1 mt-2 border-t pt-2 border-dashed border-slate-200">${breakdownHtml}</div>
-                        <div class="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-50">${btns}</div>
-                    </div>`;
+                list.innerHTML += `<div onclick="viewItem('${item.ID}')" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-3 animate-fade-in cursor-pointer hover:bg-slate-50 transition ${currentView==='trash'?'opacity-80 bg-red-50/30':''}"><div class="flex justify-between mb-1"><div><p class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md inline-block mb-1">${formatDateFriendly(item.Date)}</p></div><p class="text-lg font-bold text-indigo-600">${formatCurrency(item.Amount||itemTotal)}</p></div><p class="text-slate-700 text-sm font-medium line-clamp-1 mb-2">${item.Description||'No Description'}</p><div class="flex flex-wrap gap-1 mt-2 border-t pt-2 border-dashed border-slate-200">${breakdownHtml}</div><div class="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-50">${btns}</div></div>`;
             });
             lucide.createIcons();
         }
@@ -868,7 +907,13 @@
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
         function openSettingsModal() { renderCategorySettings(); document.getElementById('settingsModal').classList.add('active'); }
         function closeSettingsModal() { document.getElementById('settingsModal').classList.remove('active'); resetCategoryForm(); }
-        function openMobileModal() { document.getElementById('mobileModal').classList.add('active'); document.getElementById('mobile-date').value=new Date().toISOString().split('T')[0]; document.querySelectorAll('.dock-icon').forEach(i => i.blur()); }
+        
+        function openMobileModal() { 
+            document.getElementById('mobileModal').classList.add('active'); 
+            resetForm('mobile-form'); // Reset and ensure no data is pre-filled on open
+            document.querySelectorAll('.dock-icon').forEach(i => i.blur()); 
+        }
+        
         function closeMobileModal() { document.getElementById('mobileModal').classList.remove('active'); resetForm('mobile-form'); }
         function toggleProfileMenu() { document.getElementById('profile-menu').classList.toggle('hidden'); }
         document.addEventListener('click', e => { if(!e.target.closest('.relative')) document.getElementById('profile-menu').classList.add('hidden'); });
@@ -912,7 +957,7 @@
             const gen = (cid, p) => { 
                 const c = document.getElementById(cid); 
                 c.innerHTML = ''; 
-                if(p==='desktop') c.innerHTML += `<div class="mb-4"><label class="text-xs font-bold text-slate-500 uppercase mb-1">កាលបរិច្ឆេទ</label><input type="date" name="Date" class="w-full p-3 border rounded-xl bg-slate-50" required value="${new Date().toISOString().split('T')[0]}"></div>`; 
+                if(p==='desktop') c.innerHTML += `<div class="mb-4"><label class="text-xs font-bold text-slate-500 uppercase mb-1">កាលបរិច្ឆេទ</label><input type="date" name="Date" class="w-full p-3 border rounded-xl bg-slate-50" required onchange="checkExistingDate(this.value, 'desktop-form')"></div>`; 
                 if(categories.length===0) c.innerHTML=`<div class="text-center p-4 bg-amber-50 text-amber-700 text-sm rounded-xl">Please add categories in Settings.</div>`; 
                 else {
                     categories.forEach(cat => { 
@@ -931,19 +976,8 @@
             const l = document.getElementById('category-list'); 
             l.innerHTML = categories.length ? categories.map((c,i)=>`
                 <div class="flex justify-between items-center p-3 bg-slate-50 border rounded-lg mb-2">
-                    <div>
-                        <p class="text-sm font-bold ${c.visible === false ? 'text-slate-400' : 'text-slate-800'}">${c.label}</p>
-                        <p class="text-xs text-slate-400">${c.key}</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" class="sr-only peer" onchange="toggleCategoryVisibility(${i})" ${c.visible !== false ? 'checked' : ''}>
-                            <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
-                        </label>
-                        <div class="h-4 w-px bg-slate-300 mx-1"></div>
-                        <button onclick="prepareEditCategory(${i})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                        <button onclick="removeCategory(${i})" class="p-1.5 text-red-600 hover:bg-red-50 rounded"><i data-lucide="trash" class="w-4 h-4"></i></button>
-                    </div>
+                    <div><p class="text-sm font-bold ${c.visible === false ? 'text-slate-400' : 'text-slate-800'}">${c.label}</p><p class="text-xs text-slate-400">${c.key}</p></div>
+                    <div class="flex items-center gap-3"><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" class="sr-only peer" onchange="toggleCategoryVisibility(${i})" ${c.visible !== false ? 'checked' : ''}><div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div></label><div class="h-4 w-px bg-slate-300 mx-1"></div><button onclick="prepareEditCategory(${i})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="removeCategory(${i})" class="p-1.5 text-red-600 hover:bg-red-50 rounded"><i data-lucide="trash" class="w-4 h-4"></i></button></div>
                 </div>
             `).join('') : '<div class="text-center py-4 text-slate-400 text-sm">No categories</div>'; 
             lucide.createIcons(); 
@@ -972,12 +1006,7 @@
             if (actualDateField) actualDateField.value = item.Date;
             const descField = document.getElementById(fid).querySelector('[name="Description"]');
             if (descField) descField.value = item.Description;
-            categories.forEach(c => { 
-                if (c.visible !== false) {
-                    const input = document.getElementById(fid).querySelector(`[name="${c.key}"]`); 
-                    if (input) { input.value = item[c.key] || 0; } 
-                }
-            });
+            categories.forEach(c => { if (c.visible !== false) { const input = document.getElementById(fid).querySelector(`[name="${c.key}"]`); if (input) { input.value = item[c.key] || 0; } } });
             calculateTotal(fid.replace('-form', ''));
         }
 
@@ -991,13 +1020,7 @@
             const id = data.get('ID');
             let payload = { Date: data.get('Date'), Description: data.get('Description'), ModifiedDate: new Date().toISOString() };
             let total = 0;
-            categories.forEach(c => { 
-                if(c.visible !== false) {
-                    const v = parseFloat(data.get(c.key)) || 0; 
-                    payload[c.key] = v; 
-                    total += v; 
-                }
-            });
+            categories.forEach(c => { if(c.visible !== false) { const v = parseFloat(data.get(c.key)) || 0; payload[c.key] = v; total += v; } });
             payload.Amount = total; 
             if(total === 0) return customAlert("Missing Data", "Please enter a valid amount.", "warning");
             if (btn) { btn.disabled = true; btn.innerHTML = 'Saving...'; }
@@ -1016,205 +1039,450 @@
         function aggregateExpensesByDate(data) {
             const grouped = {};
             const activeCats = categories.filter(c => c.visible !== false);
-
             data.forEach(item => {
                 if (!item.Date) return;
-                
                 if (!grouped[item.Date]) {
-                    // Initialize group
-                    grouped[item.Date] = {
-                        Date: item.Date,
-                        Amount: 0
-                    };
-                    // Initialize categories to 0
+                    grouped[item.Date] = { Date: item.Date, Amount: 0 };
                     activeCats.forEach(c => grouped[item.Date][c.key] = 0);
                 }
-
-                // Add values
                 grouped[item.Date].Amount += (parseFloat(item.Amount) || 0);
-                activeCats.forEach(c => {
-                    grouped[item.Date][c.key] += (parseFloat(item[c.key]) || 0);
-                });
+                activeCats.forEach(c => { grouped[item.Date][c.key] += (parseFloat(item[c.key]) || 0); });
             });
-
-            // Convert back to array
-            return Object.values(grouped).map(g => ({
-                ...g
-            })).sort((a,b) => new Date(a.Date) - new Date(b.Date));
+            return Object.values(grouped).map(g => ({ ...g })).sort((a,b) => new Date(a.Date) - new Date(b.Date));
         }
 
-        // --- EXCEL EXPORT (Updated) ---
-        function exportToExcel() {
-            if (filteredExpenses.length === 0) return customAlert("No Data", "No data to export.", "warning");
+        // --- UNIFIED EXPORT LOGIC (PDF & EXCEL) ---
+
+        function openDateSelection(type) {
+            closeModal('exportModal');
+            document.getElementById('dateSelectionModal').classList.add('active');
+            document.getElementById('export-target-type').value = type; // Store if PDF or Excel
+
+            // Set default values
+            const today = new Date();
+            document.getElementById('pdf-month-val').value = today.toISOString().slice(0, 7); 
             
-            try {
-                // 1. Group Data (No Description)
-                const aggregatedData = aggregateExpensesByDate(filteredExpenses);
-                const activeCats = categories.filter(c => c.visible !== false);
-                
-                // 2. Prepare Rows (Separated Columns)
-                const rows = aggregatedData.map(item => {
-                    const row = [
-                        item.Date,
-                    ];
-                    // Add Category Columns
-                    activeCats.forEach(c => row.push(item[c.key] || 0));
-                    // Add Total
-                    row.push(item.Amount);
-                    return row;
-                });
+            // Populate Year Dropdown
+            const yearSelect = document.getElementById('pdf-year-val');
+            yearSelect.innerHTML = '';
+            const years = [...new Set(allExpenses.map(x => x.Date.substring(0, 4)))].sort().reverse();
+            if(years.length === 0) years.push(today.getFullYear());
+            years.forEach(y => yearSelect.add(new Option(y, y)));
+            
+            togglePDFInputs('all');
+        }
 
-                // 3. Calculate Vertical Grand Totals
-                const grandTotals = ["GRAND TOTAL"];
-                let finalSum = 0;
-                activeCats.forEach(c => {
-                    let catSum = 0;
-                    aggregatedData.forEach(item => catSum += (item[c.key] || 0));
-                    grandTotals.push(catSum);
-                });
-                aggregatedData.forEach(item => finalSum += item.Amount);
-                grandTotals.push(finalSum);
-
-                // 4. Prepare Header Row (Beautiful Headers)
-                const headerRow = ["Date", ...activeCats.map(c => c.label), "Total"];
-
-                // 5. Create Workbook with Spacer Row
-                const ws = XLSX.utils.aoa_to_sheet([
-                    headerRow, 
-                    ...rows, 
-                    [], // Empty spacer row
-                    grandTotals // Footer Row
-                ]);
-                
-                // Adjust Column Widths
-                const cols = [{wch: 15}, ...activeCats.map(() => ({wch: 15})), {wch: 18}];
-                ws['!cols'] = cols;
-
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Expenses");
-                XLSX.writeFile(wb, `Expense_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
-                
-                closeModal('exportModal');
-                // COOL ALERT SUCCESS
-                customAlert("Success", "Excel file has been downloaded successfully!", "success");
-
-            } catch (e) {
-                console.error(e);
-                customAlert("Error", "Failed to generate Excel file.", "error");
+        function togglePDFInputs(type) {
+            // Hide all inputs first
+            ['month', 'year', 'range'].forEach(t => document.getElementById(`pdf-input-${t}`).classList.add('hidden'));
+            
+            // Show selected
+            if(type !== 'all') {
+                document.getElementById(`pdf-input-${type}`).classList.remove('hidden');
             }
         }
 
-        // --- KHMER DATE FORMATTER ---
-function formatKhmerDateFull(dateStr) {
-    if(!dateStr) return '';
-    const khmerMonths = ["មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា", "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ"];
-    const khmerNumbers = ["០", "១", "២", "៣", "៤", "៥", "៦", "៧", "៨", "៩"];
-    
-    const parts = dateStr.split('-'); // YYYY-MM-DD
-    const year = parts[0];
-    const month = parseInt(parts[1]) - 1;
-    const day = parts[2];
+        function handleExportConfirmation() {
+            const type = document.getElementById('export-target-type').value;
+            const option = document.querySelector('input[name="pdf_option"]:checked').value;
+            let dataToExport = [];
+            
+            // Base filters: Not deleted
+            let baseData = allExpenses.filter(x => x.Status !== 'Deleted');
 
-    // Convert numbers to Khmer digits (Optional: remove this block if you prefer standard 123)
-    const toKhmerNum = (num) => num.toString().split('').map(n => khmerNumbers[n] || n).join('');
-    
-    return `${toKhmerNum(day)} ${khmerMonths[month]} ${toKhmerNum(year)}`;
-}
-        
-        function exportToPDF() {
-    if(filteredExpenses.length === 0) return customAlert("គ្មានទិន្នន័យ", "មិនមានទិន្នន័យសម្រាប់ទាញយកទេ", "warning");
-    
-    try {
-        // 1. Group Data
-        const aggregatedData = aggregateExpensesByDate(filteredExpenses);
-        const activeCats = categories.filter(c => c.visible !== false);
+            if (option === 'all') {
+                dataToExport = baseData;
+            } 
+            else if (option === 'month') {
+                const mVal = document.getElementById('pdf-month-val').value; 
+                if(!mVal) return customAlert("Error", "Please select a month", "warning");
+                dataToExport = baseData.filter(x => x.Date.startsWith(mVal));
+            } 
+            else if (option === 'year') {
+                const yVal = document.getElementById('pdf-year-val').value;
+                if(!yVal) return customAlert("Error", "Please select a year", "warning");
+                dataToExport = baseData.filter(x => x.Date.startsWith(yVal));
+            } 
+            else if (option === 'range') {
+                const sVal = document.getElementById('pdf-start-val').value;
+                const eVal = document.getElementById('pdf-end-val').value;
+                if(!sVal || !eVal) return customAlert("Error", "Please select start and end dates", "warning");
+                dataToExport = baseData.filter(x => x.Date >= sVal && x.Date <= eVal);
+            }
 
-        // 2. Populate Header
-        const thead = document.getElementById('pdf-table-head');
-        let headerHtml = `
-            <tr>
-                <th class="rounded-l-lg font-khmer-header" style="width: 110px;">កាលបរិច្ឆេទ</th>
-        `;
-        activeCats.forEach(c => {
-            headerHtml += `<th class="font-khmer-header" style="width: 70px;">${c.label}</th>`;
-        });
-        headerHtml += `<th class="rounded-r-lg font-khmer-header" style="width: 100px;">សរុប</th></tr>`;
-        thead.innerHTML = headerHtml;
+            if (dataToExport.length === 0) {
+                return customAlert("No Data", "No records found for this selection.", "warning");
+            }
 
-        // 3. Populate Body
-        const tbody = document.getElementById('pdf-table-body');
-        const tfoot = document.getElementById('pdf-table-foot');
-        tbody.innerHTML = '';
-        
-        let grandTotal = 0;
-        const catTotals = {};
-        activeCats.forEach(c => catTotals[c.key] = 0);
+            closeModal('dateSelectionModal');
 
-        aggregatedData.forEach(item => {
-            grandTotal += item.Amount;
-            let rowHtml = `
-                <tr>
-                    <td class="font-khmer-header text-[11px]">${formatKhmerDateFull(item.Date)}</td>
-            `;
-            // Categories Columns
+            if(type === 'pdf') {
+                generatePDF(dataToExport, option);
+            } else {
+                generateStyledExcel(dataToExport, option);
+            }
+        }
+
+        // --- STYLED EXCEL GENERATION ---
+        function generateStyledExcel(data, titleType) {
+            showToast("Generating Excel...", "info");
+
+            const activeCats = categories.filter(c => c.visible !== false);
+            const aggregatedData = aggregateExpensesByDate(data);
+            const getYearKey = (dateStr) => dateStr.substring(0, 4);
+
+            // 1. DEFINE STYLES
+            const styles = {
+                header: {
+                    font: { bold: true, sz: 14, color: { rgb: "FFFFFF" }, name: "Khmer OS Muol" },
+                    fill: { fgColor: { rgb: "312e81" } }, // Dark Blue
+                    alignment: { horizontal: "center", vertical: "center" },
+                    border: { bottom: { style: "medium", color: { rgb: "000000" } } }
+                },
+                cell: {
+                    font: { sz: 11, name: "Khmer OS Battambang" },
+                    alignment: { vertical: "center" },
+                    border: { bottom: { style: "thin", color: { rgb: "E2E8F0" } } }
+                },
+                currency: {
+                    font: { sz: 11, name: "Khmer OS Battambang" },
+                    alignment: { horizontal: "right", vertical: "center" },
+                    border: { bottom: { style: "thin", color: { rgb: "E2E8F0" } } }
+                },
+                subTotal: {
+                    font: { bold: true, color: { rgb: "1e40af" }, name: "Khmer OS Muol" }, // Blue Text
+                    fill: { fgColor: { rgb: "e0e7ff" } }, // Light Blue Bg
+                    alignment: { vertical: "center" },
+                    border: { top: { style: "thin" }, bottom: { style: "thin" } }
+                },
+                grandTotal: {
+                    font: { bold: true, color: { rgb: "FFFFFF" }, sz: 12, name: "Khmer OS Muol" },
+                    fill: { fgColor: { rgb: "1e1b4b" } }, // Very Dark Blue
+                    alignment: { vertical: "center" },
+                    border: { top: { style: "medium" } }
+                }
+            };
+
+            // 2. BUILD DATA ROWS WITH STYLES
+            let rows = [];
+            let currentYearTotal = {};
+            let grandTotal = {};
+            activeCats.forEach(c => { currentYearTotal[c.key] = 0; grandTotal[c.key] = 0; });
+            currentYearTotal.Amount = 0; grandTotal.Amount = 0;
+
+            // -- Add Header Row --
+            let headerRow = [
+                { v: "Date", s: styles.header },
+                ...activeCats.map(c => ({ v: c.label, s: styles.header })),
+                { v: "Total", s: styles.header }
+            ];
+            rows.push(headerRow);
+
+            // -- Add Data --
+            for (let i = 0; i < aggregatedData.length; i++) {
+                const item = aggregatedData[i];
+                
+                // Calculate Totals
+                activeCats.forEach(c => {
+                    const val = parseFloat(item[c.key]) || 0;
+                    currentYearTotal[c.key] += val;
+                    grandTotal[c.key] += val;
+                });
+                currentYearTotal.Amount += item.Amount;
+                grandTotal.Amount += item.Amount;
+
+                // Create Data Row
+                let rowData = [
+                    { v: item.Date, t: 's', s: styles.cell }
+                ];
+                activeCats.forEach(c => {
+                    rowData.push({ v: (item[c.key] || 0), t: 'n', s: styles.currency, z: '#,##0 "៛"' }); // Format Number
+                });
+                rowData.push({ v: item.Amount, t: 'n', s: {...styles.currency, font: {bold:true, color:{rgb:"4f46e5"}}}, z: '#,##0 "៛"' });
+                rows.push(rowData);
+
+                // Check for Subtotal (Year Change)
+                const nextItem = aggregatedData[i+1];
+                const isLastItem = (i === aggregatedData.length - 1);
+                const currentYear = getYearKey(item.Date);
+                const nextYear = nextItem ? getYearKey(nextItem.Date) : null;
+
+                if (titleType === 'all' && (isLastItem || currentYear !== nextYear)) {
+                    let subRow = [
+                        { v: `Total ${currentYear}`, s: styles.subTotal }
+                    ];
+                    activeCats.forEach(c => {
+                        subRow.push({ v: currentYearTotal[c.key], t: 'n', s: {...styles.subTotal, alignment:{horizontal:"right"}}, z: '#,##0 "៛"' });
+                    });
+                    subRow.push({ v: currentYearTotal.Amount, t: 'n', s: {...styles.subTotal, alignment:{horizontal:"right"}}, z: '#,##0 "៛"' });
+                    rows.push(subRow);
+                    
+                    // Reset Year Total
+                    activeCats.forEach(c => currentYearTotal[c.key] = 0); currentYearTotal.Amount = 0;
+                }
+            }
+
+            // -- Add Grand Total --
+            let grandRow = [
+                { v: "GRAND TOTAL", s: styles.grandTotal }
+            ];
             activeCats.forEach(c => {
-                const val = parseFloat(item[c.key]) || 0;
-                catTotals[c.key] += val;
-                rowHtml += `<td>${val > 0 ? formatCurrency(val) : '-'}</td>`;
+                grandRow.push({ v: grandTotal[c.key], t: 'n', s: {...styles.grandTotal, alignment:{horizontal:"right"}}, z: '#,##0 "៛"' });
             });
-            // Total Column
-            rowHtml += `<td class="font-bold bg-slate-50">${formatCurrency(item.Amount)}</td></tr>`;
-            tbody.innerHTML += rowHtml;
-        });
+            grandRow.push({ v: grandTotal.Amount, t: 'n', s: {...styles.grandTotal, alignment:{horizontal:"right"}}, z: '#,##0 "៛"' });
+            rows.push(grandRow);
 
-        // 4. Populate Footer (KHMER LABEL)
-        let footerHtml = `<tr class="footer-row"><td class="font-khmer-header">សរុបរួម</td>`;
-        activeCats.forEach(c => {
-            footerHtml += `<td>${formatCurrency(catTotals[c.key])}</td>`;
-        });
-        footerHtml += `<td>${formatCurrency(grandTotal)}</td></tr>`;
-        tfoot.innerHTML = footerHtml;
-
-        // Update Report Footer Data (KHMER TEXT)
-        // Convert current date to Khmer format for the top right header
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('pdf-generated-date').innerText = `កាលបរិច្ឆេទ: ${formatKhmerDateFull(today)}`;
-        document.getElementById('pdf-user').innerText = `អ្នកប្រើប្រាស់: ${user.Email}`;
-        document.getElementById('pdf-total-days').innerText = aggregatedData.length + ' ថ្ងៃ'; // Khmer word for Days
-        document.getElementById('pdf-grand-total').innerText = formatCurrency(grandTotal);
-
-        // 5. Show Wrapper & Capture
-        const element = document.getElementById('pdf-wrapper');
-        element.classList.remove('opacity-0');
-        element.classList.remove('z-[-10]'); 
-        element.style.zIndex = "9999";
-
-        // 6. Generate PDF
-        html2canvas(element, { scale: 2 }).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('l', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            // 3. CREATE WORKBOOK
+            const ws = XLSX.utils.aoa_to_sheet([]); // Init empty
             
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save('Expense_Report_Khmer.pdf');
-            
-            // Hide again
-            element.classList.add('opacity-0');
-            element.classList.add('z-[-10]');
-            element.style.zIndex = "-10";
-            
-            closeModal('exportModal');
-            customAlert("ជោគជ័យ", "របាយការណ៍ PDF ត្រូវបានរក្សាទុក!", "success"); // Khmer Alert
-        });
+            // Add data manually to support styled cells
+            XLSX.utils.sheet_add_aoa(ws, rows, { origin: "A1" });
 
-    } catch (e) {
-        console.error(e);
-        element.classList.add('hidden'); 
-        customAlert("កំហុស", "បរាជ័យក្នុងការបង្កើត PDF", "error"); // Khmer Alert
-    }
-}
+            // Set Column Widths
+            const wscols = [
+                { wch: 15 }, // Date
+                ...activeCats.map(() => ({ wch: 18 })), // Cats
+                { wch: 20 } // Total
+            ];
+            ws['!cols'] = wscols;
+
+            // Set Row Height for Header
+            if(!ws['!rows']) ws['!rows'] = [];
+            ws['!rows'][0] = { hpt: 30 }; // Header Height
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Expenses");
+
+            // 4. DOWNLOAD
+            XLSX.writeFile(wb, `Expense_Report_${titleType}_${new Date().toISOString().split('T')[0]}.xlsx`);
+            
+            showToast("Success!", "success");
+        }
+
+        function generatePDF(data, titleType) {
+            showToast("Generating PDF...", "info");
+
+            // --- 1. CONFIGURATION ---
+            const MAX_PAGE_HEIGHT = 780; 
+            const ROW_HEIGHT = 42;       
+            const HEADER_HEIGHT = 130;   
+            const TABLE_HEADER_HEIGHT = 45; 
+            const FOOTER_HEIGHT = 180;   
+            const SUMMARY_HEIGHT = 140;  
+
+            // --- 2. PREPARE DATA ---
+            const activeCats = categories.filter(c => c.visible !== false);
+            const aggregatedData = aggregateExpensesByDate(data);
+            
+            // --- CALCULATE COLUMN WIDTHS ---
+            const dateColWidth = "12%";
+            const totalColWidth = "13%";
+            const catColWidth = (75 / (activeCats.length || 1)) + "%";
+
+            const getYearKey = (dateStr) => dateStr.substring(0, 4);
+            let flatData = []; 
+            let currentYearTotal = {};
+            let grandTotal = {};
+            
+            activeCats.forEach(c => { currentYearTotal[c.key]=0; grandTotal[c.key]=0; });
+            currentYearTotal.Amount = 0; grandTotal.Amount = 0;
+
+            for (let i = 0; i < aggregatedData.length; i++) {
+                const item = aggregatedData[i];
+                flatData.push({ type: 'data', ...item });
+
+                activeCats.forEach(c => {
+                    const val = parseFloat(item[c.key]) || 0;
+                    currentYearTotal[c.key] += val; 
+                    grandTotal[c.key] += val;
+                });
+                currentYearTotal.Amount += item.Amount; 
+                grandTotal.Amount += item.Amount;
+
+                const nextItem = aggregatedData[i+1];
+                const isLastItem = (i === aggregatedData.length - 1);
+                const currentYear = getYearKey(item.Date);
+                const nextYear = nextItem ? getYearKey(nextItem.Date) : null;
+
+                if (titleType === 'all' && (isLastItem || currentYear !== nextYear)) {
+                    flatData.push({ type: 'year_total', label: `សរុបប្រចាំឆ្នាំ ${currentYear}`, totals: {...currentYearTotal} });
+                    activeCats.forEach(c => currentYearTotal[c.key] = 0); currentYearTotal.Amount = 0;
+                }
+            }
+            flatData.push({ type: 'grand_total', totals: grandTotal });
+
+            // --- 3. SMART PAGINATION ---
+            let pages = [];
+            let currentPageRows = [];
+            let currentHeight = 0;
+
+            currentHeight = HEADER_HEIGHT + SUMMARY_HEIGHT + TABLE_HEADER_HEIGHT;
+
+            for (let i = 0; i < flatData.length; i++) {
+                const row = flatData[i];
+                if (currentHeight + ROW_HEIGHT > MAX_PAGE_HEIGHT) {
+                    pages.push(currentPageRows); 
+                    currentPageRows = []; 
+                    currentHeight = HEADER_HEIGHT + TABLE_HEADER_HEIGHT; 
+                }
+                currentPageRows.push(row);
+                currentHeight += ROW_HEIGHT;
+            }
+
+            // --- 4. ORPHAN LOGIC ---
+            if (currentHeight + FOOTER_HEIGHT > MAX_PAGE_HEIGHT) {
+                let rowsToMove = [];
+                if (currentPageRows.length > 2) {
+                    rowsToMove = currentPageRows.splice(-2); 
+                } else if (currentPageRows.length > 0) {
+                     rowsToMove = currentPageRows.splice(-1);
+                }
+                pages.push(currentPageRows);
+                pages.push(rowsToMove); 
+            } else {
+                pages.push(currentPageRows);
+            }
+
+            // --- 5. RENDER HTML ---
+            let fullHTML = `<div style="font-family: 'Khmer OS Battambang', sans-serif; color: #1e293b; background: white; width: 100%;">`;
+
+            for (let i = 0; i < pages.length; i++) {
+                const pageRows = pages[i];
+                const breakStyle = i > 0 ? 'page-break-before: always;' : '';
+                const isFirstPage = i === 0;
+                const isLastPage = i === pages.length - 1; 
+
+                fullHTML += `<div style="${breakStyle} padding: 20px 30px; height: 100%; box-sizing: border-box; position: relative;">`;
+
+                // HEADER
+                fullHTML += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #312e81;">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <img src="${LOGO_BASE64}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #e0e7ff;">
+                            <div>
+                                <h1 style="font-family: 'Khmer OS Muol'; color: #312e81; font-size: 20px; margin: 0; line-height: 1.2;">Expense Manager Pro</h1>
+                                <p style="font-size: 10px; color: #6b7280; margin: 2px 0 0 0; font-weight: 600; letter-spacing: 0.5px;">OFFICIAL FINANCIAL REPORT</p>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                             <div style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; display:inline-block; margin-bottom: 4px;">
+                                <p style="font-size: 9px; color: #64748b; font-weight: bold; text-transform: uppercase;">Generated On</p>
+                                <p style="font-size: 11px; font-weight: bold; color: #0f172a;">${new Date().toLocaleDateString('en-GB')}</p>
+                            </div>
+                            <p style="font-size: 10px; color: #4b5563;">User: <span style="font-weight: bold; color: #4f46e5;">${user.Email}</span></p>
+                             <p style="font-size: 9px; color: #94a3b8;">Page ${i + 1} of ${pages.length}</p>
+                        </div>
+                    </div>`;
+
+                // SUMMARY CARDS (Page 1 Only)
+                if (isFirstPage) {
+                    fullHTML += `
+                    <div style="display: flex; gap: 15px; margin-bottom: 25px;">
+                        <div style="flex: 1; padding: 12px 16px; border-radius: 10px; background-color: #312e81; color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                             <p style="font-size: 9px; font-weight: bold; font-family: 'Khmer OS Battambang'; opacity: 0.8; margin-bottom: 4px; text-transform: uppercase;">សរុបរួម (GRAND TOTAL)</p>
+                             <p style="font-size: 20px; font-weight: bold; letter-spacing: -0.5px;">${grandTotal.Amount.toLocaleString('en-US')} ៛</p>
+                        </div>
+                         <div style="flex: 1; padding: 12px 16px; border-radius: 10px; background: #ffffff; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                             <p style="font-size: 9px; font-weight: bold; color: #64748b; margin-bottom: 4px; font-family: 'Khmer OS Battambang'; text-transform: uppercase;">ចន្លោះកាលបរិច្ឆេទ (RANGE)</p>
+                             <div style="display:flex; align-items:center; gap: 8px;">
+                                <span style="font-size: 13px; font-weight: bold; color: #334155;">${formatDateMinimal(aggregatedData[0].Date)}</span>
+                                <span style="color:#94a3b8;">➜</span>
+                                <span style="font-size: 13px; font-weight: bold; color: #334155;">${formatDateMinimal(aggregatedData[aggregatedData.length-1].Date)}</span>
+                             </div>
+                        </div>
+                    </div>
+                    `;
+                }
+
+                // TABLE
+                if (pageRows.length > 0) {
+                    fullHTML += `
+                        <table style="width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 9px; margin-bottom: 10px;">
+                            <thead>
+                                <tr style="background-color: #f8fafc; border-bottom: 2px solid #334155; height: 40px;">
+                                    <th style="vertical-align: middle; padding: 0 8px; text-align: left; font-family: 'Khmer OS Muol'; width: ${dateColWidth}; color: #334155;">កាលបរិច្ឆេទ</th>
+                                    ${activeCats.map(c => `<th style="vertical-align: middle; padding: 0 8px; text-align: right; font-family: 'Khmer OS Muol'; width: ${catColWidth}; color: #334155;">${c.label}</th>`).join('')}
+                                    <th style="vertical-align: middle; padding: 0 8px; text-align: right; font-family: 'Khmer OS Muol'; width: ${totalColWidth}; color: #312e81; background-color: #f1f5f9;">សរុប</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
+                    pageRows.forEach((row, idx) => {
+                        let bgStyle = (idx % 2 === 0) ? 'background-color: #ffffff;' : 'background-color: #f8fafc;';
+                        let rowStyle = `height: ${ROW_HEIGHT}px; vertical-align: middle;`;
+                        let borderStyle = 'border-bottom: 1px solid #e2e8f0;';
+                        let cellStyle = `${rowStyle} padding: 0 8px; text-align: right; color: #475569; ${borderStyle}`;
+                        let labelStyle = `${rowStyle} padding: 0 8px; text-align: left; font-weight: 500; color: #334155; ${borderStyle}`;
+
+                        if (row.type === 'data') {
+                            fullHTML += `<tr style="${bgStyle}"><td style="${labelStyle} overflow: hidden; white-space: nowrap;">${formatDateMinimal(row.Date)}</td>`;
+                            activeCats.forEach(c => {
+                                const val = parseFloat(row[c.key]) || 0;
+                                fullHTML += `<td style="${cellStyle}">${val > 0 ? val.toLocaleString('en-US') + ' ៛' : '<span style="color:#cbd5e1;">-</span>'}</td>`;
+                            });
+                            fullHTML += `<td style="${cellStyle} font-weight: bold; color: #4f46e5; background-color: ${idx % 2 === 0 ? '#f5f3ff' : '#eef2ff'};">${row.Amount.toLocaleString('en-US')} ៛</td></tr>`;
+                        } 
+                        else if (row.type === 'year_total') {
+                            fullHTML += `<tr style="background-color: #e0e7ff; border-top: 1px solid #818cf8;"><td style="${labelStyle} font-family: 'Khmer OS Muol'; color: #1e40af; padding-left: 15px;">${row.label}</td>`;
+                            activeCats.forEach(c => {
+                                fullHTML += `<td style="${cellStyle} font-weight: bold; color: #1e40af;">${row.totals[c.key] > 0 ? row.totals[c.key].toLocaleString('en-US') + ' ៛' : '-'}</td>`;
+                            });
+                            fullHTML += `<td style="${cellStyle} font-weight: bold; color: #1e40af;">${row.totals.Amount.toLocaleString('en-US')} ៛</td></tr>`;
+                        }
+                        else if (row.type === 'grand_total') {
+                             fullHTML += `<tr style="background-color: #1e1b4b; color: white;">
+                                <td style="${rowStyle} padding: 0 8px; text-align: center; font-family: 'Khmer OS Muol'; border:none;">សរុបរួម</td>`;
+                            activeCats.forEach(c => {
+                                fullHTML += `<td style="${rowStyle} padding: 0 8px; text-align: right; border:none; font-weight:bold;">${row.totals[c.key].toLocaleString('en-US')} ៛</td>`;
+                            });
+                            fullHTML += `<td style="${rowStyle} padding: 0 8px; text-align: right; font-size: 11px; border:none; font-weight:bold; background-color:#312e81;">${row.totals.Amount.toLocaleString('en-US')} ៛</td></tr>`;
+                        }
+                    });
+                    fullHTML += `</tbody></table>`;
+                }
+
+                // SIGNATURE FOOTER (Only on Last Page)
+                if (isLastPage) {
+                    const footerDates = getKhmerFooterDates(); 
+                    fullHTML += `
+                        <div style="margin-top: 40px; display: flex; justify-content: space-between; font-family: 'Khmer OS Battambang'; color: #334155;">
+                            
+                            <div style="text-align: center; width: 40%; padding-top: 150px;">
+                                <p style="font-weight: bold; font-size: 11px; margin-bottom: 60px;">អ្នកត្រួតពិនិត្យ (Approved By)</p>
+                                <div style="border-bottom: 1px solid #94a3b8; width: 140px; margin: 0 auto;"></div>
+                            </div>
+                            
+                            <div style="text-align: center; width: 40%;">
+                                <p style="font-size: 11px; margin-bottom: 4px;">${footerDates.lunar}</p>
+                                <p style="font-size: 11px; margin-bottom: 15px; font-weight: 600;">${footerDates.gregorian}</p>
+                                <p style="font-weight: bold; font-size: 11px; margin-bottom: 60px;">អ្នកធ្វើរបាយការណ៍ (Prepared By)</p>
+                                <div style="border-bottom: 1px solid #94a3b8; width: 140px; margin: 0 auto;"></div>
+                                <p style="font-size: 10px; margin-top: 8px; font-weight:bold; color: #475569;">${user.Email}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                fullHTML += `</div>`; 
+            }
+            fullHTML += `</div>`; 
+
+            const element = document.createElement('div');
+            element.innerHTML = fullHTML;
+            document.body.appendChild(element);
+
+            const opt = {
+                margin:       0, 
+                filename:     `Expense_Report_${titleType}_${new Date().toISOString().split('T')[0]}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 }, 
+                jsPDF:        { unit: 'pt', format: 'a4', orientation: 'landscape' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                document.body.removeChild(element);
+                showToast("ជោគជ័យ!", "success");
+            });
+        }
     </script>
 </body>
 </html>
