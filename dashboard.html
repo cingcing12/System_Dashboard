@@ -465,7 +465,7 @@
         const user = JSON.parse(userStr); 
 
         // CONFIG
-        const SHEETDB_URL = "https://sheetdb.io/api/v1/xw1p32oicjp24"; 
+        const SHEETDB_URL = "https://sheetdb.io/api/v1/fs779752mqg6p"; 
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxgwmWfbIQb7ETnPQHlmydgAhShl9a9Nn-lIjhlBKdB7aYi4WiyjFYfjL2cIUXfpes7ig/exec"; 
 
         // USER STATE
@@ -587,12 +587,13 @@
         };
 
         function initProfile() {
-            const avatarUrl = user.FaceImageFile ? `faces/${user.FaceImageFile}` : `https://ui-avatars.com/api/?name=${user.Email}&background=random`;
+            // UPDATED: Use user.Name instead of user.Email for avatars and display
+            const avatarUrl = user.FaceImageFile ? `faces/${user.FaceImageFile}` : `https://ui-avatars.com/api/?name=${user.Name}&background=random`;
             document.getElementById('header-avatar').src = avatarUrl;
-            document.getElementById('menu-email').innerText = user.Email;
+            document.getElementById('menu-email').innerText = user.Name; // Display Name
             document.getElementById('menu-role').innerText = user.Role;
             document.getElementById('modal-avatar').src = avatarUrl;
-            document.getElementById('modal-email-display').innerText = user.Email;
+            document.getElementById('modal-email-display').innerText = user.Name; // Display Name
             document.getElementById('modal-role-display').innerText = user.Role;
 
             if(user.Role !== 'Owner') {
@@ -673,12 +674,13 @@
             } catch(e){ console.error(e); list.innerHTML = `<div class="text-center py-10 text-red-500 p-4 bg-red-50 rounded-xl border border-red-100"><p class="font-bold">Error Loading Data</p><button onclick="loadData()" class="mt-3 px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-medium">Retry</button></div>`; }
         }
 
-        // --- NEW: CHECK EXISTING DATE LOGIC ---
+        // --- NEW: CHECK EXISTING DATE LOGIC (UPDATED TO NAME) ---
         function checkExistingDate(dateStr, formId) {
             if (!dateStr) return;
 
             // 1. Find if there is an active entry for this date AND this user
-            const existingEntry = allExpenses.find(x => x.Date === dateStr && x.Status !== 'Deleted' && x.UserEmail === user.Email);
+            // UPDATED: Using UserName instead of UserEmail
+            const existingEntry = allExpenses.find(x => x.Date === dateStr && x.Status !== 'Deleted' && x.UserName === user.Name);
 
             if (existingEntry) {
                 // FOUND: Populate form for EDIT
@@ -789,7 +791,8 @@
             document.getElementById('detail-date').innerText = formatDateFriendly(item.Date);
             document.getElementById('detail-amount').innerText = formatCurrency(item.Amount);
             document.getElementById('detail-desc').innerText = item.Description || "No description provided.";
-            document.getElementById('detail-user').innerHTML = `<i data-lucide="user" class="w-3"></i> ${item.UserEmail || 'Unknown'}`;
+            // UPDATED: Show UserName
+            document.getElementById('detail-user').innerHTML = `<i data-lucide="user" class="w-3"></i> ${item.UserName || 'Unknown'}`;
             document.getElementById('detail-status').innerText = item.Status;
             document.getElementById('detail-status').className = item.Status === 'Active' ? "px-2 py-1 rounded bg-emerald-100 text-emerald-700 font-bold" : "px-2 py-1 rounded bg-red-100 text-red-700 font-bold";
 
@@ -1026,7 +1029,14 @@
             if (btn) { btn.disabled = true; btn.innerHTML = 'Saving...'; }
             try {
                 if(id) await fetch(`${SHEETDB_URL}/ID/${id}?sheet=Expenses`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:payload})});
-                else { payload.ID=Date.now(); payload.Status='Active'; payload.Type='Expense'; payload.UserEmail=user.Email; await fetch(`${SHEETDB_URL}?sheet=Expenses`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:payload})}); }
+                else { 
+                    payload.ID=Date.now(); 
+                    payload.Status='Active'; 
+                    payload.Type='Expense'; 
+                    // UPDATED: Using UserName
+                    payload.UserName = user.Name; 
+                    await fetch(`${SHEETDB_URL}?sheet=Expenses`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:payload})}); 
+                }
                 showToast('Saved Successfully!', 'success'); resetForm(fid); 
                 if(fid === 'mobile-form') closeMobileModal(); 
                 loadData();
@@ -1369,7 +1379,7 @@
                                 <p style="font-size: 9px; color: #64748b; font-weight: bold; text-transform: uppercase;">Generated On</p>
                                 <p style="font-size: 11px; font-weight: bold; color: #0f172a;">${new Date().toLocaleDateString('en-GB')}</p>
                             </div>
-                            <p style="font-size: 10px; color: #4b5563;">User: <span style="font-weight: bold; color: #4f46e5;">${user.Email}</span></p>
+                            <p style="font-size: 10px; color: #4b5563;">User: <span style="font-weight: bold; color: #4f46e5;">${user.Name}</span></p>
                              <p style="font-size: 9px; color: #94a3b8;">Page ${i + 1} of ${pages.length}</p>
                         </div>
                     </div>`;
@@ -1457,7 +1467,7 @@
                                 <p style="font-size: 11px; margin-bottom: 15px; font-weight: 600;">${footerDates.gregorian}</p>
                                 <p style="font-weight: bold; font-size: 11px; margin-bottom: 60px;">អ្នកធ្វើរបាយការណ៍ (Prepared By)</p>
                                 <div style="border-bottom: 1px solid #94a3b8; width: 140px; margin: 0 auto;"></div>
-                                <p style="font-size: 10px; margin-top: 8px; font-weight:bold; color: #475569;">${user.Email}</p>
+                                <p style="font-size: 10px; margin-top: 8px; font-weight:bold; color: #475569;">${user.Name}</p>
                             </div>
                         </div>
                     `;
