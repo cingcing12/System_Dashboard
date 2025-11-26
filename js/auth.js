@@ -99,21 +99,31 @@ async function fetchUsers(force = false) {
 })();
 
 // -------------------------------
-// Email/password login
+// Manual Login (UPDATED TO NAME)
 // -------------------------------
 const loginBtn = document.getElementById('loginBtn');
 if (loginBtn) loginBtn.addEventListener('click', loginUser);
 
 async function loginUser() {
-  const email = document.getElementById('email').value.trim();
+  // 1. Get Value from Name input
+  const nameInput = document.getElementById('name').value.trim();
   const password = document.getElementById('password').value.trim();
-  if (!email || !password) return alert('Enter email and password!');
+  
+  if (!nameInput || !password) return alert('Enter name and password!');
+  
   try {
     const users = await fetchUsers();
-    const user = users.find(u => String(u.Email).trim().toLowerCase() === email.toLowerCase());
+    
+    // 2. Search by Name
+    const user = users.find(u => {
+        const uName = u.Name || u['ឈ្មោះ'] || ''; // Handle English or Khmer header
+        return String(uName).trim().toLowerCase() === nameInput.toLowerCase();
+    });
+
     if (!user) return alert('User not found!');
     if (isBlocked(user)) return alert('❌ You are blocked by owner!');
     if (user.PasswordHash !== password) return alert('Wrong password!');
+    
     await updateLastLoginAndRedirect(user);
   } catch (err) {
     console.error(err);
@@ -122,22 +132,26 @@ async function loginUser() {
 }
 
 // -------------------------------
-// Update last login & redirect
+// Update last login & redirect (UPDATED TO NAME)
 // -------------------------------
 async function updateLastLoginAndRedirect(user) {
   const now = new Date().toISOString();
-  const email = user.Email;
-  // Assumes SHEETDB_BASE_URL is in config.js
-  const patchUrl = `${SHEETDB_BASE_URL}/Email/${encodeURIComponent(email)}`;
+  // Use Name to identify user for update
+  const userName = user.Name || user['ឈ្មោះ'];
+  
+  // 3. Patch URL uses /Name/
+  const patchUrl = `${SHEETDB_BASE_URL}/Name/${encodeURIComponent(userName)}`;
+  
   try {
     await fetch(patchUrl, {
-      method: 'PUT',
+      method: 'PATCH', // SheetDB often prefers PATCH for updates
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ data: [{ LastLogin: now }] })
     });
   } catch (err) {
     console.warn('Failed to update last login', err);
   }
+  
   try { user.LastLogin = now; localStorage.setItem('user', JSON.stringify(user)); } catch(e){}
   window.location.href = 'dashboard.html';
 }
@@ -176,7 +190,7 @@ async function loadModels() {
 }
 
 // -------------------------------
-// Preload Stored Faces
+// Preload Stored Faces (UPDATED TO NAME)
 // -------------------------------
 async function preloadStoredFaces() {
   storedDescriptors = [];
@@ -189,6 +203,7 @@ async function preloadStoredFaces() {
         if (!u.FaceImageFile) continue;
         const img = new Image();
         img.crossOrigin = 'anonymous';
+        // Note: Filename logic should already be handled by backend. We just read the file path.
         img.src = `https://cingcing12.github.io/System_Dashboard/faces/${u.FaceImageFile}`;
         await img.decode();
 
@@ -196,8 +211,9 @@ async function preloadStoredFaces() {
         const desc = await getDescriptorFromImage(img, options);
         if (!desc) continue;
 
+        // 4. Store Name instead of Email
         storedDescriptors.push({
-          email: u.Email,
+          name: u.Name || u['ឈ្មោះ'], 
           descriptor: l2Normalize(desc),
           blocked: isBlocked(u)
         });
@@ -341,7 +357,7 @@ if (cancelFaceBtn) {
 }
 
 // -------------------------------
-// Scan Logic (Shutter Click)
+// Scan Logic (Shutter Click) - UPDATED TO NAME
 // -------------------------------
 if (captureBtn) {
   captureBtn.addEventListener('click', async () => {
@@ -386,7 +402,7 @@ if (captureBtn) {
       
       if (faceMsg) faceMsg.textContent = 'Verifying Identity...';
 
-      // --- Matching Logic ---
+      // --- Matching Logic (UPDATED TO NAME) ---
       if (storedDescriptors.length === 0) {
           if (faceMsg) faceMsg.textContent = '❌ No users enrolled';
           return;
@@ -397,7 +413,9 @@ if (captureBtn) {
         let tot = 0;
         for (const d of descriptors) tot += euclideanDistance(d, s.descriptor);
         const avg = tot / descriptors.length;
-        scores.push({ email: s.email, avgDist: avg });
+        
+        // 5. Use name in score object
+        scores.push({ name: s.name, avgDist: avg });
       }
 
       scores.sort((a,b) => a.avgDist - b.avgDist);
@@ -422,10 +440,14 @@ if (captureBtn) {
         return;
       }
 
-      // --- Final Verification ---
+      // --- Final Verification (UPDATED TO NAME) ---
       try {
         const users = await fetchUsers(true);
-        const user = users.find(u => String(u.Email).trim().toLowerCase() === String(best.email).trim().toLowerCase());
+        // 6. Find user by Name
+        const user = users.find(u => {
+            const uName = u.Name || u['ឈ្មោះ'];
+            return String(uName).trim().toLowerCase() === String(best.name).trim().toLowerCase();
+        });
         
         if (!user) { if (faceMsg) faceMsg.textContent = '❌ User missing'; stopCamera(); return; }
         if (isBlocked(user)) { if (faceMsg) faceMsg.textContent = '❌ Account Blocked'; return; }
@@ -438,7 +460,8 @@ if (captureBtn) {
 
         // SUCCESS
         if (faceMsg) {
-            faceMsg.textContent = `✅ Welcome, ${user.Username || 'User'}!`;
+            const displayName = user.Name || user['ឈ្មោះ'] || 'User';
+            faceMsg.textContent = `✅ Welcome, ${displayName}!`;
             faceMsg.classList.replace('bg-black/60', 'bg-teal-500');
             faceMsg.classList.replace('bg-red-500/80', 'bg-teal-500');
         }
